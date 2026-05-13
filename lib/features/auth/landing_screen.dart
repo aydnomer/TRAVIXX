@@ -452,8 +452,8 @@ class _LandingScreenState extends State<LandingScreen> {
   // ─── AUTH CARD ───────────────────────────────────────────────
   Widget _buildAuthCard() {
     return Container(
-      constraints: const BoxConstraints(maxWidth: 400),
-      padding: const EdgeInsets.all(28),
+      constraints: const BoxConstraints(maxWidth: 400, maxHeight: 480),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -465,7 +465,9 @@ class _LandingScreenState extends State<LandingScreen> {
           ),
         ],
       ),
-      child: _isLogin ? _buildLoginForm() : _buildRegisterForm(),
+      child: SingleChildScrollView(
+        child: _isLogin ? _buildLoginForm() : _buildRegisterForm(),
+      ),
     );
   }
 
