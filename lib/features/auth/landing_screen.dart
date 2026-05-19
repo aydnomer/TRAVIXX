@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/widgets/language_selector.dart';
@@ -12,6 +14,107 @@ class LandingScreen extends StatefulWidget {
 
 class _LandingScreenState extends State<LandingScreen> {
   bool _isLogin = true;
+  bool _rememberMe = true;
+
+  // ─── Sayfa scroll kontrolü ─────────────────────────────────────
+  final ScrollController _pageScroll = ScrollController();
+
+  // ─── Form Controller'ları (tek seferlik, dispose edilir) ───────
+  final _loginEmailCtrl = TextEditingController();
+  final _loginPassCtrl = TextEditingController();
+  final _regNameCtrl = TextEditingController();
+  final _regEmailCtrl = TextEditingController();
+  final _regPassCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+
+  // ─── Otomatik dönen şehir foto galerisi ────────────────────────
+  int _photoIdx = 0;
+  Timer? _photoTimer;
+
+  // Şimdilik sadece foto'su garanti çalışan 2 destinasyon.
+  // Sonradan kullanıcı kendi indirip ekleyecek diğerlerini.
+  final List<Map<String, dynamic>> _destinations = [
+    {
+      'name': 'Kapadokya',
+      'sub': 'Nevşehir · Sıcak hava balonları',
+      'emoji': '🎈',
+      'url':
+          'https://images.unsplash.com/photo-1641128324972-af3212f0f6bd?w=1600&q=80&auto=format&fit=crop',
+      'colors': [Color(0xFFdc2626), Color(0xFFf97316), Color(0xFFfbbf24)],
+    },
+    {
+      'name': 'İstanbul',
+      'sub': 'Galata Kulesi · Boğaz manzarası',
+      'emoji': '🌉',
+      'url':
+          'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=1600&q=80&auto=format&fit=crop',
+      'colors': [Color(0xFF1e3a8a), Color(0xFF1d4ed8), Color(0xFF60a5fa)],
+    },
+  ];
+
+  // Yardımcı: sol her zaman ilki, sağ her zaman ikincisi.
+  // Daha fazla destinasyon eklenince offset hesabı yeniden açılabilir.
+  Map<String, dynamic> _leftDest() =>
+      _destinations[_photoIdx % _destinations.length];
+  Map<String, dynamic> _rightDest() => _destinations.length > 1
+      ? _destinations[(_photoIdx + 1) % _destinations.length]
+      : _destinations[0];
+
+  // ─── Sayfa içi bölümlere kaydırma için key'ler ─────────────────
+  final GlobalKey _featuresKey = GlobalKey();
+  final GlobalKey _howWorksKey = GlobalKey();
+  final GlobalKey _aboutKey = GlobalKey();
+  final GlobalKey _authKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    // Carousel sadece 2'den fazla destinasyon varsa döner.
+    // Şu an 2 var (Kapadokya + İstanbul) — statik kalıyor.
+    if (_destinations.length > 2) {
+      _photoTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+        if (mounted) {
+          setState(() {
+            _photoIdx = (_photoIdx + 1) % _destinations.length;
+          });
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _photoTimer?.cancel();
+    _pageScroll.dispose();
+    _loginEmailCtrl.dispose();
+    _loginPassCtrl.dispose();
+    _regNameCtrl.dispose();
+    _regEmailCtrl.dispose();
+    _regPassCtrl.dispose();
+    _phoneCtrl.dispose();
+    super.dispose();
+  }
+
+  void _scrollToTop() {
+    if (_pageScroll.hasClients) {
+      _pageScroll.animateTo(
+        0,
+        duration: const Duration(milliseconds: 700),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  void _scrollTo(GlobalKey key) {
+    final ctx = key.currentContext;
+    if (ctx != null) {
+      Scrollable.ensureVisible(
+        ctx,
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,15 +134,16 @@ class _LandingScreenState extends State<LandingScreen> {
         _buildTopBar(),
         Expanded(
           child: SingleChildScrollView(
+            controller: _pageScroll,
             child: Column(
               children: [
                 _buildHeroSection(),
-                _buildFeaturesSection(),
+                _buildFeaturesSection(key: _featuresKey),
                 _buildPhotoStrip(),
-                _buildHowItWorks(),
+                _buildHowItWorks(key: _howWorksKey),
                 _buildTestimonials(),
                 _buildAIChat(),
-                _buildFooter(),
+                _buildFooter(key: _aboutKey),
               ],
             ),
           ),
@@ -51,16 +155,17 @@ class _LandingScreenState extends State<LandingScreen> {
   // ─── MOBILE LAYOUT ───────────────────────────────────────────
   Widget _buildMobile() {
     return SingleChildScrollView(
+      controller: _pageScroll,
       child: Column(
         children: [
           _buildMobileHero(),
           _buildAuthCard(),
-          _buildFeaturesSection(),
+          _buildFeaturesSection(key: _featuresKey),
           _buildPhotoStrip(),
-          _buildHowItWorks(),
+          _buildHowItWorks(key: _howWorksKey),
           _buildTestimonials(),
           _buildAIChat(),
-          _buildFooter(),
+          _buildFooter(key: _aboutKey),
         ],
       ),
     );
@@ -106,23 +211,40 @@ class _LandingScreenState extends State<LandingScreen> {
             ],
           ),
           const Spacer(),
-          // Nav links
-          ...['Özellikler', 'Nasıl Çalışır?', 'Hakkımızda'].map(
-            (t) => Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Text(
-                t,
-                style: const TextStyle(color: AppTheme.accent, fontSize: 13),
-              ),
-            ),
-          ),
+          // Nav links — tıklanınca ilgili bölüme kaydır
+          _navLink('Özellikler', () => _scrollTo(_featuresKey)),
+          _navLink('Nasıl Çalışır?', () => _scrollTo(_howWorksKey)),
+          _navLink('Hakkımızda', () => _scrollTo(_aboutKey)),
           const SizedBox(width: 12),
           const LanguageSelector(dark: true),
           const SizedBox(width: 8),
-          _navBtn('Giriş Yap', false, () => setState(() => _isLogin = true)),
+          _navBtn('Giriş Yap', false, () {
+            setState(() => _isLogin = true);
+            _scrollToTop();
+          }),
           const SizedBox(width: 8),
-          _navBtn('Kayıt Ol', true, () => setState(() => _isLogin = false)),
+          _navBtn('Kayıt Ol', true, () {
+            setState(() => _isLogin = false);
+            _scrollToTop();
+          }),
         ],
+      ),
+    );
+  }
+
+  Widget _navLink(String label, VoidCallback onTap) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          child: Text(
+            label,
+            style: const TextStyle(color: AppTheme.accent, fontSize: 13),
+          ),
+        ),
       ),
     );
   }
@@ -167,15 +289,8 @@ class _LandingScreenState extends State<LandingScreen> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                Image.network(
-                  'https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Cappadocia_Balloons.jpg/1280px-Cappadocia_Balloons.jpg',
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    color: AppTheme.primaryDark,
-                    child: const Center(
-                      child: Text('🪂', style: TextStyle(fontSize: 80)),
-                    ),
-                  ),
+                Positioned.fill(
+                  child: _destinationVisual(_leftDest(), 'hero'),
                 ),
                 Container(
                   decoration: BoxDecoration(
@@ -289,7 +404,7 @@ class _LandingScreenState extends State<LandingScreen> {
                 color: AppTheme.primary.withValues(alpha: 0.95),
                 image: const DecorationImage(
                   image: NetworkImage(
-                    'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Bosphorus_Bridge_fog.jpg/1280px-Bosphorus_Bridge_fog.jpg',
+                    'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=1600&q=80&auto=format&fit=crop',
                   ),
                   fit: BoxFit.cover,
                   opacity: 0.15,
@@ -350,12 +465,7 @@ class _LandingScreenState extends State<LandingScreen> {
         SizedBox(
           height: 280,
           width: double.infinity,
-          child: Image.network(
-            'https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Cappadocia_Balloons.jpg/1280px-Cappadocia_Balloons.jpg',
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) =>
-                Container(color: AppTheme.primaryDark),
-          ),
+          child: _destinationVisual(_leftDest(), 'mhero'),
         ),
         Container(
           height: 280,
@@ -452,6 +562,7 @@ class _LandingScreenState extends State<LandingScreen> {
   // ─── AUTH CARD ───────────────────────────────────────────────
   Widget _buildAuthCard() {
     return Container(
+      key: _authKey,
       constraints: const BoxConstraints(maxWidth: 400, maxHeight: 480),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -473,9 +584,6 @@ class _LandingScreenState extends State<LandingScreen> {
 
   // ─── LOGIN FORM ──────────────────────────────────────────────
   Widget _buildLoginForm() {
-    final emailCtrl = TextEditingController();
-    final passCtrl = TextEditingController();
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -515,27 +623,68 @@ class _LandingScreenState extends State<LandingScreen> {
         ),
         const SizedBox(height: 20),
         _inputField(
-          emailCtrl,
+          _loginEmailCtrl,
           'E-posta',
           Icons.email_outlined,
           type: TextInputType.emailAddress,
         ),
         const SizedBox(height: 12),
-        _inputField(passCtrl, 'Şifre', Icons.lock_outline, obscure: true),
-        const SizedBox(height: 6),
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton(
-            onPressed: () {},
-            child: const Text(
-              'Şifremi unuttum?',
-              style: TextStyle(color: Color(0xFFF97316), fontSize: 12),
+        _inputField(_loginPassCtrl, 'Şifre', Icons.lock_outline,
+            obscure: true),
+        const SizedBox(height: 4),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Beni hatırla
+            GestureDetector(
+              onTap: () => setState(() => _rememberMe = !_rememberMe),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: Checkbox(
+                      value: _rememberMe,
+                      onChanged: (v) =>
+                          setState(() => _rememberMe = v ?? true),
+                      activeColor: const Color(0xFFF97316),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      materialTapTargetSize:
+                          MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Beni hatırla',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textPrimary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+            // Şifremi unuttum
+            TextButton(
+              onPressed: () {},
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(50, 30),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text(
+                'Şifremi unuttum?',
+                style: TextStyle(color: Color(0xFFF97316), fontSize: 12),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 12),
         _submitBtn('Giriş Yap', Icons.login, () async {
-          await _signIn(emailCtrl.text, passCtrl.text);
+          await _signIn(_loginEmailCtrl.text, _loginPassCtrl.text);
         }),
         const SizedBox(height: 16),
         _orDivider(),
@@ -563,10 +712,6 @@ class _LandingScreenState extends State<LandingScreen> {
 
   // ─── REGISTER FORM ───────────────────────────────────────────
   Widget _buildRegisterForm() {
-    final nameCtrl = TextEditingController();
-    final emailCtrl = TextEditingController();
-    final passCtrl = TextEditingController();
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -604,24 +749,24 @@ class _LandingScreenState extends State<LandingScreen> {
           ),
         ),
         const SizedBox(height: 20),
-        _inputField(nameCtrl, 'Ad Soyad', Icons.person_outline),
+        _inputField(_regNameCtrl, 'Ad Soyad', Icons.person_outline),
         const SizedBox(height: 12),
         _inputField(
-          emailCtrl,
+          _regEmailCtrl,
           'E-posta',
           Icons.email_outlined,
           type: TextInputType.emailAddress,
         ),
         const SizedBox(height: 12),
         _inputField(
-          passCtrl,
+          _regPassCtrl,
           'Şifre (min. 6 karakter)',
           Icons.lock_outline,
           obscure: true,
         ),
         const SizedBox(height: 20),
         _submitBtn('Kayıt Ol', Icons.person_add, () async {
-          await _signUp(emailCtrl.text, passCtrl.text);
+          await _signUp(_regEmailCtrl.text, _regPassCtrl.text);
         }),
         const SizedBox(height: 16),
         _orDivider(),
@@ -776,7 +921,6 @@ class _LandingScreenState extends State<LandingScreen> {
   }
 
   Widget _phoneSection() {
-    final phoneCtrl = TextEditingController();
     return Column(
       children: [
         Row(
@@ -802,7 +946,7 @@ class _LandingScreenState extends State<LandingScreen> {
             const SizedBox(width: 8),
             Expanded(
               child: TextField(
-                controller: phoneCtrl,
+                controller: _phoneCtrl,
                 keyboardType: TextInputType.phone,
                 decoration: InputDecoration(
                   hintText: '5XX XXX XX XX',
@@ -859,7 +1003,7 @@ class _LandingScreenState extends State<LandingScreen> {
   }
 
   // ─── FEATURES SECTION ────────────────────────────────────────
-  Widget _buildFeaturesSection() {
+  Widget _buildFeaturesSection({Key? key}) {
     final features = [
       {
         'icon': Icons.qr_code_scanner,
@@ -912,6 +1056,7 @@ class _LandingScreenState extends State<LandingScreen> {
     ];
 
     return Container(
+      key: key,
       color: AppTheme.background,
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
       child: Column(
@@ -998,86 +1143,174 @@ class _LandingScreenState extends State<LandingScreen> {
     );
   }
 
-  // ─── PHOTO STRIP ─────────────────────────────────────────────
+  // ─── PHOTO STRIP — 5 sn'de bir otomatik değişen carousel ─────
   Widget _buildPhotoStrip() {
-    final photos = [
-      {
-        'url':
-            'https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Cappadocia_Balloons.jpg/1280px-Cappadocia_Balloons.jpg',
-        'title': 'Kapadokya',
-        'sub': 'Nevşehir · 48 mekan',
-      },
-      {
-        'url':
-            'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Bosphorus_Bridge_fog.jpg/1280px-Bosphorus_Bridge_fog.jpg',
-        'title': 'İstanbul',
-        'sub': '248 mekan · Türkiye\'nin kalbi',
-      },
-    ];
-
     return SizedBox(
       height: 240,
       child: Row(
-        children: photos
-            .map(
-              (p) => Expanded(
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Image.network(
-                      p['url']!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
-                          Container(color: AppTheme.primary),
-                    ),
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.black.withValues(alpha: 0.65),
-                            Colors.transparent,
-                          ],
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 20,
-                      left: 20,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            p['title']!,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            p['sub']!,
-                            style: const TextStyle(
-                              color: Color(0xFFCBD5E9),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+        children: [
+          Expanded(child: _destinationVisual(_leftDest(), 'left')),
+          Expanded(child: _destinationVisual(_rightDest(), 'right')),
+        ],
+      ),
+    );
+  }
+
+  /// Bir destinasyon için görsel widget'ı.
+  /// Eğer 'url' varsa: Image.network + üstünde isim/altyazı katmanı.
+  /// Eğer 'url' yoksa: özel gradient kartı + büyük emoji + isim/altyazı.
+  Widget _destinationVisual(Map<String, dynamic> d, String prefix) {
+    final url = d['url'] as String?;
+    final colors = (d['colors'] as List).cast<Color>();
+    final name = d['name'] as String;
+    final sub = d['sub'] as String;
+    final emoji = d['emoji'] as String;
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 800),
+      switchInCurve: Curves.easeIn,
+      switchOutCurve: Curves.easeOut,
+      layoutBuilder: (currentChild, previousChildren) => Stack(
+        fit: StackFit.expand,
+        children: [
+          ...previousChildren,
+          if (currentChild != null) currentChild,
+        ],
+      ),
+      child: KeyedSubtree(
+        key: ValueKey('${prefix}_$name'),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // ARKAPLAN — foto varsa onu, yoksa gradient
+            if (url != null)
+              Image.network(
+                url,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _gradientCard(colors, emoji),
+                loadingBuilder: (_, child, prog) =>
+                    prog == null ? child : _gradientCard(colors, emoji),
+              )
+            else
+              _gradientCard(colors, emoji),
+
+            // Karanlık alt gradient (yazıların okunması için)
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.black.withValues(alpha: 0.7),
+                    Colors.black.withValues(alpha: 0.1),
+                    Colors.transparent,
                   ],
+                  stops: const [0.0, 0.55, 1.0],
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
                 ),
               ),
-            )
-            .toList(),
+            ),
+
+            // Bilgi etiketi
+            Positioned(
+              bottom: 20,
+              left: 20,
+              right: 20,
+              child: Row(
+                children: [
+                  Text(emoji, style: const TextStyle(fontSize: 32)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black54,
+                                blurRadius: 4,
+                                offset: Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          sub,
+                          style: const TextStyle(
+                            color: Color(0xFFE2E8F0),
+                            fontSize: 12,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black54,
+                                blurRadius: 4,
+                                offset: Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Foto yoksa veya yüklenmediyse: tasarımlı gradient kart (büyük dekoratif emoji).
+  Widget _gradientCard(List<Color> colors, String emoji) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: colors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Stack(
+        children: [
+          // Sağ üstte büyük dekoratif emoji (yarı saydam)
+          Positioned(
+            top: -20,
+            right: -10,
+            child: Opacity(
+              opacity: 0.18,
+              child: Text(emoji, style: const TextStyle(fontSize: 200)),
+            ),
+          ),
+          // Ortada hafif yıldız dokusu (basit)
+          Positioned(
+            left: 30,
+            top: 40,
+            child: Text('✦',
+                style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white.withValues(alpha: 0.3))),
+          ),
+          Positioned(
+            right: 80,
+            top: 90,
+            child: Text('✧',
+                style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.white.withValues(alpha: 0.4))),
+          ),
+        ],
       ),
     );
   }
 
   // ─── HOW IT WORKS ────────────────────────────────────────────
-  Widget _buildHowItWorks() {
+  Widget _buildHowItWorks({Key? key}) {
     final steps = [
       {
         'n': '1',
@@ -1100,6 +1333,7 @@ class _LandingScreenState extends State<LandingScreen> {
     ];
 
     return Container(
+      key: key,
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
       color: Colors.white,
       child: Column(
@@ -1489,8 +1723,9 @@ class _LandingScreenState extends State<LandingScreen> {
   }
 
   // ─── FOOTER ──────────────────────────────────────────────────
-  Widget _buildFooter() {
+  Widget _buildFooter({Key? key}) {
     return Container(
+      key: key,
       color: AppTheme.primaryDark,
       padding: const EdgeInsets.all(40),
       child: Column(
@@ -1704,40 +1939,63 @@ class _LandingScreenState extends State<LandingScreen> {
 
   // ─── SUPABASE AUTH ───────────────────────────────────────────
   Future<void> _signIn(String email, String password) async {
+    if (email.trim().isEmpty || password.trim().isEmpty) {
+      _showSnack('E-posta ve şifre boş olamaz', isError: true);
+      return;
+    }
     try {
-      await Supabase.instance.client.auth.signInWithPassword(
+      final res = await Supabase.instance.client.auth.signInWithPassword(
         email: email.trim(),
         password: password.trim(),
       );
-    } on AuthException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message), backgroundColor: Colors.red),
-        );
+      if (!mounted) return;
+      if (res.session != null) {
+        _showSnack('Hoş geldin! 👋', isError: false);
+        context.go('/home');
       }
+    } on AuthException catch (e) {
+      if (mounted) _showSnack(e.message, isError: true);
+    } catch (e) {
+      if (mounted) _showSnack('Bir hata oluştu: $e', isError: true);
     }
   }
 
   Future<void> _signUp(String email, String password) async {
+    if (email.trim().isEmpty || password.trim().length < 6) {
+      _showSnack('Geçerli bir e-posta ve en az 6 karakter şifre girin',
+          isError: true);
+      return;
+    }
     try {
-      await Supabase.instance.client.auth.signUp(
+      final res = await Supabase.instance.client.auth.signUp(
         email: email.trim(),
         password: password.trim(),
       );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Kayıt başarılı! E-postanızı onaylayın.'),
-            backgroundColor: Colors.green,
-          ),
+      if (!mounted) return;
+      // Email confirmation kapalıysa session direkt gelir, açıksa null gelir
+      if (res.session != null) {
+        _showSnack('Hesap oluşturuldu, giriş yapılıyor...', isError: false);
+        context.go('/home');
+      } else {
+        _showSnack(
+          'Kayıt başarılı! E-posta kutunu kontrol et ve onaylama linkine tıkla.',
+          isError: false,
         );
       }
     } on AuthException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message), backgroundColor: Colors.red),
-        );
-      }
+      if (mounted) _showSnack(e.message, isError: true);
+    } catch (e) {
+      if (mounted) _showSnack('Bir hata oluştu: $e', isError: true);
     }
+  }
+
+  void _showSnack(String msg, {required bool isError}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 }
