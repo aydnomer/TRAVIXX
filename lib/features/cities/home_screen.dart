@@ -333,6 +333,21 @@ class _HomeScreenState extends State<HomeScreen> {
                     Expanded(
                       child: TextField(
                         controller: _searchController,
+                        textInputAction: TextInputAction.search,
+                        onTap: () {
+                          // Doğrudan dokunduğunda da arama ekranını aç
+                          if (_searchController.text.isEmpty) {
+                            context.push('/search');
+                          }
+                        },
+                        onSubmitted: (q) {
+                          final query = q.trim();
+                          if (query.isEmpty) {
+                            context.push('/search');
+                          } else {
+                            context.push('/search?q=${Uri.encodeComponent(query)}');
+                          }
+                        },
                         decoration: const InputDecoration(
                           hintText: 'Şehir veya mekan ara...',
                           border: InputBorder.none,
