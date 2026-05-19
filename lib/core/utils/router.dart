@@ -9,6 +9,7 @@ import "../../features/places/places_screen.dart";
 import "../../features/places/place_detail_screen.dart";
 import "../../features/favorites/favorites_screen.dart";
 import "../../features/profile/profile_screen.dart";
+import "../../features/qr_scanner/qr_scanner_screen.dart";
 
 /// Supabase auth state değişimlerinde router'ı tetiklemek için.
 class _AuthRefreshListenable extends ChangeNotifier {
@@ -77,6 +78,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: "/profile",
       builder: (context, state) => const ProfileScreen(),
+    ),
+    GoRoute(
+      path: "/qr-scan",
+      builder: (context, state) => const QrScannerScreen(),
     ),
   ],
 );

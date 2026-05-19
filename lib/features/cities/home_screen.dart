@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/database_service.dart';
+import '../../core/utils/gps_service.dart';
+import '../places/place_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -10,60 +14,84 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
+/// Bir mekanı kullanıcıya olan mesafesiyle birlikte tutan basit sınıf.
+class _PlaceWithDistance {
+  final Place place;
+  final double? km;
+  final int? minutes;
+  const _PlaceWithDistance(
+      {required this.place, required this.km, required this.minutes});
+}
+
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
   final _searchController = TextEditingController();
 
-  final List<Map<String, dynamic>> _demoPlaces = [
-    {
-      'name': 'Harput Kalesi',
-      'city': 'Elazığ',
-      'emoji': '🏛',
-      'km': 6.0,
-      'min': 12,
-      'category': 'Tarihi',
-    },
-    {
-      'name': 'Hazar Gölü',
-      'city': 'Elazığ',
-      'emoji': '💧',
-      'km': 28.0,
-      'min': 35,
-      'category': 'Doğa',
-    },
-    {
-      'name': 'Kurşunlu Camii',
-      'city': 'Elazığ',
-      'emoji': '🕌',
-      'km': 14.0,
-      'min': 22,
-      'category': 'Dini',
-    },
-    {
-      'name': 'Ayasofya',
-      'city': 'İstanbul',
-      'emoji': '🕌',
-      'km': 850.0,
-      'min': 600,
-      'category': 'Tarihi',
-    },
-    {
-      'name': 'Topkapı Sarayı',
-      'city': 'İstanbul',
-      'emoji': '🏰',
-      'km': 852.0,
-      'min': 605,
-      'category': 'Müze',
-    },
-    {
-      'name': 'Anıtkabir',
-      'city': 'Ankara',
-      'emoji': '🏛',
-      'km': 490.0,
-      'min': 330,
-      'category': 'Tarihi',
-    },
-  ]..sort((a, b) => (a['km'] as double).compareTo(b['km'] as double));
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  // Gerçek Supabase verisi + GPS mesafe sıralaması
+  List<_PlaceWithDistance> _places = [];
+  bool _loading = true;
+  Position? _userPos;
+  String _gpsStatus = 'Konum izleniyor...';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    // Önce GPS izni iste (paralel)
+    final posFuture = GpsService.getCurrentPosition();
+    // Aynı anda mekanları çek
+    final placesFuture = DatabaseService.getAllPlaces();
+
+    final pos = await posFuture;
+    List<Place> raw;
+    try {
+      raw = await placesFuture;
+    } catch (_) {
+      raw = const [];
+    }
+
+    if (!mounted) return;
+
+    // Mesafe hesapla ve sırala
+    final list = raw.map((p) {
+      double? km;
+      int? min;
+      if (pos != null && p.latitude != null && p.longitude != null) {
+        km = GpsService.distanceKm(
+            pos.latitude, pos.longitude, p.latitude!, p.longitude!);
+        min = GpsService.estimateMinutes(km);
+      }
+      return _PlaceWithDistance(place: p, km: km, minutes: min);
+    }).toList();
+
+    // GPS varsa mesafeye göre sırala, yoksa rating'e göre
+    if (pos != null) {
+      list.sort((a, b) {
+        if (a.km == null && b.km == null) return 0;
+        if (a.km == null) return 1;
+        if (b.km == null) return -1;
+        return a.km!.compareTo(b.km!);
+      });
+    }
+
+    setState(() {
+      _userPos = pos;
+      _places = list.take(20).toList(); // ilk 20
+      _gpsStatus = pos != null
+          ? 'GPS aktif'
+          : 'Konum kapalı — popüler mekanlar gösteriliyor';
+      _loading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,14 +110,29 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildHeroSliver(user),
         SliverToBoxAdapter(child: _buildLocationBar()),
         SliverToBoxAdapter(
-          child: _buildSectionTitle('Yakınındaki Mekanlar', 'En yakın önce ↑'),
-        ),
-        SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) => _buildPlaceCard(_demoPlaces[index], index == 0),
-            childCount: _demoPlaces.length,
+          child: _buildSectionTitle(
+            _userPos != null ? 'Yakınındaki Mekanlar' : 'Popüler Mekanlar',
+            _userPos != null ? 'En yakın önce ↑' : 'Puana göre',
           ),
         ),
+        if (_loading)
+          const SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (_places.isEmpty)
+          const SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(child: Text('Mekan bulunamadı')),
+          )
+        else
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) =>
+                  _buildPlaceCard(_places[index], index == 0),
+              childCount: _places.length,
+            ),
+          ),
         const SliverToBoxAdapter(child: SizedBox(height: 20)),
       ],
     );
@@ -106,26 +149,40 @@ class _HomeScreenState extends State<HomeScreen> {
               SliverToBoxAdapter(child: _buildLocationBar()),
               SliverToBoxAdapter(
                 child: _buildSectionTitle(
-                  'Yakınındaki Mekanlar',
-                  'En yakın önce ↑',
+                  _userPos != null
+                      ? 'Yakınındaki Mekanlar'
+                      : 'Popüler Mekanlar',
+                  _userPos != null ? 'En yakın önce ↑' : 'Puana göre',
                 ),
               ),
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                sliver: SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 3.5,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                  ),
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) =>
-                        _buildPlaceCard(_demoPlaces[index], index == 0),
-                    childCount: _demoPlaces.length,
+              if (_loading)
+                const SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (_places.isEmpty)
+                const SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(child: Text('Mekan bulunamadı')),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  sliver: SliverGrid(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 3.5,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) =>
+                          _buildPlaceCard(_places[index], index == 0),
+                      childCount: _places.length,
+                    ),
                   ),
                 ),
-              ),
               const SliverToBoxAdapter(child: SizedBox(height: 20)),
             ],
           ),
@@ -219,6 +276,7 @@ class _HomeScreenState extends State<HomeScreen> {
             setState(() => _currentIndex = e.key);
             final label = e.value['label'];
             if (label == 'Şehirler') context.push('/cities');
+            if (label == 'QR Tara') context.push('/qr-scan');
             if (label == 'Favoriler') context.push('/favorites');
             if (label == 'Profil') context.push('/profile');
           },
@@ -408,33 +466,58 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildLocationBar() {
+    final gpsActive = _userPos != null;
     return Container(
       color: const Color(0xFFEFF6FF),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          const Icon(Icons.my_location, color: AppTheme.primary, size: 16),
+          Icon(
+            gpsActive ? Icons.my_location : Icons.location_disabled,
+            color: gpsActive ? AppTheme.primary : Colors.grey,
+            size: 16,
+          ),
           const SizedBox(width: 6),
-          const Text(
-            'Elazığ, Türkiye',
-            style: TextStyle(
-              color: AppTheme.primary,
-              fontWeight: FontWeight.w500,
-              fontSize: 13,
+          Expanded(
+            child: Text(
+              _gpsStatus,
+              style: TextStyle(
+                color: gpsActive ? AppTheme.primary : AppTheme.textSecondary,
+                fontWeight: FontWeight.w500,
+                fontSize: 13,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: Colors.green.shade50,
-              borderRadius: BorderRadius.circular(20),
+          if (!gpsActive)
+            TextButton(
+              onPressed: () {
+                GpsService.clearCache();
+                setState(() => _loading = true);
+                _loadData();
+              },
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                minimumSize: const Size(50, 28),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text(
+                'Tekrar dene',
+                style: TextStyle(fontSize: 11),
+              ),
+            )
+          else
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text(
+                'GPS aktif',
+                style: TextStyle(color: Colors.green, fontSize: 11),
+              ),
             ),
-            child: const Text(
-              'GPS aktif',
-              style: TextStyle(color: Colors.green, fontSize: 11),
-            ),
-          ),
         ],
       ),
     );
@@ -463,106 +546,128 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildPlaceCard(Map<String, dynamic> place, bool isNearest) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isNearest ? AppTheme.primary : AppTheme.cardBorder,
-          width: isNearest ? 1.5 : 0.5,
+  Widget _buildPlaceCard(_PlaceWithDistance pwd, bool isNearest) {
+    final p = pwd.place;
+    final hasDistance = pwd.km != null;
+    return InkWell(
+      onTap: () => context.push('/place/${p.id}'),
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isNearest && hasDistance
+                ? AppTheme.primary
+                : AppTheme.cardBorder,
+            width: isNearest && hasDistance ? 1.5 : 0.5,
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: const BoxDecoration(
-              color: Color(0xFFEFF6FF),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(14),
-                bottomLeft: Radius.circular(14),
+        child: Row(
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: const BoxDecoration(
+                color: Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(14),
+                  bottomLeft: Radius.circular(14),
+                ),
+              ),
+              child: Center(
+                child: Text(p.emoji, style: const TextStyle(fontSize: 28)),
               ),
             ),
-            child: Center(
-              child: Text(place['emoji'], style: const TextStyle(fontSize: 28)),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        place['name'],
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textPrimary,
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            p.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.textPrimary,
+                            ),
+                          ),
                         ),
+                        if (isNearest && hasDistance) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primary,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Text(
+                              'En Yakın',
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 9),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      p.category.isNotEmpty ? p.category : 'Mekan',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppTheme.textSecondary,
                       ),
-                      if (isNearest) ...[
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        if (hasDistance) ...[
+                          _distBadge(
+                            Icons.route,
+                            '${pwd.km!.toStringAsFixed(1)} km',
+                            const Color(0xFFEFF6FF),
+                            AppTheme.primary,
+                          ),
+                          const SizedBox(width: 6),
+                          _distBadge(
+                            Icons.access_time,
+                            '${pwd.minutes} dk',
+                            const Color(0xFFFEF9C3),
+                            const Color(0xFFB45309),
+                          ),
+                        ] else ...[
+                          _distBadge(
+                            Icons.star,
+                            p.rating.toStringAsFixed(1),
+                            const Color(0xFFFEF9C3),
+                            const Color(0xFFB45309),
+                          ),
+                        ],
                         const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primary,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Text(
-                            'En Yakın',
-                            style: TextStyle(color: Colors.white, fontSize: 9),
-                          ),
+                        _distBadge(
+                          Icons.qr_code_scanner,
+                          'QR',
+                          AppTheme.primary,
+                          Colors.white,
                         ),
                       ],
-                    ],
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    place['city'],
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AppTheme.textSecondary,
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      _distBadge(
-                        Icons.route,
-                        '${place['km']} km',
-                        const Color(0xFFEFF6FF),
-                        AppTheme.primary,
-                      ),
-                      const SizedBox(width: 6),
-                      _distBadge(
-                        Icons.access_time,
-                        '${place['min']} dk',
-                        const Color(0xFFFAEEDA),
-                        AppTheme.gold,
-                      ),
-                      const SizedBox(width: 6),
-                      _distBadge(
-                        Icons.qr_code_scanner,
-                        'QR',
-                        AppTheme.primary,
-                        Colors.white,
-                      ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -598,6 +703,7 @@ class _HomeScreenState extends State<HomeScreen> {
       onTap: (i) {
         setState(() => _currentIndex = i);
         if (i == 1) context.push('/cities');
+        if (i == 2) context.push('/qr-scan');
         if (i == 3) context.push('/favorites');
         if (i == 4) context.push('/profile');
       },

@@ -1,5 +1,6 @@
-﻿import "package:flutter/material.dart";
+import "package:flutter/material.dart";
 import "package:go_router/go_router.dart";
+import "../../core/theme/app_theme.dart";
 import "../../core/utils/database_service.dart";
 import "city_model.dart";
 
@@ -14,6 +15,19 @@ class _CitiesScreenState extends State<CitiesScreen> {
   List<City> _allCities = [];
   List<City> _filteredCities = [];
   bool _loading = true;
+  String _search = "";
+  String _selectedRegion = "Tümü";
+
+  static const List<String> _regions = [
+    "Tümü",
+    "Marmara",
+    "Ege",
+    "Akdeniz",
+    "İç Anadolu",
+    "Karadeniz",
+    "Doğu Anadolu",
+    "Güneydoğu Anadolu",
+  ];
 
   @override
   void initState() {
@@ -24,23 +38,29 @@ class _CitiesScreenState extends State<CitiesScreen> {
   Future<void> _loadCities() async {
     try {
       final cities = await DatabaseService.getCities();
+      if (!mounted) return;
       setState(() {
         _allCities = cities;
         _filteredCities = cities;
         _loading = false;
       });
     } catch (e) {
-      setState(() => _loading = false);
+      if (mounted) setState(() => _loading = false);
     }
   }
 
-  void _onSearch(String value) {
+  void _applyFilters() {
+    final q = _search.toLowerCase().trim();
     setState(() {
-      _filteredCities = _allCities
-          .where((c) =>
-              c.name.toLowerCase().contains(value.toLowerCase()) ||
-              c.region.toLowerCase().contains(value.toLowerCase()))
-          .toList();
+      _filteredCities = _allCities.where((c) {
+        final matchesSearch = q.isEmpty ||
+            c.name.toLowerCase().contains(q) ||
+            c.nameEn.toLowerCase().contains(q) ||
+            c.region.toLowerCase().contains(q);
+        final matchesRegion =
+            _selectedRegion == "Tümü" || c.region == _selectedRegion;
+        return matchesSearch && matchesRegion;
+      }).toList();
     });
   }
 
@@ -49,18 +69,22 @@ class _CitiesScreenState extends State<CitiesScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        title: const Text("Sehirler"),
-        backgroundColor: const Color(0xFF1a2744),
+        title: const Text("Şehirler"),
+        backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
       ),
       body: Column(
         children: [
+          // Arama çubuğu
           Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
             child: TextField(
-              onChanged: _onSearch,
+              onChanged: (v) {
+                _search = v;
+                _applyFilters();
+              },
               decoration: InputDecoration(
-                hintText: "Sehir veya bolge ara...",
+                hintText: "Şehir veya bölge ara...",
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
                 fillColor: Colors.white,
@@ -68,14 +92,95 @@ class _CitiesScreenState extends State<CitiesScreen> {
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
               ),
             ),
           ),
+          // Bölge filtre chip'leri
+          SizedBox(
+            height: 44,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              itemCount: _regions.length,
+              itemBuilder: (context, i) {
+                final r = _regions[i];
+                final selected = r == _selectedRegion;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(r),
+                    selected: selected,
+                    onSelected: (_) {
+                      _selectedRegion = r;
+                      _applyFilters();
+                    },
+                    selectedColor: AppTheme.primary,
+                    backgroundColor: Colors.white,
+                    labelStyle: TextStyle(
+                      color: selected ? Colors.white : AppTheme.primary,
+                      fontSize: 12,
+                      fontWeight: selected
+                          ? FontWeight.bold
+                          : FontWeight.w500,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      side: BorderSide(
+                        color: selected
+                            ? AppTheme.primary
+                            : AppTheme.cardBorder,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Sonuç sayısı
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Text(
+                  "${_filteredCities.length} şehir",
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                if (_selectedRegion != "Tümü" || _search.isNotEmpty) ...[
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: () {
+                      _search = "";
+                      _selectedRegion = "Tümü";
+                      _applyFilters();
+                    },
+                    icon: const Icon(Icons.clear, size: 14),
+                    label: const Text("Temizle",
+                        style: TextStyle(fontSize: 12)),
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(50, 28),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : _filteredCities.isEmpty
-                    ? const Center(child: Text("Sehir bulunamadi"))
+                    ? _buildEmpty()
                     : GridView.builder(
                         padding: const EdgeInsets.all(12),
                         gridDelegate:
@@ -91,6 +196,32 @@ class _CitiesScreenState extends State<CitiesScreen> {
                           return _CityCard(city: city);
                         },
                       ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmpty() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.search_off, size: 56, color: Colors.grey),
+          const SizedBox(height: 12),
+          const Text(
+            "Sonuç bulunamadı",
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.primary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            "Farklı bir arama veya bölge dene",
+            style:
+                TextStyle(fontSize: 12, color: AppTheme.textSecondary),
           ),
         ],
       ),
@@ -129,7 +260,7 @@ class _CityCard extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1a2744),
+                color: AppTheme.primary,
               ),
             ),
             const SizedBox(height: 4),
@@ -142,14 +273,14 @@ class _CityCard extends StatelessWidget {
               padding:
                   const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: const Color(0xFFf97316).withValues(alpha: 0.15),
+                color: AppTheme.accentOrange.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 "${city.placeCount} mekan",
                 style: const TextStyle(
                   fontSize: 11,
-                  color: Color(0xFFf97316),
+                  color: AppTheme.accentOrange,
                   fontWeight: FontWeight.w600,
                 ),
               ),
