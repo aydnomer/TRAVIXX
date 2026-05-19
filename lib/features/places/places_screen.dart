@@ -1,4 +1,5 @@
 ﻿import "package:flutter/material.dart";
+import "package:go_router/go_router.dart";
 import "../../core/utils/database_service.dart";
 import "place_model.dart";
 
@@ -51,7 +52,10 @@ class _PlacesScreenState extends State<PlacesScreen> {
                   itemCount: _places.length,
                   itemBuilder: (context, index) {
                     final place = _places[index];
-                    return Container(
+                    return InkWell(
+                      onTap: () => context.push('/place/${place.id}'),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
@@ -120,6 +124,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
                           ),
                         ],
                       ),
+                    ),
                     );
                   },
                 ),
