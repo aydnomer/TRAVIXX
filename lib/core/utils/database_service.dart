@@ -56,4 +56,19 @@ class DatabaseService {
     if (response == null) return null;
     return Place.fromJson(response);
   }
+
+  /// Kullanıcının favori mekanlarını döner (places ile join).
+  /// userId null veya boş ise boş liste döner (giriş yapılmamış demek).
+  static Future<List<Place>> getFavorites(String? userId) async {
+    if (userId == null || userId.isEmpty) return const [];
+    final response = await _supabase
+        .from('favorites')
+        .select('place_id, places(*)')
+        .eq('user_id', userId)
+        .order('created_at', ascending: false);
+    return (response as List)
+        .where((row) => row['places'] != null)
+        .map((row) => Place.fromJson(row['places'] as Map<String, dynamic>))
+        .toList();
+  }
 }

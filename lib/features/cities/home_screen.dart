@@ -217,7 +217,10 @@ class _HomeScreenState extends State<HomeScreen> {
           tileColor: isSelected ? const Color(0xFFEFF6FF) : null,
           onTap: () {
             setState(() => _currentIndex = e.key);
-            if (e.value['label'] == 'Şehirler') context.push('/cities');
+            final label = e.value['label'];
+            if (label == 'Şehirler') context.push('/cities');
+            if (label == 'Favoriler') context.push('/favorites');
+            if (label == 'Profil') context.push('/profile');
           },
         ),
       );
@@ -595,6 +598,8 @@ class _HomeScreenState extends State<HomeScreen> {
       onTap: (i) {
         setState(() => _currentIndex = i);
         if (i == 1) context.push('/cities');
+        if (i == 3) context.push('/favorites');
+        if (i == 4) context.push('/profile');
       },
       selectedItemColor: AppTheme.primary,
       unselectedItemColor: AppTheme.textSecondary,

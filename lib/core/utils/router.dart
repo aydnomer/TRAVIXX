@@ -7,6 +7,8 @@ import "../../features/cities/home_screen.dart";
 import "../../features/cities/cities_screen.dart";
 import "../../features/places/places_screen.dart";
 import "../../features/places/place_detail_screen.dart";
+import "../../features/favorites/favorites_screen.dart";
+import "../../features/profile/profile_screen.dart";
 
 /// Supabase auth state değişimlerinde router'ı tetiklemek için.
 class _AuthRefreshListenable extends ChangeNotifier {
@@ -67,6 +69,14 @@ final GoRouter appRouter = GoRouter(
         final placeId = state.pathParameters["id"]!;
         return PlaceDetailScreen(placeId: placeId);
       },
+    ),
+    GoRoute(
+      path: "/favorites",
+      builder: (context, state) => const FavoritesScreen(),
+    ),
+    GoRoute(
+      path: "/profile",
+      builder: (context, state) => const ProfileScreen(),
     ),
   ],
 );
