@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/widgets/language_selector.dart';
 
@@ -212,18 +213,18 @@ class _LandingScreenState extends State<LandingScreen> {
           ),
           const Spacer(),
           // Nav links — tıklanınca ilgili bölüme kaydır
-          _navLink('Özellikler', () => _scrollTo(_featuresKey)),
-          _navLink('Nasıl Çalışır?', () => _scrollTo(_howWorksKey)),
-          _navLink('Hakkımızda', () => _scrollTo(_aboutKey)),
+          _navLink(I18n.t('nav.features'), () => _scrollTo(_featuresKey)),
+          _navLink(I18n.t('nav.howItWorks'), () => _scrollTo(_howWorksKey)),
+          _navLink(I18n.t('nav.about'), () => _scrollTo(_aboutKey)),
           const SizedBox(width: 12),
           const LanguageSelector(dark: true),
           const SizedBox(width: 8),
-          _navBtn('Giriş Yap', false, () {
+          _navBtn(I18n.t('nav.login'), false, () {
             setState(() => _isLogin = true);
             _scrollToTop();
           }),
           const SizedBox(width: 8),
-          _navBtn('Kayıt Ol', true, () {
+          _navBtn(I18n.t('nav.register'), true, () {
             setState(() => _isLogin = false);
             _scrollToTop();
           }),
@@ -321,14 +322,14 @@ class _LandingScreenState extends State<LandingScreen> {
                           color: const Color(0xFFF97316),
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.star, color: Colors.white, size: 14),
-                            SizedBox(width: 5),
+                            const Icon(Icons.star, color: Colors.white, size: 14),
+                            const SizedBox(width: 5),
                             Text(
-                              "Türkiye'nin #1 Turizm Platformu",
-                              style: TextStyle(
+                              I18n.t('landing.badge'),
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
@@ -369,13 +370,13 @@ class _LandingScreenState extends State<LandingScreen> {
                       // Stats
                       Row(
                         children: [
-                          _statItem('81', 'Şehir'),
+                          _statItem('81', I18n.t('landing.stat.city')),
                           const SizedBox(width: 32),
-                          _statItem('2.4K+', 'Mekan'),
+                          _statItem('2.4K+', I18n.t('landing.stat.place')),
                           const SizedBox(width: 32),
-                          _statItem('6', 'Dil'),
+                          _statItem('6', I18n.t('landing.stat.lang')),
                           const SizedBox(width: 32),
-                          _statItem('4.9★', 'Puan'),
+                          _statItem('4.9★', I18n.t('landing.stat.rating')),
                         ],
                       ),
                       const SizedBox(height: 24),
@@ -384,10 +385,10 @@ class _LandingScreenState extends State<LandingScreen> {
                         spacing: 8,
                         runSpacing: 8,
                         children: [
-                          _heroTag(Icons.qr_code_scanner, 'QR Rehber'),
-                          _heroTag(Icons.gps_fixed, 'GPS Sıralama'),
-                          _heroTag(Icons.language, '6 Dil'),
-                          _heroTag(Icons.psychology, 'Yapay Zeka'),
+                          _heroTag(Icons.qr_code_scanner, I18n.t('landing.tag.qr')),
+                          _heroTag(Icons.gps_fixed, I18n.t('landing.tag.gps')),
+                          _heroTag(Icons.language, I18n.t('landing.tag.lang')),
+                          _heroTag(Icons.psychology, I18n.t('landing.tag.ai')),
                         ],
                       ),
                     ],
@@ -588,18 +589,18 @@ class _LandingScreenState extends State<LandingScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Text(
-          'Hoş Geldin! 👋',
-          style: TextStyle(
+        Text(
+          I18n.t('auth.welcome'),
+          style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: AppTheme.textPrimary,
           ),
         ),
         const SizedBox(height: 4),
-        const Text(
-          'Hesabına giriş yap',
-          style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+        Text(
+          I18n.t('auth.signInPrompt'),
+          style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
         ),
         const SizedBox(height: 20),
         // Tab
@@ -624,12 +625,12 @@ class _LandingScreenState extends State<LandingScreen> {
         const SizedBox(height: 20),
         _inputField(
           _loginEmailCtrl,
-          'E-posta',
+          I18n.t('auth.email'),
           Icons.email_outlined,
           type: TextInputType.emailAddress,
         ),
         const SizedBox(height: 12),
-        _inputField(_loginPassCtrl, 'Şifre', Icons.lock_outline,
+        _inputField(_loginPassCtrl, I18n.t('auth.password'), Icons.lock_outline,
             obscure: true),
         const SizedBox(height: 4),
         Row(
@@ -656,9 +657,9 @@ class _LandingScreenState extends State<LandingScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  const Text(
-                    'Beni hatırla',
-                    style: TextStyle(
+                  Text(
+                    I18n.t('auth.rememberMe'),
+                    style: const TextStyle(
                       fontSize: 12,
                       color: AppTheme.textPrimary,
                       fontWeight: FontWeight.w500,
@@ -675,15 +676,15 @@ class _LandingScreenState extends State<LandingScreen> {
                 minimumSize: const Size(50, 30),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              child: const Text(
-                'Şifremi unuttum?',
-                style: TextStyle(color: Color(0xFFF97316), fontSize: 12),
+              child: Text(
+                I18n.t('auth.forgotPassword'),
+                style: const TextStyle(color: Color(0xFFF97316), fontSize: 12),
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        _submitBtn('Giriş Yap', Icons.login, () async {
+        _submitBtn(I18n.t('nav.login'), Icons.login, () async {
           await _signIn(_loginEmailCtrl.text, _loginPassCtrl.text);
         }),
         const SizedBox(height: 16),
@@ -716,18 +717,18 @@ class _LandingScreenState extends State<LandingScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Text(
-          'Hesap Oluştur 🚀',
-          style: TextStyle(
+        Text(
+          I18n.t('auth.createAccount'),
+          style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: AppTheme.textPrimary,
           ),
         ),
         const SizedBox(height: 4),
-        const Text(
-          'Ücretsiz kayıt ol, keşfetmeye başla',
-          style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+        Text(
+          I18n.t('auth.registerPrompt'),
+          style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
         ),
         const SizedBox(height: 20),
         Container(
@@ -749,23 +750,23 @@ class _LandingScreenState extends State<LandingScreen> {
           ),
         ),
         const SizedBox(height: 20),
-        _inputField(_regNameCtrl, 'Ad Soyad', Icons.person_outline),
+        _inputField(_regNameCtrl, I18n.t('auth.fullName'), Icons.person_outline),
         const SizedBox(height: 12),
         _inputField(
           _regEmailCtrl,
-          'E-posta',
+          I18n.t('auth.email'),
           Icons.email_outlined,
           type: TextInputType.emailAddress,
         ),
         const SizedBox(height: 12),
         _inputField(
           _regPassCtrl,
-          'Şifre (min. 6 karakter)',
+          I18n.t('auth.passwordHint'),
           Icons.lock_outline,
           obscure: true,
         ),
         const SizedBox(height: 20),
-        _submitBtn('Kayıt Ol', Icons.person_add, () async {
+        _submitBtn(I18n.t('nav.register'), Icons.person_add, () async {
           await _signUp(_regEmailCtrl.text, _regPassCtrl.text);
         }),
         const SizedBox(height: 16),

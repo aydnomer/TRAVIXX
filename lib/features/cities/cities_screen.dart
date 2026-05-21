@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 import "package:go_router/go_router.dart";
+import "../../core/i18n/i18n.dart";
 import "../../core/theme/app_theme.dart";
 import "../../core/utils/database_service.dart";
 import "city_model.dart";
@@ -18,15 +19,16 @@ class _CitiesScreenState extends State<CitiesScreen> {
   String _search = "";
   String _selectedRegion = "Tümü";
 
-  static const List<String> _regions = [
-    "Tümü",
-    "Marmara",
-    "Ege",
-    "Akdeniz",
-    "İç Anadolu",
-    "Karadeniz",
-    "Doğu Anadolu",
-    "Güneydoğu Anadolu",
+  // İç anahtar (DB ile eşleşir) → i18n key
+  static const List<(String, String)> _regions = [
+    ("Tümü", "region.all"),
+    ("Marmara", "region.marmara"),
+    ("Ege", "region.aegean"),
+    ("Akdeniz", "region.mediterranean"),
+    ("İç Anadolu", "region.centralAnatolia"),
+    ("Karadeniz", "region.blackSea"),
+    ("Doğu Anadolu", "region.easternAnatolia"),
+    ("Güneydoğu Anadolu", "region.southeasternAnatolia"),
   ];
 
   @override
@@ -69,7 +71,7 @@ class _CitiesScreenState extends State<CitiesScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        title: const Text("Şehirler"),
+        title: Text(I18n.t('cities.title')),
         backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
       ),
@@ -84,7 +86,7 @@ class _CitiesScreenState extends State<CitiesScreen> {
                 _applyFilters();
               },
               decoration: InputDecoration(
-                hintText: "Şehir veya bölge ara...",
+                hintText: I18n.t('cities.searchHint'),
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
                 fillColor: Colors.white,
@@ -107,15 +109,15 @@ class _CitiesScreenState extends State<CitiesScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 12),
               itemCount: _regions.length,
               itemBuilder: (context, i) {
-                final r = _regions[i];
-                final selected = r == _selectedRegion;
+                final (key, i18nKey) = _regions[i];
+                final selected = key == _selectedRegion;
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ChoiceChip(
-                    label: Text(r),
+                    label: Text(I18n.t(i18nKey)),
                     selected: selected,
                     onSelected: (_) {
-                      _selectedRegion = r;
+                      _selectedRegion = key;
                       _applyFilters();
                     },
                     selectedColor: AppTheme.primary,
@@ -163,7 +165,7 @@ class _CitiesScreenState extends State<CitiesScreen> {
                       _applyFilters();
                     },
                     icon: const Icon(Icons.clear, size: 14),
-                    label: const Text("Temizle",
+                    label: Text(I18n.t('common.clear'),
                         style: TextStyle(fontSize: 12)),
                     style: TextButton.styleFrom(
                       padding: EdgeInsets.zero,

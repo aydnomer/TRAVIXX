@@ -1,0 +1,1270 @@
+import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// Travixx için hafif i18n sistemi.
+///
+/// Kullanım:
+///   I18n.t('nav.login')          → "Giriş Yap" / "Login" / ...
+///   I18n.setLanguage('en')       → tüm app yeniden render olur
+///   ValueListenableBuilder ile reaktif rebuild
+class I18n {
+  /// Desteklenen diller — kod, etiket ve bayrak.
+  static const List<LangMeta> languages = [
+    LangMeta(code: 'tr', label: 'TR', name: 'Türkçe', flag: '🇹🇷'),
+    LangMeta(code: 'en', label: 'EN', name: 'English', flag: '🇬🇧'),
+    LangMeta(code: 'de', label: 'DE', name: 'Deutsch', flag: '🇩🇪'),
+    LangMeta(code: 'ar', label: 'AR', name: 'العربية', flag: '🇸🇦'),
+    LangMeta(code: 'fr', label: 'FR', name: 'Français', flag: '🇫🇷'),
+    LangMeta(code: 'ru', label: 'RU', name: 'Русский', flag: '🇷🇺'),
+  ];
+
+  /// Reaktif dil notifier'ı — değişince app yeniden render olur.
+  static final ValueNotifier<String> language = ValueNotifier('tr');
+
+  /// Arapça gibi sağdan sola yazılan dilleri tespit eder.
+  static bool isRtl(String code) => code == 'ar';
+
+  static const _prefsKey = 'app_language';
+
+  /// SharedPreferences'tan kayıtlı dili yükler.
+  static Future<void> load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString(_prefsKey);
+      if (saved != null && _strings.containsKey(saved)) {
+        language.value = saved;
+      }
+    } catch (_) {
+      // Sessizce geç — default 'tr' kalır
+    }
+  }
+
+  /// Dili değiştirir ve kalıcı kaydeder.
+  static Future<void> setLanguage(String code) async {
+    if (!_strings.containsKey(code)) return;
+    language.value = code;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_prefsKey, code);
+    } catch (_) {}
+  }
+
+  /// Verilen key için aktif dildeki çeviriyi döner.
+  /// Bulunamazsa TR fallback, o da yoksa key kendisi döner.
+  static String t(String key) {
+    return _strings[language.value]?[key] ??
+        _strings['tr']?[key] ??
+        key;
+  }
+
+  /// {placeholders} ile parametre desteği.
+  ///   I18n.tp('home.greeting', {'name': 'Ahmet'}) → "Merhaba, Ahmet! 👋"
+  static String tp(String key, Map<String, String> params) {
+    var result = t(key);
+    params.forEach((k, v) {
+      result = result.replaceAll('{$k}', v);
+    });
+    return result;
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // ÇEVİRİ SÖZLÜĞÜ
+  // ──────────────────────────────────────────────────────────────
+  static const Map<String, Map<String, String>> _strings = {
+    // ════════════════════════════════════════════════ TÜRKÇE
+    'tr': {
+      // Common
+      'app.title': 'Travixx',
+      'app.tagline': "Türkiye'yi Keşfet",
+      'common.cancel': 'İptal',
+      'common.confirm': 'Onayla',
+      'common.save': 'Kaydet',
+      'common.back': 'Geri',
+      'common.retry': 'Tekrar dene',
+      'common.clear': 'Temizle',
+      'common.loading': 'Yükleniyor...',
+      'common.search': 'Ara',
+      'common.all': 'Tümü',
+
+      // Nav (üst menü)
+      'nav.features': 'Özellikler',
+      'nav.howItWorks': 'Nasıl Çalışır?',
+      'nav.about': 'Hakkımızda',
+      'nav.login': 'Giriş Yap',
+      'nav.register': 'Kayıt Ol',
+
+      // Landing hero
+      'landing.badge': "Türkiye'nin #1 Turizm Platformu",
+      'landing.heroTitle1': "Türkiye'yi",
+      'landing.heroTitle2': 'Akıllıca',
+      'landing.heroTitle3': 'Keşfet',
+      'landing.heroSub':
+          '81 şehir, 2.400+ tarihi mekan. QR destekli rehberlik ve yapay zeka ile kişisel gezi deneyimi.',
+      'landing.stat.city': 'Şehir',
+      'landing.stat.place': 'Mekan',
+      'landing.stat.lang': 'Dil',
+      'landing.stat.rating': 'Puan',
+      'landing.tag.qr': 'QR Rehber',
+      'landing.tag.gps': 'GPS Sıralama',
+      'landing.tag.lang': '6 Dil',
+      'landing.tag.ai': 'Yapay Zeka',
+
+      // Auth
+      'auth.welcome': 'Hoş Geldin! 👋',
+      'auth.signInPrompt': 'Hesabına giriş yap',
+      'auth.createAccount': 'Hesap Oluştur 🚀',
+      'auth.registerPrompt': 'Ücretsiz kayıt ol, keşfetmeye başla',
+      'auth.email': 'E-posta',
+      'auth.password': 'Şifre',
+      'auth.passwordHint': 'Şifre (min. 6 karakter)',
+      'auth.fullName': 'Ad Soyad',
+      'auth.rememberMe': 'Beni hatırla',
+      'auth.forgotPassword': 'Şifremi unuttum?',
+      'auth.continueWith': 'veya şununla devam et',
+      'auth.continueWithPhone': 'veya telefon ile',
+      'auth.smsCode': 'SMS Doğrulama Kodu Gönder',
+      'auth.terms':
+          'Kayıt olarak Gizlilik Politikası ve Kullanım Şartlarını kabul etmiş olursunuz.',
+      'auth.emptyFields': 'E-posta ve şifre boş olamaz',
+      'auth.weakPassword':
+          'Geçerli bir e-posta ve en az 6 karakter şifre girin',
+      'auth.welcomeBack': 'Hoş geldin! 👋',
+      'auth.accountCreated': 'Hesap oluşturuldu, giriş yapılıyor...',
+      'auth.checkEmail':
+          'Kayıt başarılı! E-posta kutunu kontrol et ve onaylama linkine tıkla.',
+      'auth.genericError': 'Bir hata oluştu',
+
+      // Features section
+      'features.title': 'Neden Travixx?',
+      'features.subtitle': 'Turizmi yeniden tanımlayan 6 güçlü özellik',
+      'features.qr.title': 'Akıllı QR Rehber',
+      'features.qr.desc':
+          'Her tarihi mekanda QR kodu okutun, anında detaylı tarihçe ve bilgiye ulaşın.',
+      'features.gps.title': 'GPS Tabanlı Sıralama',
+      'features.gps.desc':
+          'Konumunuza göre en yakın mekanlar otomatik üste listelenir.',
+      'features.lang.title': '6 Dil Desteği',
+      'features.lang.desc':
+          'TR, EN, DE, AR, FR, RU dillerinde otomatik çeviri ile dil engeli ortadan kalkar.',
+      'features.ai.title': 'Yapay Zeka Asistanı',
+      'features.ai.desc':
+          'Kişisel gezi planı oluşturun, öneriler alın ve sorularınızı AI\'a sorun.',
+      'features.platform.title': 'Web & Mobil',
+      'features.platform.desc':
+          'Tek hesapla web ve mobil üzerinden kesintisiz erişim, her cihazda mükemmel görünüm.',
+      'features.fav.title': 'Favori & Rota Planla',
+      'features.fav.desc':
+          'Mekanları favorileyin, kişisel gezi rotanızı oluşturun ve paylaşın.',
+
+      // How it works
+      'how.badge': 'Nasıl Çalışır?',
+      'how.title': '3 Adımda Keşfet',
+      'how.subtitle': 'Dakikalar içinde gezmeye başla',
+      'how.step1.title': 'Kayıt Ol',
+      'how.step1.desc':
+          'E-posta, Google veya telefon ile saniyeler içinde ücretsiz hesap oluştur.',
+      'how.step2.title': 'Şehir Seç',
+      'how.step2.desc':
+          '81 il arasından seç veya GPS ile konumuna en yakın mekanları bul.',
+      'how.step3.title': 'QR Okut & Keşfet',
+      'how.step3.desc':
+          'Mekandaki QR kodu okut, kendi dilinde tarihçeyi oku ve rotanı planla.',
+
+      // Sidebar / Bottom nav
+      'sidebar.home': 'Ana Sayfa',
+      'sidebar.cities': 'Şehirler',
+      'sidebar.qr': 'QR Tara',
+      'sidebar.favorites': 'Favoriler',
+      'sidebar.profile': 'Profil',
+
+      // Home
+      'home.greeting': 'Merhaba, {name}! 👋',
+      'home.subtitle': 'Bugün nereyi keşfedelim?',
+      'home.searchHint': 'Şehir veya mekan ara...',
+      'home.exploreBtn': 'Şehirleri Keşfet',
+      'home.gpsActive': 'GPS aktif',
+      'home.gpsOff': 'Konum kapalı — popüler mekanlar gösteriliyor',
+      'home.gpsTracking': 'Konum izleniyor...',
+      'home.nearby': 'Yakınındaki Mekanlar',
+      'home.popular': 'Popüler Mekanlar',
+      'home.nearbySub': 'En yakın önce ↑',
+      'home.popularSub': 'Puana göre',
+      'home.nearest': 'En Yakın',
+      'home.notFound': 'Mekan bulunamadı',
+
+      // Logout dialog
+      'logout.title': 'Çıkış Yap',
+      'logout.confirm':
+          'Hesabınızdan çıkış yapmak istediğinize emin misiniz?\n\nTekrar giriş yapmak için e-posta ve şifrenize ihtiyacınız olacak.',
+      'logout.tooltip': 'Çıkış Yap',
+
+      // Cities
+      'cities.title': 'Şehirler',
+      'cities.searchHint': 'Şehir veya bölge ara...',
+      'cities.notFound': 'Şehir bulunamadı',
+      'cities.found': '{count} şehir bulundu',
+      'cities.placesCount': '{count} mekan',
+      'region.all': 'Tümü',
+      'region.marmara': 'Marmara',
+      'region.aegean': 'Ege',
+      'region.mediterranean': 'Akdeniz',
+      'region.centralAnatolia': 'İç Anadolu',
+      'region.blackSea': 'Karadeniz',
+      'region.easternAnatolia': 'Doğu Anadolu',
+      'region.southeasternAnatolia': 'Güneydoğu Anadolu',
+
+      // Places
+      'places.notFound': 'Bu şehirde mekan bulunamadı',
+
+      // Place detail
+      'place.notFound': 'Mekan bulunamadı',
+      'place.description': 'Açıklama',
+      'place.location': 'Konum',
+      'place.descPlaceholder':
+          'Bu mekan hakkında detaylı bilgi yakında eklenecek.',
+      'place.free': 'Ücretsiz',
+      'place.paid': 'Ücretli',
+      'place.featured': 'Öne Çıkan',
+      'place.qrScan': 'QR Tara',
+      'place.addFavorite': 'Favoriye Ekle',
+      'place.isFavorite': 'Favoride',
+      'place.favAdded': 'Favorilere eklendi ❤️',
+      'place.favRemoved': 'Favorilerden çıkarıldı',
+      'place.favLoginRequired': 'Favorilere eklemek için giriş yap',
+      'place.qrSoon': 'QR tara özelliği yakında',
+
+      // Search
+      'search.title': 'Mekan Ara',
+      'search.hint': 'Mekan, şehir veya kategori...',
+      'search.startTyping': 'Mekan veya şehir adı yazmaya başla',
+      'search.travixxResults': 'Travixx mekanları',
+      'search.osmResults': 'OpenStreetMap (geniş arama)',
+      'search.noResults': '"{q}" için Travixx\'te sonuç yok',
+      'search.broadSearch': 'Geniş Ara',
+      'search.broadSearchHint': 'Tüm OpenStreetMap\'te ara',
+      'search.searching': 'Geniş arama yapılıyor...',
+      'search.osmHint': 'Sonuç bulunamadı mı? OSM\'de de ara',
+
+      // QR Scanner
+      'qr.title': 'QR Tara',
+      'qr.hint': 'QR kodunu çerçeve içine yerleştir\nmekan otomatik açılacak',
+      'qr.cameraError': 'Kameraya erişilemiyor',
+      'qr.cameraHint':
+          'Tarayıcı izinlerini kontrol et veya cihazın kamerasına erişim ver.',
+      'qr.processing': 'İşleniyor...',
+      'qr.notRegistered': 'Bu QR kodu sistemde kayıtlı değil.',
+      'qr.broken': 'QR kodu bozuk görünüyor.',
+      'qr.foundOpening': 'Mekan bulundu! Açılıyor...',
+
+      // Favorites
+      'favorites.title': 'Favorilerim',
+      'favorites.loginPrompt1': 'Favorilerini görmek için',
+      'favorites.loginPrompt2': 'giriş yapmalısın',
+      'favorites.empty': 'Henüz favori mekanın yok',
+      'favorites.emptyDesc':
+          'Beğendiğin mekanları kalp ikonuna basarak\nfavorilerine ekleyebilirsin',
+      'favorites.explore': 'Mekanları Keşfet',
+
+      // Profile
+      'profile.title': 'Profil',
+      'profile.accountInfo': 'Hesap Bilgileri',
+      'profile.email': 'E-posta',
+      'profile.memberSince': 'Üyelik tarihi',
+      'profile.status': 'Durum',
+      'profile.verified': 'Doğrulanmış ✓',
+      'profile.unverified': 'Doğrulanmamış',
+      'profile.myFavorites': 'Favorilerim',
+      'profile.cities': 'Şehirler',
+      'profile.help': 'Yardım Merkezi',
+      'profile.settings': 'Ayarlar',
+      'profile.loginPrompt': 'Profilini görmek için giriş yap',
+      'profile.travelerName': 'Gezgin',
+    },
+
+    // ════════════════════════════════════════════════ ENGLISH
+    'en': {
+      'app.title': 'Travixx',
+      'app.tagline': 'Discover Türkiye',
+      'common.cancel': 'Cancel',
+      'common.confirm': 'Confirm',
+      'common.save': 'Save',
+      'common.back': 'Back',
+      'common.retry': 'Retry',
+      'common.clear': 'Clear',
+      'common.loading': 'Loading...',
+      'common.search': 'Search',
+      'common.all': 'All',
+
+      'nav.features': 'Features',
+      'nav.howItWorks': 'How It Works',
+      'nav.about': 'About Us',
+      'nav.login': 'Sign In',
+      'nav.register': 'Sign Up',
+
+      'landing.badge': "Türkiye's #1 Tourism Platform",
+      'landing.heroTitle1': 'Discover',
+      'landing.heroTitle2': 'Türkiye',
+      'landing.heroTitle3': 'Smartly',
+      'landing.heroSub':
+          '81 cities, 2,400+ historical sites. Personalized travel with QR-powered guidance and AI.',
+      'landing.stat.city': 'Cities',
+      'landing.stat.place': 'Places',
+      'landing.stat.lang': 'Languages',
+      'landing.stat.rating': 'Rating',
+      'landing.tag.qr': 'QR Guide',
+      'landing.tag.gps': 'GPS Sorting',
+      'landing.tag.lang': '6 Languages',
+      'landing.tag.ai': 'AI Assistant',
+
+      'auth.welcome': 'Welcome! 👋',
+      'auth.signInPrompt': 'Sign in to your account',
+      'auth.createAccount': 'Create Account 🚀',
+      'auth.registerPrompt': 'Sign up free and start exploring',
+      'auth.email': 'Email',
+      'auth.password': 'Password',
+      'auth.passwordHint': 'Password (min. 6 chars)',
+      'auth.fullName': 'Full Name',
+      'auth.rememberMe': 'Remember me',
+      'auth.forgotPassword': 'Forgot password?',
+      'auth.continueWith': 'or continue with',
+      'auth.continueWithPhone': 'or with phone',
+      'auth.smsCode': 'Send SMS Verification Code',
+      'auth.terms':
+          'By signing up you accept our Privacy Policy and Terms of Use.',
+      'auth.emptyFields': 'Email and password cannot be empty',
+      'auth.weakPassword':
+          'Please enter a valid email and a password of at least 6 characters',
+      'auth.welcomeBack': 'Welcome back! 👋',
+      'auth.accountCreated': 'Account created, signing you in...',
+      'auth.checkEmail':
+          'Registration successful! Check your inbox and click the confirmation link.',
+      'auth.genericError': 'An error occurred',
+
+      'features.title': 'Why Travixx?',
+      'features.subtitle': '6 powerful features redefining tourism',
+      'features.qr.title': 'Smart QR Guide',
+      'features.qr.desc':
+          'Scan the QR code at any historical site and instantly get detailed information.',
+      'features.gps.title': 'GPS-Based Sorting',
+      'features.gps.desc':
+          'Nearest places to your location are automatically listed first.',
+      'features.lang.title': '6 Language Support',
+      'features.lang.desc':
+          'Automatic translation in TR, EN, DE, AR, FR, RU removes language barriers.',
+      'features.ai.title': 'AI Assistant',
+      'features.ai.desc':
+          'Create personal travel plans, get recommendations and ask the AI.',
+      'features.platform.title': 'Web & Mobile',
+      'features.platform.desc':
+          'Seamless access on web and mobile with one account, perfect on every device.',
+      'features.fav.title': 'Favorites & Routes',
+      'features.fav.desc':
+          'Favorite places, build your personal travel route, and share.',
+
+      'how.badge': 'How It Works',
+      'how.title': 'Discover in 3 Steps',
+      'how.subtitle': 'Start exploring in minutes',
+      'how.step1.title': 'Sign Up',
+      'how.step1.desc':
+          'Create a free account in seconds with email, Google or phone.',
+      'how.step2.title': 'Pick a City',
+      'how.step2.desc':
+          'Choose from 81 cities or find the nearest places via GPS.',
+      'how.step3.title': 'Scan QR & Discover',
+      'how.step3.desc':
+          'Scan the QR at the site, read the story in your language and plan your route.',
+
+      'sidebar.home': 'Home',
+      'sidebar.cities': 'Cities',
+      'sidebar.qr': 'Scan QR',
+      'sidebar.favorites': 'Favorites',
+      'sidebar.profile': 'Profile',
+
+      'home.greeting': 'Hello, {name}! 👋',
+      'home.subtitle': 'Where shall we explore today?',
+      'home.searchHint': 'Search city or place...',
+      'home.exploreBtn': 'Explore Cities',
+      'home.gpsActive': 'GPS active',
+      'home.gpsOff': 'Location off — showing popular places',
+      'home.gpsTracking': 'Locating...',
+      'home.nearby': 'Places Near You',
+      'home.popular': 'Popular Places',
+      'home.nearbySub': 'Closest first ↑',
+      'home.popularSub': 'By rating',
+      'home.nearest': 'Nearest',
+      'home.notFound': 'No places found',
+
+      'logout.title': 'Sign Out',
+      'logout.confirm':
+          'Are you sure you want to sign out?\n\nYou will need your email and password to sign back in.',
+      'logout.tooltip': 'Sign Out',
+
+      'cities.title': 'Cities',
+      'cities.searchHint': 'Search city or region...',
+      'cities.notFound': 'No cities found',
+      'cities.found': '{count} cities found',
+      'cities.placesCount': '{count} places',
+      'region.all': 'All',
+      'region.marmara': 'Marmara',
+      'region.aegean': 'Aegean',
+      'region.mediterranean': 'Mediterranean',
+      'region.centralAnatolia': 'Central Anatolia',
+      'region.blackSea': 'Black Sea',
+      'region.easternAnatolia': 'Eastern Anatolia',
+      'region.southeasternAnatolia': 'Southeastern Anatolia',
+
+      'places.notFound': 'No places found in this city',
+
+      'place.notFound': 'Place not found',
+      'place.description': 'Description',
+      'place.location': 'Location',
+      'place.descPlaceholder':
+          'Detailed information about this place coming soon.',
+      'place.free': 'Free',
+      'place.paid': 'Paid',
+      'place.featured': 'Featured',
+      'place.qrScan': 'Scan QR',
+      'place.addFavorite': 'Add to Favorites',
+      'place.isFavorite': 'Favorited',
+      'place.favAdded': 'Added to favorites ❤️',
+      'place.favRemoved': 'Removed from favorites',
+      'place.favLoginRequired': 'Sign in to add favorites',
+      'place.qrSoon': 'QR scanning coming soon',
+
+      'search.title': 'Search Places',
+      'search.hint': 'Place, city or category...',
+      'search.startTyping': 'Start typing a place or city name',
+      'search.travixxResults': 'Travixx places',
+      'search.osmResults': 'OpenStreetMap (broad search)',
+      'search.noResults': 'No Travixx results for "{q}"',
+      'search.broadSearch': 'Broad Search',
+      'search.broadSearchHint': 'Search all of OpenStreetMap',
+      'search.searching': 'Searching broadly...',
+      'search.osmHint': 'No results? Try OSM as well',
+
+      'qr.title': 'Scan QR',
+      'qr.hint': 'Place the QR inside the frame\nthe place will open automatically',
+      'qr.cameraError': 'Cannot access camera',
+      'qr.cameraHint':
+          'Check browser permissions or grant camera access to the device.',
+      'qr.processing': 'Processing...',
+      'qr.notRegistered': 'This QR code is not registered.',
+      'qr.broken': 'The QR code looks broken.',
+      'qr.foundOpening': 'Place found! Opening...',
+
+      'favorites.title': 'My Favorites',
+      'favorites.loginPrompt1': 'To view your favorites',
+      'favorites.loginPrompt2': 'please sign in',
+      'favorites.empty': 'No favorites yet',
+      'favorites.emptyDesc':
+          'Tap the heart icon on places you like\nto add them to favorites',
+      'favorites.explore': 'Explore Places',
+
+      'profile.title': 'Profile',
+      'profile.accountInfo': 'Account Info',
+      'profile.email': 'Email',
+      'profile.memberSince': 'Member since',
+      'profile.status': 'Status',
+      'profile.verified': 'Verified ✓',
+      'profile.unverified': 'Unverified',
+      'profile.myFavorites': 'My Favorites',
+      'profile.cities': 'Cities',
+      'profile.help': 'Help Center',
+      'profile.settings': 'Settings',
+      'profile.loginPrompt': 'Sign in to view your profile',
+      'profile.travelerName': 'Traveler',
+    },
+
+    // ════════════════════════════════════════════════ DEUTSCH
+    'de': {
+      'app.title': 'Travixx',
+      'app.tagline': 'Entdecke die Türkei',
+      'common.cancel': 'Abbrechen',
+      'common.confirm': 'Bestätigen',
+      'common.save': 'Speichern',
+      'common.back': 'Zurück',
+      'common.retry': 'Wiederholen',
+      'common.clear': 'Löschen',
+      'common.loading': 'Wird geladen...',
+      'common.search': 'Suchen',
+      'common.all': 'Alle',
+
+      'nav.features': 'Funktionen',
+      'nav.howItWorks': 'So funktioniert\'s',
+      'nav.about': 'Über uns',
+      'nav.login': 'Anmelden',
+      'nav.register': 'Registrieren',
+
+      'landing.badge': 'Die #1 Tourismus-Plattform der Türkei',
+      'landing.heroTitle1': 'Entdecke',
+      'landing.heroTitle2': 'die Türkei',
+      'landing.heroTitle3': 'klug',
+      'landing.heroSub':
+          '81 Städte, 2.400+ historische Orte. Personalisierte Reise mit QR-Führung und KI.',
+      'landing.stat.city': 'Städte',
+      'landing.stat.place': 'Orte',
+      'landing.stat.lang': 'Sprachen',
+      'landing.stat.rating': 'Bewertung',
+      'landing.tag.qr': 'QR-Führer',
+      'landing.tag.gps': 'GPS-Sortierung',
+      'landing.tag.lang': '6 Sprachen',
+      'landing.tag.ai': 'KI-Assistent',
+
+      'auth.welcome': 'Willkommen! 👋',
+      'auth.signInPrompt': 'In dein Konto anmelden',
+      'auth.createAccount': 'Konto erstellen 🚀',
+      'auth.registerPrompt': 'Kostenlos registrieren und loslegen',
+      'auth.email': 'E-Mail',
+      'auth.password': 'Passwort',
+      'auth.passwordHint': 'Passwort (min. 6 Zeichen)',
+      'auth.fullName': 'Vor- und Nachname',
+      'auth.rememberMe': 'Eingeloggt bleiben',
+      'auth.forgotPassword': 'Passwort vergessen?',
+      'auth.continueWith': 'oder fortfahren mit',
+      'auth.continueWithPhone': 'oder per Telefon',
+      'auth.smsCode': 'SMS-Code senden',
+      'auth.terms':
+          'Mit der Registrierung akzeptierst du unsere Datenschutzerklärung und Nutzungsbedingungen.',
+      'auth.emptyFields': 'E-Mail und Passwort dürfen nicht leer sein',
+      'auth.weakPassword':
+          'Gültige E-Mail und Passwort mit mind. 6 Zeichen eingeben',
+      'auth.welcomeBack': 'Willkommen zurück! 👋',
+      'auth.accountCreated': 'Konto erstellt, du wirst angemeldet...',
+      'auth.checkEmail':
+          'Registrierung erfolgreich! Überprüfe dein Postfach und klicke den Link.',
+      'auth.genericError': 'Ein Fehler ist aufgetreten',
+
+      'features.title': 'Warum Travixx?',
+      'features.subtitle': '6 starke Funktionen, die den Tourismus neu definieren',
+      'features.qr.title': 'Smarter QR-Führer',
+      'features.qr.desc':
+          'Scanne den QR-Code an jedem Ort und erhalte sofort detaillierte Infos.',
+      'features.gps.title': 'GPS-basierte Sortierung',
+      'features.gps.desc':
+          'Nächstgelegene Orte werden automatisch zuerst gelistet.',
+      'features.lang.title': '6 Sprachen',
+      'features.lang.desc':
+          'Automatische Übersetzung in TR, EN, DE, AR, FR, RU baut Sprachbarrieren ab.',
+      'features.ai.title': 'KI-Assistent',
+      'features.ai.desc':
+          'Erstelle persönliche Reisepläne, hol dir Empfehlungen und stelle der KI Fragen.',
+      'features.platform.title': 'Web & Mobil',
+      'features.platform.desc':
+          'Nahtloser Zugang per Web und Mobil, perfekt auf jedem Gerät.',
+      'features.fav.title': 'Favoriten & Routen',
+      'features.fav.desc':
+          'Markiere Lieblingsorte, plane deine Route und teile sie.',
+
+      'how.badge': 'So funktioniert\'s',
+      'how.title': 'In 3 Schritten entdecken',
+      'how.subtitle': 'In Minuten startbereit',
+      'how.step1.title': 'Registrieren',
+      'how.step1.desc':
+          'Erstelle in Sekunden ein kostenloses Konto per E-Mail, Google oder Telefon.',
+      'how.step2.title': 'Stadt wählen',
+      'how.step2.desc':
+          'Wähle aus 81 Städten oder finde die nächsten Orte per GPS.',
+      'how.step3.title': 'QR scannen & entdecken',
+      'how.step3.desc':
+          'Scanne den QR vor Ort, lies die Geschichte in deiner Sprache und plane deine Route.',
+
+      'sidebar.home': 'Startseite',
+      'sidebar.cities': 'Städte',
+      'sidebar.qr': 'QR scannen',
+      'sidebar.favorites': 'Favoriten',
+      'sidebar.profile': 'Profil',
+
+      'home.greeting': 'Hallo, {name}! 👋',
+      'home.subtitle': 'Wohin entdecken wir heute?',
+      'home.searchHint': 'Stadt oder Ort suchen...',
+      'home.exploreBtn': 'Städte entdecken',
+      'home.gpsActive': 'GPS aktiv',
+      'home.gpsOff': 'Standort aus — beliebte Orte werden gezeigt',
+      'home.gpsTracking': 'Standort wird ermittelt...',
+      'home.nearby': 'Orte in deiner Nähe',
+      'home.popular': 'Beliebte Orte',
+      'home.nearbySub': 'Am nächsten zuerst ↑',
+      'home.popularSub': 'Nach Bewertung',
+      'home.nearest': 'Nächster',
+      'home.notFound': 'Keine Orte gefunden',
+
+      'logout.title': 'Abmelden',
+      'logout.confirm':
+          'Möchtest du dich wirklich abmelden?\n\nDu brauchst E-Mail und Passwort zum erneuten Anmelden.',
+      'logout.tooltip': 'Abmelden',
+
+      'cities.title': 'Städte',
+      'cities.searchHint': 'Stadt oder Region suchen...',
+      'cities.notFound': 'Keine Städte gefunden',
+      'cities.found': '{count} Städte gefunden',
+      'cities.placesCount': '{count} Orte',
+      'region.all': 'Alle',
+      'region.marmara': 'Marmara',
+      'region.aegean': 'Ägäis',
+      'region.mediterranean': 'Mittelmeer',
+      'region.centralAnatolia': 'Zentralanatolien',
+      'region.blackSea': 'Schwarzes Meer',
+      'region.easternAnatolia': 'Ostanatolien',
+      'region.southeasternAnatolia': 'Südostanatolien',
+
+      'places.notFound': 'Keine Orte in dieser Stadt',
+
+      'place.notFound': 'Ort nicht gefunden',
+      'place.description': 'Beschreibung',
+      'place.location': 'Standort',
+      'place.descPlaceholder':
+          'Ausführliche Infos zu diesem Ort folgen bald.',
+      'place.free': 'Kostenlos',
+      'place.paid': 'Kostenpflichtig',
+      'place.featured': 'Hervorgehoben',
+      'place.qrScan': 'QR scannen',
+      'place.addFavorite': 'Zu Favoriten',
+      'place.isFavorite': 'Favorisiert',
+      'place.favAdded': 'Zu Favoriten hinzugefügt ❤️',
+      'place.favRemoved': 'Aus Favoriten entfernt',
+      'place.favLoginRequired': 'Melde dich an, um Favoriten zu speichern',
+      'place.qrSoon': 'QR-Scan kommt bald',
+
+      'search.title': 'Orte suchen',
+      'search.hint': 'Ort, Stadt oder Kategorie...',
+      'search.startTyping': 'Tippe einen Ort- oder Stadtnamen',
+      'search.travixxResults': 'Travixx Orte',
+      'search.osmResults': 'OpenStreetMap (breite Suche)',
+      'search.noResults': 'Keine Travixx-Treffer für "{q}"',
+      'search.broadSearch': 'Breite Suche',
+      'search.broadSearchHint': 'Ganz OpenStreetMap durchsuchen',
+      'search.searching': 'Breite Suche läuft...',
+      'search.osmHint': 'Keine Treffer? Probiere OSM',
+
+      'qr.title': 'QR scannen',
+      'qr.hint':
+          'QR in den Rahmen platzieren\nder Ort öffnet sich automatisch',
+      'qr.cameraError': 'Kamera nicht zugänglich',
+      'qr.cameraHint':
+          'Browser-Berechtigungen prüfen oder Kamera-Zugriff erlauben.',
+      'qr.processing': 'Verarbeitung...',
+      'qr.notRegistered': 'Dieser QR-Code ist nicht registriert.',
+      'qr.broken': 'Der QR-Code scheint beschädigt.',
+      'qr.foundOpening': 'Ort gefunden! Wird geöffnet...',
+
+      'favorites.title': 'Meine Favoriten',
+      'favorites.loginPrompt1': 'Um deine Favoriten zu sehen',
+      'favorites.loginPrompt2': 'bitte anmelden',
+      'favorites.empty': 'Noch keine Favoriten',
+      'favorites.emptyDesc':
+          'Tippe auf das Herz-Symbol\num Orte zu speichern',
+      'favorites.explore': 'Orte entdecken',
+
+      'profile.title': 'Profil',
+      'profile.accountInfo': 'Kontoinformationen',
+      'profile.email': 'E-Mail',
+      'profile.memberSince': 'Mitglied seit',
+      'profile.status': 'Status',
+      'profile.verified': 'Verifiziert ✓',
+      'profile.unverified': 'Unverifiziert',
+      'profile.myFavorites': 'Meine Favoriten',
+      'profile.cities': 'Städte',
+      'profile.help': 'Hilfe',
+      'profile.settings': 'Einstellungen',
+      'profile.loginPrompt': 'Melde dich an, um dein Profil zu sehen',
+      'profile.travelerName': 'Reisender',
+    },
+
+    // ════════════════════════════════════════════════ العربية (RTL)
+    'ar': {
+      'app.title': 'Travixx',
+      'app.tagline': 'اكتشف تركيا',
+      'common.cancel': 'إلغاء',
+      'common.confirm': 'تأكيد',
+      'common.save': 'حفظ',
+      'common.back': 'عودة',
+      'common.retry': 'إعادة المحاولة',
+      'common.clear': 'مسح',
+      'common.loading': 'جارٍ التحميل...',
+      'common.search': 'بحث',
+      'common.all': 'الكل',
+
+      'nav.features': 'الميزات',
+      'nav.howItWorks': 'كيف يعمل؟',
+      'nav.about': 'من نحن',
+      'nav.login': 'تسجيل الدخول',
+      'nav.register': 'إنشاء حساب',
+
+      'landing.badge': 'منصة السياحة رقم 1 في تركيا',
+      'landing.heroTitle1': 'اكتشف',
+      'landing.heroTitle2': 'تركيا',
+      'landing.heroTitle3': 'بذكاء',
+      'landing.heroSub':
+          '81 مدينة، أكثر من 2,400 معلم تاريخي. تجربة سفر شخصية مع دليل QR والذكاء الاصطناعي.',
+      'landing.stat.city': 'مدن',
+      'landing.stat.place': 'أماكن',
+      'landing.stat.lang': 'لغات',
+      'landing.stat.rating': 'تقييم',
+      'landing.tag.qr': 'دليل QR',
+      'landing.tag.gps': 'ترتيب GPS',
+      'landing.tag.lang': '6 لغات',
+      'landing.tag.ai': 'مساعد ذكي',
+
+      'auth.welcome': 'أهلاً وسهلاً! 👋',
+      'auth.signInPrompt': 'سجّل الدخول إلى حسابك',
+      'auth.createAccount': 'إنشاء حساب 🚀',
+      'auth.registerPrompt': 'سجّل مجاناً وابدأ الاكتشاف',
+      'auth.email': 'البريد الإلكتروني',
+      'auth.password': 'كلمة المرور',
+      'auth.passwordHint': 'كلمة المرور (6 أحرف على الأقل)',
+      'auth.fullName': 'الاسم الكامل',
+      'auth.rememberMe': 'تذكرني',
+      'auth.forgotPassword': 'نسيت كلمة المرور؟',
+      'auth.continueWith': 'أو تابع باستخدام',
+      'auth.continueWithPhone': 'أو بالهاتف',
+      'auth.smsCode': 'إرسال رمز التحقق عبر SMS',
+      'auth.terms':
+          'بالتسجيل توافق على سياسة الخصوصية وشروط الاستخدام.',
+      'auth.emptyFields': 'لا يمكن ترك البريد وكلمة المرور فارغين',
+      'auth.weakPassword':
+          'الرجاء إدخال بريد صحيح وكلمة مرور 6 أحرف على الأقل',
+      'auth.welcomeBack': 'مرحباً بعودتك! 👋',
+      'auth.accountCreated': 'تم إنشاء الحساب، جارٍ تسجيل الدخول...',
+      'auth.checkEmail':
+          'تم التسجيل بنجاح! تحقق من بريدك واضغط على رابط التأكيد.',
+      'auth.genericError': 'حدث خطأ',
+
+      'features.title': 'لماذا Travixx؟',
+      'features.subtitle': '6 ميزات قوية تعيد تعريف السياحة',
+      'features.qr.title': 'دليل QR ذكي',
+      'features.qr.desc':
+          'امسح رمز QR في أي موقع تاريخي للحصول على معلومات تفصيلية فوراً.',
+      'features.gps.title': 'ترتيب بناءً على GPS',
+      'features.gps.desc':
+          'يتم عرض أقرب الأماكن إلى موقعك في الأعلى تلقائياً.',
+      'features.lang.title': 'دعم 6 لغات',
+      'features.lang.desc':
+          'ترجمة تلقائية بالتركية والإنجليزية والألمانية والعربية والفرنسية والروسية.',
+      'features.ai.title': 'مساعد ذكي',
+      'features.ai.desc':
+          'أنشئ خطط سفر شخصية واحصل على توصيات واسأل الذكاء الاصطناعي.',
+      'features.platform.title': 'ويب وموبايل',
+      'features.platform.desc':
+          'وصول سلس عبر الويب والهاتف بحساب واحد، مثالي على كل جهاز.',
+      'features.fav.title': 'المفضلة والمسارات',
+      'features.fav.desc':
+          'احفظ الأماكن المفضلة وخطط مسارك الشخصي وشاركه.',
+
+      'how.badge': 'كيف يعمل؟',
+      'how.title': 'اكتشف في 3 خطوات',
+      'how.subtitle': 'ابدأ خلال دقائق',
+      'how.step1.title': 'سجّل',
+      'how.step1.desc':
+          'أنشئ حساباً مجانياً في ثوانٍ عبر البريد أو Google أو الهاتف.',
+      'how.step2.title': 'اختر مدينة',
+      'how.step2.desc':
+          'اختر من بين 81 مدينة أو ابحث عن أقرب الأماكن عبر GPS.',
+      'how.step3.title': 'امسح QR واكتشف',
+      'how.step3.desc':
+          'امسح QR في الموقع، اقرأ القصة بلغتك وخطط مسارك.',
+
+      'sidebar.home': 'الرئيسية',
+      'sidebar.cities': 'المدن',
+      'sidebar.qr': 'مسح QR',
+      'sidebar.favorites': 'المفضلة',
+      'sidebar.profile': 'الملف الشخصي',
+
+      'home.greeting': 'مرحباً، {name}! 👋',
+      'home.subtitle': 'إلى أين نستكشف اليوم؟',
+      'home.searchHint': 'ابحث عن مدينة أو مكان...',
+      'home.exploreBtn': 'استكشف المدن',
+      'home.gpsActive': 'GPS مفعّل',
+      'home.gpsOff': 'الموقع متوقف — يتم عرض الأماكن الشهيرة',
+      'home.gpsTracking': 'جارٍ تحديد الموقع...',
+      'home.nearby': 'الأماكن القريبة',
+      'home.popular': 'الأماكن الشهيرة',
+      'home.nearbySub': 'الأقرب أولاً ↑',
+      'home.popularSub': 'حسب التقييم',
+      'home.nearest': 'الأقرب',
+      'home.notFound': 'لا توجد أماكن',
+
+      'logout.title': 'تسجيل الخروج',
+      'logout.confirm':
+          'هل أنت متأكد من تسجيل الخروج؟\n\nستحتاج إلى بريدك وكلمة المرور للدخول مجدداً.',
+      'logout.tooltip': 'تسجيل الخروج',
+
+      'cities.title': 'المدن',
+      'cities.searchHint': 'ابحث عن مدينة أو منطقة...',
+      'cities.notFound': 'لم يتم العثور على مدن',
+      'cities.found': 'تم العثور على {count} مدينة',
+      'cities.placesCount': '{count} أماكن',
+      'region.all': 'الكل',
+      'region.marmara': 'مرمرة',
+      'region.aegean': 'بحر إيجة',
+      'region.mediterranean': 'البحر المتوسط',
+      'region.centralAnatolia': 'الأناضول الوسطى',
+      'region.blackSea': 'البحر الأسود',
+      'region.easternAnatolia': 'شرق الأناضول',
+      'region.southeasternAnatolia': 'جنوب شرق الأناضول',
+
+      'places.notFound': 'لا توجد أماكن في هذه المدينة',
+
+      'place.notFound': 'لم يتم العثور على المكان',
+      'place.description': 'الوصف',
+      'place.location': 'الموقع',
+      'place.descPlaceholder': 'معلومات تفصيلية عن هذا المكان قريباً.',
+      'place.free': 'مجاني',
+      'place.paid': 'مدفوع',
+      'place.featured': 'مميّز',
+      'place.qrScan': 'مسح QR',
+      'place.addFavorite': 'أضف إلى المفضلة',
+      'place.isFavorite': 'في المفضلة',
+      'place.favAdded': 'تمت الإضافة إلى المفضلة ❤️',
+      'place.favRemoved': 'تمت الإزالة من المفضلة',
+      'place.favLoginRequired': 'سجّل الدخول لإضافة المفضلة',
+      'place.qrSoon': 'مسح QR قريباً',
+
+      'search.title': 'ابحث عن مكان',
+      'search.hint': 'مكان، مدينة أو فئة...',
+      'search.startTyping': 'ابدأ بكتابة اسم مكان أو مدينة',
+      'search.travixxResults': 'أماكن Travixx',
+      'search.osmResults': 'OpenStreetMap (بحث موسّع)',
+      'search.noResults': 'لا توجد نتائج في Travixx لـ "{q}"',
+      'search.broadSearch': 'بحث موسّع',
+      'search.broadSearchHint': 'ابحث في كل OpenStreetMap',
+      'search.searching': 'جارٍ البحث الموسّع...',
+      'search.osmHint': 'لا توجد نتائج؟ جرّب OSM',
+
+      'qr.title': 'مسح QR',
+      'qr.hint': 'ضع رمز QR داخل الإطار\nسيتم فتح المكان تلقائياً',
+      'qr.cameraError': 'لا يمكن الوصول إلى الكاميرا',
+      'qr.cameraHint': 'تحقق من أذونات المتصفح أو امنح وصولاً للكاميرا.',
+      'qr.processing': 'جارٍ المعالجة...',
+      'qr.notRegistered': 'هذا الرمز غير مسجّل في النظام.',
+      'qr.broken': 'يبدو أن الرمز معطوب.',
+      'qr.foundOpening': 'تم العثور على المكان! جارٍ الفتح...',
+
+      'favorites.title': 'المفضلة',
+      'favorites.loginPrompt1': 'لعرض المفضلة',
+      'favorites.loginPrompt2': 'يرجى تسجيل الدخول',
+      'favorites.empty': 'لا توجد مفضلة بعد',
+      'favorites.emptyDesc':
+          'اضغط على القلب في الأماكن التي تعجبك\nلإضافتها إلى المفضلة',
+      'favorites.explore': 'استكشف الأماكن',
+
+      'profile.title': 'الملف الشخصي',
+      'profile.accountInfo': 'معلومات الحساب',
+      'profile.email': 'البريد الإلكتروني',
+      'profile.memberSince': 'عضو منذ',
+      'profile.status': 'الحالة',
+      'profile.verified': 'موثّق ✓',
+      'profile.unverified': 'غير موثّق',
+      'profile.myFavorites': 'مفضلتي',
+      'profile.cities': 'المدن',
+      'profile.help': 'مركز المساعدة',
+      'profile.settings': 'الإعدادات',
+      'profile.loginPrompt': 'سجّل الدخول لعرض ملفك',
+      'profile.travelerName': 'المسافر',
+    },
+
+    // ════════════════════════════════════════════════ FRANÇAIS
+    'fr': {
+      'app.title': 'Travixx',
+      'app.tagline': 'Découvre la Turquie',
+      'common.cancel': 'Annuler',
+      'common.confirm': 'Confirmer',
+      'common.save': 'Enregistrer',
+      'common.back': 'Retour',
+      'common.retry': 'Réessayer',
+      'common.clear': 'Effacer',
+      'common.loading': 'Chargement...',
+      'common.search': 'Rechercher',
+      'common.all': 'Tous',
+
+      'nav.features': 'Fonctionnalités',
+      'nav.howItWorks': 'Comment ça marche',
+      'nav.about': 'À propos',
+      'nav.login': 'Se connecter',
+      'nav.register': "S'inscrire",
+
+      'landing.badge': 'Plateforme touristique n°1 de Türkiye',
+      'landing.heroTitle1': 'Découvre',
+      'landing.heroTitle2': 'la Turquie',
+      'landing.heroTitle3': 'intelligemment',
+      'landing.heroSub':
+          '81 villes, 2 400+ sites historiques. Voyage personnalisé avec QR et IA.',
+      'landing.stat.city': 'Villes',
+      'landing.stat.place': 'Lieux',
+      'landing.stat.lang': 'Langues',
+      'landing.stat.rating': 'Note',
+      'landing.tag.qr': 'Guide QR',
+      'landing.tag.gps': 'Tri GPS',
+      'landing.tag.lang': '6 Langues',
+      'landing.tag.ai': 'IA',
+
+      'auth.welcome': 'Bienvenue ! 👋',
+      'auth.signInPrompt': 'Connecte-toi à ton compte',
+      'auth.createAccount': 'Créer un compte 🚀',
+      'auth.registerPrompt': 'Inscris-toi gratuitement et commence à explorer',
+      'auth.email': 'E-mail',
+      'auth.password': 'Mot de passe',
+      'auth.passwordHint': 'Mot de passe (min. 6 caractères)',
+      'auth.fullName': 'Nom complet',
+      'auth.rememberMe': 'Se souvenir de moi',
+      'auth.forgotPassword': 'Mot de passe oublié ?',
+      'auth.continueWith': 'ou continuer avec',
+      'auth.continueWithPhone': 'ou par téléphone',
+      'auth.smsCode': 'Envoyer le code SMS',
+      'auth.terms':
+          "En t'inscrivant, tu acceptes la politique de confidentialité et les conditions d'utilisation.",
+      'auth.emptyFields': 'E-mail et mot de passe sont requis',
+      'auth.weakPassword':
+          'Saisis un e-mail valide et un mot de passe de 6+ caractères',
+      'auth.welcomeBack': 'Bon retour ! 👋',
+      'auth.accountCreated': 'Compte créé, connexion en cours...',
+      'auth.checkEmail':
+          'Inscription réussie ! Vérifie ta boîte mail et clique sur le lien.',
+      'auth.genericError': "Une erreur s'est produite",
+
+      'features.title': 'Pourquoi Travixx ?',
+      'features.subtitle': '6 fonctionnalités qui redéfinissent le tourisme',
+      'features.qr.title': 'Guide QR intelligent',
+      'features.qr.desc':
+          'Scanne le QR sur chaque site et obtiens des infos détaillées instantanément.',
+      'features.gps.title': 'Tri basé sur le GPS',
+      'features.gps.desc':
+          'Les lieux les plus proches apparaissent automatiquement en premier.',
+      'features.lang.title': '6 langues prises en charge',
+      'features.lang.desc':
+          'Traduction automatique en TR, EN, DE, AR, FR, RU.',
+      'features.ai.title': 'Assistant IA',
+      'features.ai.desc':
+          "Crée ton plan de voyage personnel, reçois des recommandations et pose des questions à l'IA.",
+      'features.platform.title': 'Web & Mobile',
+      'features.platform.desc':
+          'Accès fluide sur web et mobile avec un seul compte.',
+      'features.fav.title': 'Favoris & Itinéraires',
+      'features.fav.desc':
+          'Marque tes lieux préférés, crée ton itinéraire et partage-le.',
+
+      'how.badge': 'Comment ça marche',
+      'how.title': 'Découvre en 3 étapes',
+      'how.subtitle': 'Commence en quelques minutes',
+      'how.step1.title': "S'inscrire",
+      'how.step1.desc':
+          "Crée un compte gratuit en quelques secondes par e-mail, Google ou téléphone.",
+      'how.step2.title': 'Choisir une ville',
+      'how.step2.desc':
+          'Choisis parmi 81 villes ou trouve les lieux les plus proches via GPS.',
+      'how.step3.title': 'Scanner & découvrir',
+      'how.step3.desc':
+          "Scanne le QR sur place, lis l'histoire dans ta langue et planifie ton itinéraire.",
+
+      'sidebar.home': 'Accueil',
+      'sidebar.cities': 'Villes',
+      'sidebar.qr': 'Scanner QR',
+      'sidebar.favorites': 'Favoris',
+      'sidebar.profile': 'Profil',
+
+      'home.greeting': 'Bonjour, {name} ! 👋',
+      'home.subtitle': 'Où explorons-nous aujourd\'hui ?',
+      'home.searchHint': 'Cherche une ville ou un lieu...',
+      'home.exploreBtn': 'Explorer les villes',
+      'home.gpsActive': 'GPS actif',
+      'home.gpsOff': 'Localisation désactivée — lieux populaires affichés',
+      'home.gpsTracking': 'Localisation...',
+      'home.nearby': 'Lieux proches',
+      'home.popular': 'Lieux populaires',
+      'home.nearbySub': 'Plus proche en premier ↑',
+      'home.popularSub': 'Par note',
+      'home.nearest': 'Le plus proche',
+      'home.notFound': 'Aucun lieu trouvé',
+
+      'logout.title': 'Se déconnecter',
+      'logout.confirm':
+          'Es-tu sûr de vouloir te déconnecter ?\n\nTu auras besoin de ton e-mail et mot de passe pour te reconnecter.',
+      'logout.tooltip': 'Se déconnecter',
+
+      'cities.title': 'Villes',
+      'cities.searchHint': 'Cherche une ville ou région...',
+      'cities.notFound': 'Aucune ville trouvée',
+      'cities.found': '{count} villes trouvées',
+      'cities.placesCount': '{count} lieux',
+      'region.all': 'Tous',
+      'region.marmara': 'Marmara',
+      'region.aegean': 'Égée',
+      'region.mediterranean': 'Méditerranée',
+      'region.centralAnatolia': 'Anatolie centrale',
+      'region.blackSea': 'Mer Noire',
+      'region.easternAnatolia': 'Anatolie orientale',
+      'region.southeasternAnatolia': 'Anatolie du Sud-Est',
+
+      'places.notFound': 'Aucun lieu dans cette ville',
+
+      'place.notFound': 'Lieu introuvable',
+      'place.description': 'Description',
+      'place.location': 'Localisation',
+      'place.descPlaceholder':
+          'Informations détaillées à venir.',
+      'place.free': 'Gratuit',
+      'place.paid': 'Payant',
+      'place.featured': 'À la une',
+      'place.qrScan': 'Scanner QR',
+      'place.addFavorite': 'Ajouter aux favoris',
+      'place.isFavorite': 'En favori',
+      'place.favAdded': 'Ajouté aux favoris ❤️',
+      'place.favRemoved': 'Retiré des favoris',
+      'place.favLoginRequired': 'Connecte-toi pour ajouter en favori',
+      'place.qrSoon': 'Scan QR bientôt disponible',
+
+      'search.title': 'Rechercher un lieu',
+      'search.hint': 'Lieu, ville ou catégorie...',
+      'search.startTyping': 'Commence à taper le nom d\'un lieu ou d\'une ville',
+      'search.travixxResults': 'Lieux Travixx',
+      'search.osmResults': 'OpenStreetMap (recherche large)',
+      'search.noResults': 'Aucun résultat Travixx pour "{q}"',
+      'search.broadSearch': 'Recherche large',
+      'search.broadSearchHint': 'Chercher dans tout OpenStreetMap',
+      'search.searching': 'Recherche large en cours...',
+      'search.osmHint': 'Aucun résultat ? Essaie OSM',
+
+      'qr.title': 'Scanner QR',
+      'qr.hint':
+          'Place le QR dans le cadre\nle lieu s\'ouvrira automatiquement',
+      'qr.cameraError': 'Impossible d\'accéder à la caméra',
+      'qr.cameraHint':
+          'Vérifie les permissions du navigateur ou autorise l\'accès à la caméra.',
+      'qr.processing': 'Traitement...',
+      'qr.notRegistered': 'Ce code QR n\'est pas enregistré.',
+      'qr.broken': 'Le code QR semble corrompu.',
+      'qr.foundOpening': 'Lieu trouvé ! Ouverture...',
+
+      'favorites.title': 'Mes favoris',
+      'favorites.loginPrompt1': 'Pour voir tes favoris',
+      'favorites.loginPrompt2': 'connecte-toi',
+      'favorites.empty': 'Aucun favori pour le moment',
+      'favorites.emptyDesc':
+          'Tape sur le cœur des lieux que tu aimes\npour les ajouter aux favoris',
+      'favorites.explore': 'Explorer les lieux',
+
+      'profile.title': 'Profil',
+      'profile.accountInfo': 'Infos du compte',
+      'profile.email': 'E-mail',
+      'profile.memberSince': 'Membre depuis',
+      'profile.status': 'Statut',
+      'profile.verified': 'Vérifié ✓',
+      'profile.unverified': 'Non vérifié',
+      'profile.myFavorites': 'Mes favoris',
+      'profile.cities': 'Villes',
+      'profile.help': 'Aide',
+      'profile.settings': 'Paramètres',
+      'profile.loginPrompt': 'Connecte-toi pour voir ton profil',
+      'profile.travelerName': 'Voyageur',
+    },
+
+    // ════════════════════════════════════════════════ РУССКИЙ
+    'ru': {
+      'app.title': 'Travixx',
+      'app.tagline': 'Откройте Турцию',
+      'common.cancel': 'Отмена',
+      'common.confirm': 'Подтвердить',
+      'common.save': 'Сохранить',
+      'common.back': 'Назад',
+      'common.retry': 'Повторить',
+      'common.clear': 'Очистить',
+      'common.loading': 'Загрузка...',
+      'common.search': 'Поиск',
+      'common.all': 'Все',
+
+      'nav.features': 'Возможности',
+      'nav.howItWorks': 'Как это работает',
+      'nav.about': 'О нас',
+      'nav.login': 'Войти',
+      'nav.register': 'Регистрация',
+
+      'landing.badge': 'Туристическая платформа №1 в Турции',
+      'landing.heroTitle1': 'Открой',
+      'landing.heroTitle2': 'Турцию',
+      'landing.heroTitle3': 'умно',
+      'landing.heroSub':
+          '81 город, 2400+ исторических мест. Персональное путешествие с QR и ИИ.',
+      'landing.stat.city': 'Городов',
+      'landing.stat.place': 'Мест',
+      'landing.stat.lang': 'Языков',
+      'landing.stat.rating': 'Оценка',
+      'landing.tag.qr': 'QR-гид',
+      'landing.tag.gps': 'GPS-сортировка',
+      'landing.tag.lang': '6 языков',
+      'landing.tag.ai': 'ИИ',
+
+      'auth.welcome': 'Добро пожаловать! 👋',
+      'auth.signInPrompt': 'Войдите в аккаунт',
+      'auth.createAccount': 'Создать аккаунт 🚀',
+      'auth.registerPrompt': 'Бесплатная регистрация — начни исследовать',
+      'auth.email': 'E-mail',
+      'auth.password': 'Пароль',
+      'auth.passwordHint': 'Пароль (мин. 6 символов)',
+      'auth.fullName': 'Имя и фамилия',
+      'auth.rememberMe': 'Запомнить меня',
+      'auth.forgotPassword': 'Забыли пароль?',
+      'auth.continueWith': 'или продолжить с',
+      'auth.continueWithPhone': 'или по телефону',
+      'auth.smsCode': 'Отправить SMS-код',
+      'auth.terms':
+          'Регистрируясь, вы принимаете политику конфиденциальности и условия использования.',
+      'auth.emptyFields': 'E-mail и пароль не могут быть пустыми',
+      'auth.weakPassword':
+          'Введите корректный e-mail и пароль из 6+ символов',
+      'auth.welcomeBack': 'С возвращением! 👋',
+      'auth.accountCreated': 'Аккаунт создан, выполняется вход...',
+      'auth.checkEmail':
+          'Регистрация успешна! Проверьте почту и нажмите на ссылку подтверждения.',
+      'auth.genericError': 'Произошла ошибка',
+
+      'features.title': 'Почему Travixx?',
+      'features.subtitle':
+          '6 мощных функций, переопределяющих туризм',
+      'features.qr.title': 'Умный QR-гид',
+      'features.qr.desc':
+          'Сканируйте QR на каждом месте — моментально получайте подробную информацию.',
+      'features.gps.title': 'Сортировка по GPS',
+      'features.gps.desc':
+          'Ближайшие к вам места автоматически отображаются вверху.',
+      'features.lang.title': 'Поддержка 6 языков',
+      'features.lang.desc':
+          'Автоперевод на TR, EN, DE, AR, FR, RU убирает языковой барьер.',
+      'features.ai.title': 'ИИ-ассистент',
+      'features.ai.desc':
+          'Создавайте план поездки, получайте рекомендации и задавайте вопросы ИИ.',
+      'features.platform.title': 'Веб и мобильный',
+      'features.platform.desc':
+          'Один аккаунт — бесшовный доступ через веб и мобильный.',
+      'features.fav.title': 'Избранное и маршруты',
+      'features.fav.desc':
+          'Сохраняйте любимые места, стройте маршрут и делитесь им.',
+
+      'how.badge': 'Как это работает',
+      'how.title': 'Откройте за 3 шага',
+      'how.subtitle': 'Начните за пару минут',
+      'how.step1.title': 'Зарегистрируйтесь',
+      'how.step1.desc':
+          'Создайте бесплатный аккаунт за секунды через e-mail, Google или телефон.',
+      'how.step2.title': 'Выберите город',
+      'how.step2.desc':
+          'Выбирайте из 81 города или ищите ближайшие места через GPS.',
+      'how.step3.title': 'Сканируйте QR',
+      'how.step3.desc':
+          'Сканируйте QR на месте, читайте историю на своём языке и стройте маршрут.',
+
+      'sidebar.home': 'Главная',
+      'sidebar.cities': 'Города',
+      'sidebar.qr': 'Скан QR',
+      'sidebar.favorites': 'Избранное',
+      'sidebar.profile': 'Профиль',
+
+      'home.greeting': 'Привет, {name}! 👋',
+      'home.subtitle': 'Куда отправимся сегодня?',
+      'home.searchHint': 'Найти город или место...',
+      'home.exploreBtn': 'Исследовать города',
+      'home.gpsActive': 'GPS включён',
+      'home.gpsOff': 'Геолокация выключена — показаны популярные места',
+      'home.gpsTracking': 'Определение местоположения...',
+      'home.nearby': 'Места рядом',
+      'home.popular': 'Популярные места',
+      'home.nearbySub': 'Ближайшие сначала ↑',
+      'home.popularSub': 'По рейтингу',
+      'home.nearest': 'Ближайшее',
+      'home.notFound': 'Места не найдены',
+
+      'logout.title': 'Выйти',
+      'logout.confirm':
+          'Вы уверены, что хотите выйти?\n\nДля повторного входа понадобятся e-mail и пароль.',
+      'logout.tooltip': 'Выйти',
+
+      'cities.title': 'Города',
+      'cities.searchHint': 'Найти город или регион...',
+      'cities.notFound': 'Города не найдены',
+      'cities.found': 'Найдено {count} городов',
+      'cities.placesCount': '{count} мест',
+      'region.all': 'Все',
+      'region.marmara': 'Мармара',
+      'region.aegean': 'Эгейский',
+      'region.mediterranean': 'Средиземноморский',
+      'region.centralAnatolia': 'Центральная Анатолия',
+      'region.blackSea': 'Черноморский',
+      'region.easternAnatolia': 'Восточная Анатолия',
+      'region.southeasternAnatolia': 'Юго-Восточная Анатолия',
+
+      'places.notFound': 'В этом городе мест не найдено',
+
+      'place.notFound': 'Место не найдено',
+      'place.description': 'Описание',
+      'place.location': 'Расположение',
+      'place.descPlaceholder':
+          'Подробная информация скоро.',
+      'place.free': 'Бесплатно',
+      'place.paid': 'Платно',
+      'place.featured': 'Избранное',
+      'place.qrScan': 'Сканировать QR',
+      'place.addFavorite': 'В избранное',
+      'place.isFavorite': 'В избранном',
+      'place.favAdded': 'Добавлено в избранное ❤️',
+      'place.favRemoved': 'Удалено из избранного',
+      'place.favLoginRequired': 'Войдите, чтобы добавить в избранное',
+      'place.qrSoon': 'Сканер QR — скоро',
+
+      'search.title': 'Поиск мест',
+      'search.hint': 'Место, город или категория...',
+      'search.startTyping': 'Начните вводить название места или города',
+      'search.travixxResults': 'Места Travixx',
+      'search.osmResults': 'OpenStreetMap (расширенный поиск)',
+      'search.noResults': 'Нет результатов Travixx для "{q}"',
+      'search.broadSearch': 'Расширенный поиск',
+      'search.broadSearchHint': 'Искать во всём OpenStreetMap',
+      'search.searching': 'Идёт расширенный поиск...',
+      'search.osmHint': 'Ничего не нашли? Попробуйте OSM',
+
+      'qr.title': 'Скан QR',
+      'qr.hint':
+          'Поместите QR в рамку\nместо откроется автоматически',
+      'qr.cameraError': 'Нет доступа к камере',
+      'qr.cameraHint':
+          'Проверьте разрешения браузера или дайте доступ к камере.',
+      'qr.processing': 'Обработка...',
+      'qr.notRegistered': 'Этот QR-код не зарегистрирован.',
+      'qr.broken': 'QR-код повреждён.',
+      'qr.foundOpening': 'Место найдено! Открытие...',
+
+      'favorites.title': 'Избранное',
+      'favorites.loginPrompt1': 'Чтобы увидеть избранное',
+      'favorites.loginPrompt2': 'войдите в аккаунт',
+      'favorites.empty': 'Пока нет избранного',
+      'favorites.emptyDesc':
+          'Нажимайте на сердечко в местах, которые понравились\nчтобы добавить в избранное',
+      'favorites.explore': 'Исследовать места',
+
+      'profile.title': 'Профиль',
+      'profile.accountInfo': 'Информация об аккаунте',
+      'profile.email': 'E-mail',
+      'profile.memberSince': 'С нами с',
+      'profile.status': 'Статус',
+      'profile.verified': 'Подтверждён ✓',
+      'profile.unverified': 'Не подтверждён',
+      'profile.myFavorites': 'Моё избранное',
+      'profile.cities': 'Города',
+      'profile.help': 'Помощь',
+      'profile.settings': 'Настройки',
+      'profile.loginPrompt': 'Войдите, чтобы увидеть профиль',
+      'profile.travelerName': 'Путешественник',
+    },
+  };
+}
+
+/// Dil meta verisi.
+class LangMeta {
+  final String code;
+  final String label;
+  final String name;
+  final String flag;
+  const LangMeta({
+    required this.code,
+    required this.label,
+    required this.name,
+    required this.flag,
+  });
+}

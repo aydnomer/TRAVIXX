@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/constants/supabase_constants.dart';
+import 'core/i18n/i18n.dart';
 import 'core/theme/app_theme.dart';
 import 'core/utils/router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('tr_TR', null);
+  await I18n.load();
   await Supabase.initialize(
     url: SupabaseConstants.supabaseUrl,
     anonKey: SupabaseConstants.supabaseAnonKey,
@@ -20,11 +22,28 @@ class TravixxApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'Travixx',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      routerConfig: appRouter,
+    // Dil değişimine reaktif — tüm app yeniden render olur
+    return ValueListenableBuilder<String>(
+      valueListenable: I18n.language,
+      builder: (context, lang, _) {
+        return Directionality(
+          // Arapça için sağdan-sola
+          textDirection:
+              I18n.isRtl(lang) ? TextDirection.rtl : TextDirection.ltr,
+          child: MaterialApp.router(
+            // Dil değişince tüm sayfa ağacını yeniden inşa et
+            key: ValueKey('app_$lang'),
+            title: 'Travixx',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            routerConfig: appRouter,
+            locale: Locale(lang),
+            supportedLocales: I18n.languages
+                .map((l) => Locale(l.code))
+                .toList(growable: false),
+          ),
+        );
+      },
     );
   }
 }

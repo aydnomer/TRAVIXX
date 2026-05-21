@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/database_service.dart';
 import '../../core/utils/gps_service.dart';
@@ -37,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<_PlaceWithDistance> _places = [];
   bool _loading = true;
   Position? _userPos;
-  String _gpsStatus = 'Konum izleniyor...';
+  String _gpsStatus = '';
 
   @override
   void initState() {
@@ -86,9 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _userPos = pos;
       _places = list.take(20).toList(); // ilk 20
-      _gpsStatus = pos != null
-          ? 'GPS aktif'
-          : 'Konum kapalı — popüler mekanlar gösteriliyor';
+      _gpsStatus = pos != null ? I18n.t('home.gpsActive') : I18n.t('home.gpsOff');
       _loading = false;
     });
   }
@@ -111,8 +110,10 @@ class _HomeScreenState extends State<HomeScreen> {
         SliverToBoxAdapter(child: _buildLocationBar()),
         SliverToBoxAdapter(
           child: _buildSectionTitle(
-            _userPos != null ? 'Yakınındaki Mekanlar' : 'Popüler Mekanlar',
-            _userPos != null ? 'En yakın önce ↑' : 'Puana göre',
+            _userPos != null ? I18n.t('home.nearby') : I18n.t('home.popular'),
+            _userPos != null
+                ? I18n.t('home.nearbySub')
+                : I18n.t('home.popularSub'),
           ),
         ),
         if (_loading)
@@ -150,9 +151,11 @@ class _HomeScreenState extends State<HomeScreen> {
               SliverToBoxAdapter(
                 child: _buildSectionTitle(
                   _userPos != null
-                      ? 'Yakınındaki Mekanlar'
-                      : 'Popüler Mekanlar',
-                  _userPos != null ? 'En yakın önce ↑' : 'Puana göre',
+                      ? I18n.t('home.nearby')
+                      : I18n.t('home.popular'),
+                  _userPos != null
+                      ? I18n.t('home.nearbySub')
+                      : I18n.t('home.popularSub'),
                 ),
               ),
               if (_loading)
@@ -161,9 +164,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Center(child: CircularProgressIndicator()),
                 )
               else if (_places.isEmpty)
-                const SliverFillRemaining(
+                SliverFillRemaining(
                   hasScrollBody: false,
-                  child: Center(child: Text('Mekan bulunamadı')),
+                  child: Center(child: Text(I18n.t('home.notFound'))),
                 )
               else
                 SliverPadding(
@@ -244,11 +247,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<Widget> _buildSidebarItems() {
     final items = [
-      {'icon': Icons.home_outlined, 'label': 'Ana Sayfa'},
-      {'icon': Icons.location_city_outlined, 'label': 'Şehirler'},
-      {'icon': Icons.qr_code_scanner_outlined, 'label': 'QR Tara'},
-      {'icon': Icons.favorite_outline, 'label': 'Favoriler'},
-      {'icon': Icons.person_outline, 'label': 'Profil'},
+      {'icon': Icons.home_outlined, 'key': 'sidebar.home', 'route': '/home'},
+      {
+        'icon': Icons.location_city_outlined,
+        'key': 'sidebar.cities',
+        'route': '/cities'
+      },
+      {
+        'icon': Icons.qr_code_scanner_outlined,
+        'key': 'sidebar.qr',
+        'route': '/qr-scan'
+      },
+      {
+        'icon': Icons.favorite_outline,
+        'key': 'sidebar.favorites',
+        'route': '/favorites'
+      },
+      {
+        'icon': Icons.person_outline,
+        'key': 'sidebar.profile',
+        'route': '/profile'
+      },
     ];
     return items.asMap().entries.map((e) {
       final isSelected = e.key == _currentIndex;
@@ -264,7 +283,7 @@ class _HomeScreenState extends State<HomeScreen> {
             size: 22,
           ),
           title: Text(
-            e.value['label'] as String,
+            I18n.t(e.value['key'] as String),
             style: TextStyle(
               color: isSelected ? AppTheme.primary : AppTheme.textSecondary,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
@@ -274,11 +293,8 @@ class _HomeScreenState extends State<HomeScreen> {
           tileColor: isSelected ? const Color(0xFFEFF6FF) : null,
           onTap: () {
             setState(() => _currentIndex = e.key);
-            final label = e.value['label'];
-            if (label == 'Şehirler') context.push('/cities');
-            if (label == 'QR Tara') context.push('/qr-scan');
-            if (label == 'Favoriler') context.push('/favorites');
-            if (label == 'Profil') context.push('/profile');
+            final route = e.value['route'] as String;
+            if (route != '/home') context.push(route);
           },
         ),
       );
@@ -305,16 +321,19 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Merhaba, ${user?.email?.split('@')[0] ?? 'Gezgin'}! 👋',
+                I18n.tp('home.greeting', {
+                  'name': user?.email?.split('@')[0] ??
+                      I18n.t('profile.travelerName')
+                }),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const Text(
-                "Bugün nereyi keşfedelim?",
-                style: TextStyle(color: Color(0xFFE0F2FE), fontSize: 13),
+              Text(
+                I18n.t('home.subtitle'),
+                style: const TextStyle(color: Color(0xFFE0F2FE), fontSize: 13),
               ),
               const SizedBox(height: 12),
               Container(
@@ -348,10 +367,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             context.push('/search?q=${Uri.encodeComponent(query)}');
                           }
                         },
-                        decoration: const InputDecoration(
-                          hintText: 'Şehir veya mekan ara...',
+                        decoration: InputDecoration(
+                          hintText: I18n.t('home.searchHint'),
                           border: InputBorder.none,
-                          hintStyle: TextStyle(
+                          hintStyle: const TextStyle(
                             color: AppTheme.textSecondary,
                             fontSize: 13,
                           ),
@@ -367,9 +386,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: ElevatedButton.icon(
                   onPressed: () => context.push('/cities'),
                   icon: const Icon(Icons.explore, size: 18),
-                  label: const Text(
-                    'Şehirleri Keşfet',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                  label: Text(
+                    I18n.t('home.exploreBtn'),
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.bold),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.accentOrange,
@@ -389,7 +409,7 @@ class _HomeScreenState extends State<HomeScreen> {
       actions: [
         IconButton(
           icon: const Icon(Icons.logout, color: Colors.white),
-          tooltip: 'Çıkış Yap',
+          tooltip: I18n.t('logout.tooltip'),
           onPressed: _confirmLogout,
         ),
       ],
@@ -420,10 +440,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Text(
-                'Çıkış Yap',
-                style: TextStyle(
+                I18n.t('logout.title'),
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: AppTheme.primary,
@@ -432,10 +452,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        content: const Text(
-          'Hesabınızdan çıkış yapmak istediğinize emin misiniz?\n\n'
-          'Tekrar giriş yapmak için e-posta ve şifrenize ihtiyacınız olacak.',
-          style: TextStyle(
+        content: Text(
+          I18n.t('logout.confirm'),
+          style: const TextStyle(
             fontSize: 14,
             color: AppTheme.textSecondary,
             height: 1.5,
@@ -449,9 +468,9 @@ class _HomeScreenState extends State<HomeScreen> {
               foregroundColor: AppTheme.textSecondary,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             ),
-            child: const Text(
-              'İptal',
-              style: TextStyle(fontWeight: FontWeight.w600),
+            child: Text(
+              I18n.t('common.cancel'),
+              style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
           ElevatedButton(
@@ -465,9 +484,9 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               elevation: 0,
             ),
-            child: const Text(
-              'Çıkış Yap',
-              style: TextStyle(fontWeight: FontWeight.bold),
+            child: Text(
+              I18n.t('logout.title'),
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
         ],

@@ -23,6 +23,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   geolocator: ^13.0.2
   http: ^1.2.2
+  shared_preferences: ^2.3.4
 
   flutter_localizations:
     sdk: flutter
