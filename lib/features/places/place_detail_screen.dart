@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/database_service.dart';
+import '../../core/utils/weather_service.dart';
 import 'place_model.dart';
 
 class PlaceDetailScreen extends StatefulWidget {
@@ -28,6 +29,10 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   // Foto galerisi için PageController
   final PageController _galleryCtrl = PageController();
   int _galleryIdx = 0;
+
+  // Hava durumu (lat/lng varsa fetch edilir)
+  WeatherInfo? _weather;
+  bool _weatherLoading = false;
 
   @override
   void dispose() {
@@ -49,10 +54,27 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
         _place = p;
         _loading = false;
       });
-      if (p != null) _checkFavorite();
+      if (p != null) {
+        _checkFavorite();
+        _loadWeather(p);
+      }
     } catch (e) {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _loadWeather(Place p) async {
+    if (p.latitude == null || p.longitude == null) return;
+    setState(() => _weatherLoading = true);
+    final w = await WeatherService.currentWeather(
+      lat: p.latitude!,
+      lng: p.longitude!,
+    );
+    if (!mounted) return;
+    setState(() {
+      _weather = w;
+      _weatherLoading = false;
+    });
   }
 
   Future<void> _checkFavorite() async {
@@ -165,6 +187,10 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildBadgeRow(p),
+                  if (_weather != null || _weatherLoading) ...[
+                    const SizedBox(height: 12),
+                    _buildWeatherStrip(),
+                  ],
                   const SizedBox(height: 20),
                   _buildTitleSection(p),
                   const SizedBox(height: 24),
@@ -508,6 +534,84 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                 size: 16, color: AppTheme.textSecondary),
           ],
         ),
+      ),
+    );
+  }
+
+  // Hava durumu şeridi — mekanın koordinatına göre anlık hava
+  Widget _buildWeatherStrip() {
+    if (_weatherLoading) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEFF6FF),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Row(
+          children: [
+            SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            SizedBox(width: 10),
+            Text('...', style: TextStyle(fontSize: 13)),
+          ],
+        ),
+      );
+    }
+    final w = _weather;
+    if (w == null) return const SizedBox.shrink();
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFDDF2FE), Color(0xFFEFF6FF)],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFBAE6FD)),
+      ),
+      child: Row(
+        children: [
+          Text(w.emoji, style: const TextStyle(fontSize: 28)),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${w.temperatureC.toStringAsFixed(0)}°C',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primary,
+                ),
+              ),
+              Text(
+                I18n.t('place.weatherNow'),
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+          Row(
+            children: [
+              const Icon(Icons.air, size: 14, color: AppTheme.textSecondary),
+              const SizedBox(width: 4),
+              Text(
+                '${w.windKmh.toStringAsFixed(0)} km/h',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
