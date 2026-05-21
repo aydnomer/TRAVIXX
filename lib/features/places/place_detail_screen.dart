@@ -10,6 +10,7 @@ import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/database_service.dart';
 import '../../core/utils/weather_service.dart';
+import '../gamification/badge_service.dart';
 import 'place_model.dart';
 
 class PlaceDetailScreen extends StatefulWidget {
@@ -57,6 +58,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
       if (p != null) {
         _checkFavorite();
         _loadWeather(p);
+        // Ziyaret kaydı (gamification için, 24 saat deduplikasyon var)
+        BadgeService.recordVisit(p.id);
       }
     } catch (e) {
       if (mounted) setState(() => _loading = false);

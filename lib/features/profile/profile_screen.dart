@@ -5,9 +5,40 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
+import '../gamification/badge_service.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  UserStats? _stats;
+  List<BadgeInfo> _earnedBadges = const [];
+  bool _statsLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStats();
+  }
+
+  Future<void> _loadStats() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) {
+      if (mounted) setState(() => _statsLoading = false);
+      return;
+    }
+    final stats = await BadgeService.getStats();
+    if (!mounted) return;
+    setState(() {
+      _stats = stats;
+      _earnedBadges = BadgeService.getEarnedBadges(stats);
+      _statsLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +63,11 @@ class ProfileScreen extends StatelessWidget {
               child: Column(
                 children: [
                   _buildAvatar(user),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
+                  if (_stats != null) _buildStatsRow(_stats!),
+                  const SizedBox(height: 16),
+                  _buildBadgesSection(),
+                  const SizedBox(height: 16),
                   _buildInfoCard(user),
                   const SizedBox(height: 16),
                   _buildMenuCard(context),
@@ -41,6 +76,217 @@ class ProfileScreen extends StatelessWidget {
                 ],
               ),
             ),
+    );
+  }
+
+  // Hızlı istatistik şeridi: Ziyaret + Mekan + Rozet sayıları
+  Widget _buildStatsRow(UserStats stats) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.cardBorder),
+      ),
+      child: Row(
+        children: [
+          _statCol(stats.totalVisits.toString(), I18n.t('badge.stats.visits')),
+          _statDivider(),
+          _statCol(
+              stats.uniquePlaces.toString(), I18n.t('badge.stats.places')),
+          _statDivider(),
+          _statCol(_earnedBadges.length.toString(), I18n.t('badge.title')),
+        ],
+      ),
+    );
+  }
+
+  Widget _statCol(String value, String label) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.accentOrange,
+            ),
+          ),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppTheme.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _statDivider() => Container(
+        width: 1,
+        height: 32,
+        color: AppTheme.cardBorder,
+      );
+
+  Widget _buildBadgesSection() {
+    if (_statsLoading) {
+      return const SizedBox(
+        height: 100,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    final all = BadgeService.allBadges;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.workspace_premium,
+                  size: 18, color: AppTheme.accentOrange),
+              const SizedBox(width: 8),
+              Text(
+                I18n.t('badge.title'),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primary,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${_earnedBadges.length}/${all.length}',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: all.map((b) => _badgeChip(b)).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _badgeChip(BadgeInfo b) {
+    final earned = _stats != null && b.isEarned(_stats!);
+    final tierColor = switch (b.tier) {
+      BadgeTier.bronze => const Color(0xFFCD7F32),
+      BadgeTier.silver => const Color(0xFF94A3B8),
+      BadgeTier.gold => const Color(0xFFEAB308),
+    };
+
+    return GestureDetector(
+      onTap: () => _showBadgeDetail(b, earned),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 76,
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: earned
+              ? tierColor.withValues(alpha: 0.12)
+              : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: earned ? tierColor : Colors.grey.shade300,
+            width: earned ? 1.5 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Opacity(
+              opacity: earned ? 1.0 : 0.3,
+              child: Text(b.emoji, style: const TextStyle(fontSize: 28)),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              I18n.t(b.titleKey),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+                color: earned ? tierColor : Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showBadgeDetail(BadgeInfo b, bool earned) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Text(b.emoji, style: const TextStyle(fontSize: 32)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                I18n.t(b.titleKey),
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(I18n.t(b.descKey)),
+            const SizedBox(height: 12),
+            if (!earned)
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.lock_outline, size: 14),
+                    const SizedBox(width: 6),
+                    Text(
+                      I18n.t('badge.locked'),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(I18n.t('common.cancel')),
+          ),
+        ],
+      ),
     );
   }
 
