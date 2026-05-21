@@ -26,21 +26,20 @@ class TravixxApp extends StatelessWidget {
     return ValueListenableBuilder<String>(
       valueListenable: I18n.language,
       builder: (context, lang, _) {
-        return Directionality(
-          // Arapça için sağdan-sola
-          textDirection:
-              I18n.isRtl(lang) ? TextDirection.rtl : TextDirection.ltr,
-          child: MaterialApp.router(
-            // Dil değişince tüm sayfa ağacını yeniden inşa et
-            key: ValueKey('app_$lang'),
-            title: 'Travixx',
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.lightTheme,
-            routerConfig: appRouter,
-            locale: Locale(lang),
-            supportedLocales: I18n.languages
-                .map((l) => Locale(l.code))
-                .toList(growable: false),
+        return MaterialApp.router(
+          // Dil değişince tüm sayfa ağacını yeniden inşa et
+          key: ValueKey('app_$lang'),
+          title: 'Travixx',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          routerConfig: appRouter,
+          // Directionality MaterialApp İÇİNDE — Material widget'ları
+          // (TextField, PopupMenuButton) doğru context'i bulur, RTL de
+          // çalışır. Dışa sarmak Material'ı bozuyor.
+          builder: (context, child) => Directionality(
+            textDirection:
+                I18n.isRtl(lang) ? TextDirection.rtl : TextDirection.ltr,
+            child: child ?? const SizedBox(),
           ),
         );
       },
