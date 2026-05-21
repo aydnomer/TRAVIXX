@@ -340,27 +340,27 @@ class _LandingScreenState extends State<LandingScreen> {
                       ),
                       const SizedBox(height: 20),
                       RichText(
-                        text: const TextSpan(
-                          style: TextStyle(
+                        text: TextSpan(
+                          style: const TextStyle(
                             fontSize: 36,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                             height: 1.3,
                           ),
                           children: [
-                            TextSpan(text: "Türkiye'yi\n"),
+                            TextSpan(text: "${I18n.t('landing.heroTitle1')}\n"),
                             TextSpan(
-                              text: 'Akıllıca ',
-                              style: TextStyle(color: Color(0xFFFB923C)),
+                              text: '${I18n.t('landing.heroTitle2')} ',
+                              style: const TextStyle(color: Color(0xFFFB923C)),
                             ),
-                            TextSpan(text: 'Keşfet'),
+                            TextSpan(text: I18n.t('landing.heroTitle3')),
                           ],
                         ),
                       ),
                       const SizedBox(height: 14),
-                      const Text(
-                        '81 şehir, 2.400+ tarihi mekan. QR destekli\nrehberlik ve yapay zeka ile kişisel gezi deneyimi.',
-                        style: TextStyle(
+                      Text(
+                        I18n.t('landing.heroSub'),
+                        style: const TextStyle(
                           color: Color(0xFFCBD5E9),
                           fontSize: 15,
                           height: 1.7,
@@ -497,24 +497,26 @@ class _LandingScreenState extends State<LandingScreen> {
                   color: const Color(0xFFF97316),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Text(
-                  "Türkiye'nin #1 Turizm Platformu",
-                  style: TextStyle(color: Colors.white, fontSize: 11),
+                child: Text(
+                  I18n.t('landing.badge'),
+                  style: const TextStyle(color: Colors.white, fontSize: 11),
                 ),
               ),
               const SizedBox(height: 10),
-              const Text(
-                "Türkiye'yi Akıllıca Keşfet",
-                style: TextStyle(
+              Text(
+                "${I18n.t('landing.heroTitle1')} ${I18n.t('landing.heroTitle2')} ${I18n.t('landing.heroTitle3')}",
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 6),
-              const Text(
-                '81 şehir · 2.400+ mekan · QR Rehber · 6 Dil',
-                style: TextStyle(color: Color(0xFFCBD5E9), fontSize: 12),
+              Text(
+                I18n.t('landing.heroSub'),
+                style: const TextStyle(color: Color(0xFFCBD5E9), fontSize: 12),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -704,7 +706,7 @@ class _LandingScreenState extends State<LandingScreen> {
           ],
         ),
         const SizedBox(height: 16),
-        _orDivider(text: 'veya telefon ile'),
+        _orDivider(text: I18n.t('auth.continueWithPhone')),
         const SizedBox(height: 16),
         _phoneSection(),
       ],
@@ -786,9 +788,9 @@ class _LandingScreenState extends State<LandingScreen> {
           ],
         ),
         const SizedBox(height: 12),
-        const Text(
-          'Kayıt olarak Gizlilik Politikası ve Kullanım Şartlarını kabul etmiş olursunuz.',
-          style: TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+        Text(
+          I18n.t('auth.terms'),
+          style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
           textAlign: TextAlign.center,
         ),
       ],
@@ -884,7 +886,8 @@ class _LandingScreenState extends State<LandingScreen> {
     );
   }
 
-  Widget _orDivider({String text = 'veya şununla devam et'}) {
+  Widget _orDivider({String? text}) {
+    final divText = text ?? I18n.t('auth.continueWith');
     return Row(
       children: [
         const Expanded(
@@ -893,7 +896,7 @@ class _LandingScreenState extends State<LandingScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Text(
-            text,
+            divText,
             style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
           ),
         ),
@@ -986,9 +989,9 @@ class _LandingScreenState extends State<LandingScreen> {
               size: 18,
               color: AppTheme.primary,
             ),
-            label: const Text(
-              'SMS Doğrulama Kodu Gönder',
-              style: TextStyle(fontSize: 13, color: AppTheme.primary),
+            label: Text(
+              I18n.t('auth.smsCode'),
+              style: const TextStyle(fontSize: 13, color: AppTheme.primary),
             ),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 13),
@@ -1010,49 +1013,43 @@ class _LandingScreenState extends State<LandingScreen> {
         'icon': Icons.qr_code_scanner,
         'color': const Color(0xFFF97316),
         'bg': const Color(0xFFFFF7ED),
-        'title': 'Akıllı QR Rehber',
-        'desc':
-            'Her tarihi mekanda QR kodu okutun, anında detaylı tarihçe ve bilgiye ulaşın.',
+        'title': I18n.t('features.qr.title'),
+        'desc': I18n.t('features.qr.desc'),
       },
       {
         'icon': Icons.gps_fixed,
         'color': AppTheme.primary,
         'bg': const Color(0xFFEFF6FF),
-        'title': 'GPS Tabanlı Sıralama',
-        'desc':
-            'Konumunuza göre en yakın mekanlar otomatik üste listelenir, km ve süre gösterilir.',
+        'title': I18n.t('features.gps.title'),
+        'desc': I18n.t('features.gps.desc'),
       },
       {
         'icon': Icons.language,
         'color': const Color(0xFF854D0E),
         'bg': const Color(0xFFFEFCE8),
-        'title': '6 Dil Desteği',
-        'desc':
-            'TR, EN, DE, AR, FR, RU dillerinde otomatik çeviri ile dil engeli ortadan kalkar.',
+        'title': I18n.t('features.lang.title'),
+        'desc': I18n.t('features.lang.desc'),
       },
       {
         'icon': Icons.psychology,
         'color': const Color(0xFFF97316),
         'bg': const Color(0xFFFFF7ED),
-        'title': 'Yapay Zeka Asistanı',
-        'desc':
-            'Kişisel gezi planı oluşturun, öneriler alın ve sorularınızı AI\'a sorun.',
+        'title': I18n.t('features.ai.title'),
+        'desc': I18n.t('features.ai.desc'),
       },
       {
         'icon': Icons.devices,
         'color': AppTheme.primary,
         'bg': const Color(0xFFEFF6FF),
-        'title': 'Web & Mobil',
-        'desc':
-            'Tek hesapla web ve mobil üzerinden kesintisiz erişim, her cihazda mükemmel görünüm.',
+        'title': I18n.t('features.platform.title'),
+        'desc': I18n.t('features.platform.desc'),
       },
       {
         'icon': Icons.favorite_outline,
         'color': const Color(0xFF854D0E),
         'bg': const Color(0xFFFEFCE8),
-        'title': 'Favori & Rota Planla',
-        'desc':
-            'Mekanları favorileyin, kişisel gezi rotanızı oluşturun ve paylaşın.',
+        'title': I18n.t('features.fav.title'),
+        'desc': I18n.t('features.fav.desc'),
       },
     ];
 
@@ -1062,20 +1059,20 @@ class _LandingScreenState extends State<LandingScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
       child: Column(
         children: [
-          _sectionBadge('Özellikler'),
+          _sectionBadge(I18n.t('nav.features')),
           const SizedBox(height: 10),
-          const Text(
-            "Neden Travixx?",
-            style: TextStyle(
+          Text(
+            I18n.t('features.title'),
+            style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: AppTheme.textPrimary,
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Turizmi yeniden tanımlayan 6 güçlü özellik',
-            style: TextStyle(fontSize: 14, color: AppTheme.textSecondary),
+          Text(
+            I18n.t('features.subtitle'),
+            style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary),
           ),
           const SizedBox(height: 36),
           LayoutBuilder(
@@ -1315,21 +1312,18 @@ class _LandingScreenState extends State<LandingScreen> {
     final steps = [
       {
         'n': '1',
-        'title': 'Kayıt Ol',
-        'desc':
-            'E-posta, Google veya telefon ile saniyeler içinde ücretsiz hesap oluştur.',
+        'title': I18n.t('how.step1.title'),
+        'desc': I18n.t('how.step1.desc'),
       },
       {
         'n': '2',
-        'title': 'Şehir Seç',
-        'desc':
-            '81 il arasından seç veya GPS ile konumuna en yakın mekanları bul.',
+        'title': I18n.t('how.step2.title'),
+        'desc': I18n.t('how.step2.desc'),
       },
       {
         'n': '3',
-        'title': 'QR Okut & Keşfet',
-        'desc':
-            'Mekandaki QR kodu okut, kendi dilinde tarihçeyi oku ve rotanı planla.',
+        'title': I18n.t('how.step3.title'),
+        'desc': I18n.t('how.step3.desc'),
       },
     ];
 
@@ -1339,20 +1333,20 @@ class _LandingScreenState extends State<LandingScreen> {
       color: Colors.white,
       child: Column(
         children: [
-          _sectionBadge('Nasıl Çalışır?'),
+          _sectionBadge(I18n.t('how.badge')),
           const SizedBox(height: 10),
-          const Text(
-            '3 Adımda Keşfet',
-            style: TextStyle(
+          Text(
+            I18n.t('how.title'),
+            style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: AppTheme.textPrimary,
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Dakikalar içinde gezmeye başla',
-            style: TextStyle(fontSize: 14, color: AppTheme.textSecondary),
+          Text(
+            I18n.t('how.subtitle'),
+            style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary),
           ),
           const SizedBox(height: 40),
           Row(
