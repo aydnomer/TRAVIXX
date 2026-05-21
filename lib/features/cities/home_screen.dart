@@ -100,6 +100,17 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: isWide ? _buildWebLayout(user) : _buildMobileLayout(user),
       bottomNavigationBar: isWide ? null : _buildBottomNav(),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/ai-chat'),
+        backgroundColor: AppTheme.accentOrange,
+        foregroundColor: Colors.white,
+        icon: const Text('🤖', style: TextStyle(fontSize: 18)),
+        label: Text(
+          I18n.t('ai.openChat'),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+        ),
+        elevation: 4,
+      ),
     );
   }
 

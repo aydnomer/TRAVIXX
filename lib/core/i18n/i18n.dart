@@ -242,6 +242,15 @@ class I18n {
       'place.gallery': 'Fotoğraflar',
       'place.copyAddress': 'Adres kopyalandı',
       'place.weatherNow': 'Şu an',
+      'ai.title': 'AI Gezi Planlayıcı',
+      'ai.welcome':
+          'Merhaba! 👋 Hangi şehri kaç gün gezmek istersin? Örn: "İstanbul 2 gün"',
+      'ai.inputHint': 'Sorunu yaz... (örn: Antalya hafta sonu)',
+      'ai.cantUnderstand':
+          'Anlayamadım. Bir şehir adı + kaç gün yaz lütfen. Örn: "Kapadokya 3 gün"',
+      'ai.noPlaces': 'Bu şehir için henüz mekan kaydı yok.',
+      'ai.day': 'Gün',
+      'ai.openChat': 'AI Planlayıcı',
 
       // Search
       'search.title': 'Mekan Ara',
@@ -450,6 +459,15 @@ class I18n {
       'place.gallery': 'Photos',
       'place.copyAddress': 'Address copied',
       'place.weatherNow': 'Now',
+      'ai.title': 'AI Trip Planner',
+      'ai.welcome':
+          'Hi! 👋 Which city, how many days? E.g. "Istanbul 2 days"',
+      'ai.inputHint': 'Type your question... (e.g. Antalya weekend)',
+      'ai.cantUnderstand':
+          "I couldn't understand. Please write a city + number of days. E.g. \"Cappadocia 3 days\"",
+      'ai.noPlaces': 'No places recorded for this city yet.',
+      'ai.day': 'Day',
+      'ai.openChat': 'AI Planner',
 
       'search.title': 'Search Places',
       'search.hint': 'Place, city or category...',
@@ -654,6 +672,15 @@ class I18n {
       'place.gallery': 'Fotos',
       'place.copyAddress': 'Adresse kopiert',
       'place.weatherNow': 'Jetzt',
+      'ai.title': 'KI Reiseplaner',
+      'ai.welcome':
+          'Hallo! 👋 Welche Stadt, wie viele Tage? Z.B. "Istanbul 2 Tage"',
+      'ai.inputHint': 'Frage eingeben... (z.B. Antalya Wochenende)',
+      'ai.cantUnderstand':
+          'Verstehe ich nicht. Bitte Stadt + Anzahl Tage. Z.B. "Kappadokien 3 Tage"',
+      'ai.noPlaces': 'Noch keine Orte für diese Stadt erfasst.',
+      'ai.day': 'Tag',
+      'ai.openChat': 'KI-Planer',
 
       'search.title': 'Orte suchen',
       'search.hint': 'Ort, Stadt oder Kategorie...',
@@ -858,6 +885,15 @@ class I18n {
       'place.gallery': 'الصور',
       'place.copyAddress': 'تم نسخ العنوان',
       'place.weatherNow': 'الآن',
+      'ai.title': 'مخطط الرحلات بالذكاء الاصطناعي',
+      'ai.welcome':
+          'مرحباً! 👋 أي مدينة وكم يوم؟ مثلاً: "اسطنبول يومين"',
+      'ai.inputHint': 'اكتب سؤالك... (مثال: أنطاليا عطلة نهاية الأسبوع)',
+      'ai.cantUnderstand':
+          'لم أفهم. الرجاء كتابة اسم مدينة + عدد الأيام. مثلاً: "كابادوكيا 3 أيام"',
+      'ai.noPlaces': 'لا توجد أماكن مسجلة لهذه المدينة بعد.',
+      'ai.day': 'اليوم',
+      'ai.openChat': 'المخطط الذكي',
 
       'search.title': 'ابحث عن مكان',
       'search.hint': 'مكان، مدينة أو فئة...',
@@ -1061,6 +1097,15 @@ class I18n {
       'place.gallery': 'Photos',
       'place.copyAddress': 'Adresse copiée',
       'place.weatherNow': 'Maintenant',
+      'ai.title': 'Planificateur IA',
+      'ai.welcome':
+          'Salut! 👋 Quelle ville, combien de jours? Ex: "Istanbul 2 jours"',
+      'ai.inputHint': 'Tape ta question... (ex: Antalya week-end)',
+      'ai.cantUnderstand':
+          "Je n'ai pas compris. Indique une ville + nombre de jours. Ex: \"Cappadoce 3 jours\"",
+      'ai.noPlaces': 'Aucun lieu enregistré pour cette ville.',
+      'ai.day': 'Jour',
+      'ai.openChat': 'Planificateur IA',
 
       'search.title': 'Rechercher un lieu',
       'search.hint': 'Lieu, ville ou catégorie...',
@@ -1267,6 +1312,15 @@ class I18n {
       'place.gallery': 'Фото',
       'place.copyAddress': 'Адрес скопирован',
       'place.weatherNow': 'Сейчас',
+      'ai.title': 'ИИ-планировщик',
+      'ai.welcome':
+          'Привет! 👋 Какой город, сколько дней? Например: "Стамбул 2 дня"',
+      'ai.inputHint': 'Введите вопрос... (напр.: Анталия выходные)',
+      'ai.cantUnderstand':
+          'Не понял. Укажите город + количество дней. Например: "Каппадокия 3 дня"',
+      'ai.noPlaces': 'Для этого города пока нет мест.',
+      'ai.day': 'День',
+      'ai.openChat': 'ИИ-планировщик',
 
       'search.title': 'Поиск мест',
       'search.hint': 'Место, город или категория...',

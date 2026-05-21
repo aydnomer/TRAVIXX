@@ -7,6 +7,7 @@ import "../../features/cities/home_screen.dart";
 import "../../features/cities/cities_screen.dart";
 import "../../features/places/places_screen.dart";
 import "../../features/places/place_detail_screen.dart";
+import "../../features/ai_planner/ai_chat_screen.dart";
 import "../../features/favorites/favorites_screen.dart";
 import "../../features/profile/profile_screen.dart";
 import "../../features/qr_scanner/qr_scanner_screen.dart";
@@ -90,6 +91,10 @@ final GoRouter appRouter = GoRouter(
         final q = state.uri.queryParameters['q'] ?? '';
         return SearchScreen(initialQuery: q);
       },
+    ),
+    GoRoute(
+      path: "/ai-chat",
+      builder: (context, state) => const AiChatScreen(),
     ),
   ],
 );
