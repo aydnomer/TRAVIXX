@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/database_service.dart';
 import '../places/place_model.dart';
@@ -45,7 +46,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        title: const Text('Favorilerim'),
+        title: Text(I18n.t('favorites.title')),
         backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
         leading: IconButton(
@@ -79,13 +80,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         children: [
           const Icon(Icons.lock_outline, size: 72, color: Colors.grey),
           const SizedBox(height: 16),
-          const Text(
-            'Favorilerini görmek için',
-            style: TextStyle(fontSize: 16, color: AppTheme.textSecondary),
+          Text(
+            I18n.t('favorites.loginPrompt1'),
+            style: const TextStyle(fontSize: 16, color: AppTheme.textSecondary),
           ),
-          const Text(
-            'giriş yapmalısın',
-            style: TextStyle(
+          Text(
+            I18n.t('favorites.loginPrompt2'),
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
               color: AppTheme.primary,
@@ -95,7 +96,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           ElevatedButton.icon(
             onPressed: () => context.go('/'),
             icon: const Icon(Icons.login),
-            label: const Text('Giriş Yap'),
+            label: Text(I18n.t('nav.login')),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.accentOrange,
               foregroundColor: Colors.white,
@@ -118,25 +119,25 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         children: [
           const Icon(Icons.favorite_border, size: 72, color: Colors.grey),
           const SizedBox(height: 16),
-          const Text(
-            'Henüz favori mekanın yok',
-            style: TextStyle(
+          Text(
+            I18n.t('favorites.empty'),
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppTheme.primary,
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Beğendiğin mekanları kalp ikonuna basarak\nfavorilerine ekleyebilirsin',
+          Text(
+            I18n.t('favorites.emptyDesc'),
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+            style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
           ),
           const SizedBox(height: 24),
           OutlinedButton.icon(
             onPressed: () => context.go('/cities'),
             icon: const Icon(Icons.explore_outlined),
-            label: const Text('Mekanları Keşfet'),
+            label: Text(I18n.t('favorites.explore')),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppTheme.primary,
               side: const BorderSide(color: AppTheme.primary),

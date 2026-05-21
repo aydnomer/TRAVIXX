@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -15,7 +16,7 @@ class ProfileScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        title: const Text('Profil'),
+        title: Text(I18n.t('profile.title')),
         backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
         leading: IconButton(
@@ -80,7 +81,7 @@ class ProfileScreen extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Text(
-          user.email?.split('@')[0] ?? 'Gezgin',
+          user.email?.split('@')[0] ?? I18n.t('profile.travelerName'),
           style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -111,27 +112,30 @@ class ProfileScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Hesap Bilgileri',
-            style: TextStyle(
+          Text(
+            I18n.t('profile.accountInfo'),
+            style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
               color: AppTheme.primary,
             ),
           ),
           const SizedBox(height: 12),
-          _infoRow(Icons.email_outlined, 'E-posta', user.email ?? '-'),
+          _infoRow(Icons.email_outlined, I18n.t('profile.email'),
+              user.email ?? '-'),
           const SizedBox(height: 8),
           _infoRow(
             Icons.calendar_today_outlined,
-            'Üyelik tarihi',
+            I18n.t('profile.memberSince'),
             _formatDate(user.createdAt),
           ),
           const SizedBox(height: 8),
           _infoRow(
             Icons.verified_user_outlined,
-            'Durum',
-            user.emailConfirmedAt != null ? 'Doğrulanmış ✓' : 'Doğrulanmamış',
+            I18n.t('profile.status'),
+            user.emailConfirmedAt != null
+                ? I18n.t('profile.verified')
+                : I18n.t('profile.unverified'),
           ),
         ],
       ),
@@ -177,26 +181,26 @@ class ProfileScreen extends StatelessWidget {
         children: [
           _menuTile(
             icon: Icons.favorite_outline,
-            label: 'Favorilerim',
+            label: I18n.t('profile.myFavorites'),
             onTap: () => context.push('/favorites'),
           ),
           const Divider(height: 1, indent: 56),
           _menuTile(
             icon: Icons.location_city_outlined,
-            label: 'Şehirler',
+            label: I18n.t('profile.cities'),
             onTap: () => context.push('/cities'),
           ),
           const Divider(height: 1, indent: 56),
           _menuTile(
             icon: Icons.help_outline,
-            label: 'Yardım Merkezi',
+            label: I18n.t('profile.help'),
             onTap: () {},
             disabled: true,
           ),
           const Divider(height: 1, indent: 56),
           _menuTile(
             icon: Icons.settings_outlined,
-            label: 'Ayarlar',
+            label: I18n.t('profile.settings'),
             onTap: () {},
             disabled: true,
           ),
@@ -238,9 +242,9 @@ class ProfileScreen extends StatelessWidget {
       child: OutlinedButton.icon(
         onPressed: () => _confirmLogout(context),
         icon: const Icon(Icons.logout, color: Colors.red),
-        label: const Text(
-          'Çıkış Yap',
-          style: TextStyle(
+        label: Text(
+          I18n.t('logout.title'),
+          style: const TextStyle(
             color: Colors.red,
             fontWeight: FontWeight.bold,
           ),
@@ -263,17 +267,15 @@ class ProfileScreen extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        title: const Text(
-          'Çıkış Yap',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          I18n.t('logout.title'),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        content: const Text(
-          'Hesabınızdan çıkış yapmak istediğinize emin misiniz?',
-        ),
+        content: Text(I18n.t('logout.confirm')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('İptal'),
+            child: Text(I18n.t('common.cancel')),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -281,7 +283,7 @@ class ProfileScreen extends StatelessWidget {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Çıkış Yap'),
+            child: Text(I18n.t('logout.title')),
           ),
         ],
       ),
@@ -299,15 +301,15 @@ class ProfileScreen extends StatelessWidget {
         children: [
           const Icon(Icons.person_outline, size: 72, color: Colors.grey),
           const SizedBox(height: 16),
-          const Text(
-            'Profilini görmek için giriş yap',
-            style: TextStyle(fontSize: 16, color: AppTheme.textSecondary),
+          Text(
+            I18n.t('profile.loginPrompt'),
+            style: const TextStyle(fontSize: 16, color: AppTheme.textSecondary),
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
             onPressed: () => context.go('/'),
             icon: const Icon(Icons.login),
-            label: const Text('Giriş Yap'),
+            label: Text(I18n.t('nav.login')),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.accentOrange,
               foregroundColor: Colors.white,

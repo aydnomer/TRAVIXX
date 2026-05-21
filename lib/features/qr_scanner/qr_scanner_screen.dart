@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 
 class QrScannerScreen extends StatefulWidget {
@@ -45,7 +46,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
       if (!mounted) return;
 
       if (response == null) {
-        _showSnack('Bu QR kodu sistemde kayıtlı değil.', isError: true);
+        _showSnack(I18n.t('qr.notRegistered'), isError: true);
         // Birkaç saniye bekleyip tekrar tarayabilsin
         await Future.delayed(const Duration(seconds: 2));
         if (mounted) setState(() => _busy = false);
@@ -54,7 +55,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
 
       final placeId = response['place_id'] as String?;
       if (placeId == null) {
-        _showSnack('QR kodu bozuk görünüyor.', isError: true);
+        _showSnack(I18n.t('qr.broken'), isError: true);
         await Future.delayed(const Duration(seconds: 2));
         if (mounted) setState(() => _busy = false);
         return;
@@ -70,13 +71,13 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
 
       // Detaya git
       if (mounted) {
-        _showSnack('Mekan bulundu! Açılıyor...', isError: false);
+        _showSnack(I18n.t('qr.foundOpening'), isError: false);
         await Future.delayed(const Duration(milliseconds: 600));
         if (mounted) context.go('/place/$placeId');
       }
     } catch (e) {
       if (!mounted) return;
-      _showSnack('Bir hata oluştu: $e', isError: true);
+      _showSnack('${I18n.t('auth.genericError')}: $e', isError: true);
       await Future.delayed(const Duration(seconds: 2));
       if (mounted) setState(() => _busy = false);
     }
@@ -98,7 +99,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('QR Tara'),
+        title: Text(I18n.t('qr.title')),
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         leading: IconButton(
@@ -144,15 +145,15 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                       const Icon(Icons.no_photography,
                           size: 64, color: Colors.white54),
                       const SizedBox(height: 16),
-                      const Text(
-                        'Kameraya erişilemiyor',
-                        style:
-                            TextStyle(color: Colors.white, fontSize: 18),
+                      Text(
+                        I18n.t('qr.cameraError'),
+                        style: const TextStyle(
+                            color: Colors.white, fontSize: 18),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         error.errorDetails?.message ??
-                            'Tarayıcı izinlerini kontrol et veya cihazın kamerasına erişim ver.',
+                            I18n.t('qr.cameraHint'),
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                             color: Colors.white70, fontSize: 13),
@@ -191,14 +192,14 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                 color: Colors.black.withValues(alpha: 0.55),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.qr_code, color: Colors.white, size: 22),
-                  SizedBox(width: 12),
+                  const Icon(Icons.qr_code, color: Colors.white, size: 22),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'QR kodunu çerçeve içine yerleştir\nmekan otomatik açılacak',
-                      style: TextStyle(color: Colors.white, fontSize: 12),
+                      I18n.t('qr.hint'),
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
                     ),
                   ),
                 ],
@@ -208,15 +209,15 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
           if (_busy)
             Container(
               color: Colors.black54,
-              child: const Center(
+              child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    CircularProgressIndicator(color: Colors.white),
-                    SizedBox(height: 12),
+                    const CircularProgressIndicator(color: Colors.white),
+                    const SizedBox(height: 12),
                     Text(
-                      'İşleniyor...',
-                      style: TextStyle(color: Colors.white),
+                      I18n.t('qr.processing'),
+                      style: const TextStyle(color: Colors.white),
                     ),
                   ],
                 ),

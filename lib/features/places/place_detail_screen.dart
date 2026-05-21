@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/database_service.dart';
 import 'place_model.dart';
@@ -61,7 +62,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   Future<void> _toggleFavorite() async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) {
-      _showSnack('Favorilere eklemek için giriş yap', isError: true);
+      _showSnack(I18n.t('place.favLoginRequired'), isError: true);
       return;
     }
     if (_place == null || _favLoading) return;
@@ -75,7 +76,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
             .eq('place_id', _place!.id);
         if (mounted) {
           setState(() => _isFavorite = false);
-          _showSnack('Favorilerden çıkarıldı', isError: false);
+          _showSnack(I18n.t('place.favRemoved'), isError: false);
         }
       } else {
         await Supabase.instance.client.from('favorites').insert({
@@ -84,11 +85,11 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
         });
         if (mounted) {
           setState(() => _isFavorite = true);
-          _showSnack('Favorilere eklendi ❤️', isError: false);
+          _showSnack(I18n.t('place.favAdded'), isError: false);
         }
       }
     } catch (e) {
-      if (mounted) _showSnack('İşlem başarısız: $e', isError: true);
+      if (mounted) _showSnack('${I18n.t('auth.genericError')}: $e', isError: true);
     } finally {
       if (mounted) setState(() => _favLoading = false);
     }
@@ -122,14 +123,14 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
             onPressed: () => context.pop(),
           ),
         ),
-        body: const Center(
+        body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline, size: 64, color: Colors.grey),
-              SizedBox(height: 16),
-              Text('Mekan bulunamadı',
-                  style: TextStyle(fontSize: 16, color: Colors.grey)),
+              const Icon(Icons.error_outline, size: 64, color: Colors.grey),
+              const SizedBox(height: 16),
+              Text(I18n.t('place.notFound'),
+                  style: const TextStyle(fontSize: 16, color: Colors.grey)),
             ],
           ),
         ),
@@ -153,12 +154,12 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                   const SizedBox(height: 20),
                   _buildTitleSection(p),
                   const SizedBox(height: 24),
-                  _sectionTitle('Açıklama'),
+                  _sectionTitle(I18n.t('place.description')),
                   const SizedBox(height: 10),
                   _buildDescriptionCard(p),
                   if (hasMap) ...[
                     const SizedBox(height: 24),
-                    _sectionTitle('Konum'),
+                    _sectionTitle(I18n.t('place.location')),
                     const SizedBox(height: 10),
                     _buildMap(p),
                   ],
@@ -258,12 +259,12 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
           _badge(p.category, AppTheme.accentOrange, isLight: true),
         _ratingBadge(p.rating),
         _badge(
-          p.isFree ? 'Ücretsiz' : 'Ücretli',
+          p.isFree ? I18n.t('place.free') : I18n.t('place.paid'),
           p.isFree ? Colors.green : Colors.deepOrange,
           isLight: true,
         ),
         if (p.isFeatured)
-          _badge('⭐ Öne Çıkan', AppTheme.gold, isLight: true),
+          _badge('⭐ ${I18n.t('place.featured')}', AppTheme.gold, isLight: true),
       ],
     );
   }
@@ -299,7 +300,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   Widget _buildDescriptionCard(Place p) {
     final desc = p.description.isNotEmpty
         ? p.description
-        : 'Bu mekan hakkında detaylı bilgi yakında eklenecek.';
+        : I18n.t('place.descPlaceholder');
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -419,10 +420,10 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
         Expanded(
           child: ElevatedButton.icon(
             onPressed: () {
-              _showSnack('QR tara özelliği yakında', isError: false);
+              _showSnack(I18n.t('place.qrSoon'), isError: false);
             },
             icon: const Icon(Icons.qr_code_scanner, size: 18),
-            label: const Text('QR Tara'),
+            label: Text(I18n.t('place.qrScan')),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primary,
               foregroundColor: Colors.white,
@@ -448,7 +449,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                     _isFavorite ? Icons.favorite : Icons.favorite_border,
                     size: 18,
                   ),
-            label: Text(_isFavorite ? 'Favoride' : 'Favoriye Ekle'),
+            label: Text(_isFavorite ? I18n.t('place.isFavorite') : I18n.t('place.addFavorite')),
             style: OutlinedButton.styleFrom(
               foregroundColor: _isFavorite ? Colors.red : AppTheme.primary,
               side: BorderSide(
