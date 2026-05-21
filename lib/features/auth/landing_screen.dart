@@ -564,7 +564,7 @@ class _LandingScreenState extends State<LandingScreen> {
   Widget _buildAuthCard() {
     return Container(
       key: _authKey,
-      constraints: const BoxConstraints(maxWidth: 400, maxHeight: 480),
+      constraints: const BoxConstraints(maxWidth: 400),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
