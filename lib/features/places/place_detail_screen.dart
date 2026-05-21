@@ -11,6 +11,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/database_service.dart';
 import '../../core/utils/weather_service.dart';
 import '../gamification/badge_service.dart';
+import '../reviews/review_service.dart';
 import 'place_model.dart';
 
 class PlaceDetailScreen extends StatefulWidget {
@@ -35,6 +36,11 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   WeatherInfo? _weather;
   bool _weatherLoading = false;
 
+  // Yorumlar
+  List<Review> _reviews = const [];
+  Review? _myReview;
+  bool _reviewsLoading = true;
+
   @override
   void dispose() {
     _galleryCtrl.dispose();
@@ -58,11 +64,85 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
       if (p != null) {
         _checkFavorite();
         _loadWeather(p);
+        _loadReviews(p.id);
         // Ziyaret kaydı (gamification için, 24 saat deduplikasyon var)
         BadgeService.recordVisit(p.id);
       }
     } catch (e) {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _loadReviews(String placeId) async {
+    final results = await Future.wait([
+      ReviewService.getReviews(placeId),
+      ReviewService.getMyReview(placeId),
+    ]);
+    if (!mounted) return;
+    setState(() {
+      _reviews = results[0] as List<Review>;
+      _myReview = results[1] as Review?;
+      _reviewsLoading = false;
+    });
+  }
+
+  Future<void> _openReviewSheet(Place p) async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) {
+      _showSnack(I18n.t('review.loginRequired'), isError: true);
+      return;
+    }
+    final updated = await showModalBottomSheet<Review>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => _ReviewSheet(
+        placeId: p.id,
+        existing: _myReview,
+      ),
+    );
+
+    if (updated != null && mounted) {
+      _showSnack(I18n.t('review.saved'), isError: false);
+      // Yorumları yenile
+      _loadReviews(p.id);
+    }
+  }
+
+  Future<void> _deleteMyReview(Place p) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+        title: Text(I18n.t('review.delete')),
+        content: Text(I18n.t('review.deleteConfirm')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(I18n.t('common.cancel')),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(I18n.t('review.delete')),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final ok = await ReviewService.delete(p.id);
+    if (!mounted) return;
+    if (ok) {
+      _showSnack(I18n.t('review.deleted'), isError: false);
+      _loadReviews(p.id);
     }
   }
 
@@ -272,6 +352,10 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                   ],
                   const SizedBox(height: 24),
                   _buildActionButtons(),
+                  const SizedBox(height: 28),
+                  _sectionTitle(I18n.t('review.title')),
+                  const SizedBox(height: 10),
+                  _buildReviewsSection(p),
                   const SizedBox(height: 32),
                 ],
               ),
@@ -619,6 +703,115 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     );
   }
 
+  // Yorumlar bölümü
+  Widget _buildReviewsSection(Place p) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Yorum yaz butonu
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppTheme.accentOrange.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppTheme.accentOrange.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.rate_review_outlined,
+                  color: AppTheme.accentOrange),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  _myReview == null
+                      ? I18n.t('review.writeReview')
+                      : I18n.t('review.editReview'),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppTheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () => _openReviewSheet(p),
+                style: TextButton.styleFrom(
+                  backgroundColor: AppTheme.accentOrange,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 6),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text(
+                  _myReview == null
+                      ? I18n.t('review.submit')
+                      : I18n.t('common.save'),
+                  style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+              ),
+              if (_myReview != null) ...[
+                const SizedBox(width: 4),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  onPressed: () => _deleteMyReview(p),
+                  tooltip: I18n.t('review.delete'),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        // Yorum listesi
+        if (_reviewsLoading)
+          const Center(child: CircularProgressIndicator())
+        else if (_reviews.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.cardBorder),
+            ),
+            child: Center(
+              child: Text(
+                I18n.t('review.noReviews'),
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+            ),
+          )
+        else
+          Column(
+            children: [
+              // Yorum sayısı
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  '${_reviews.length} ${I18n.t('review.countLabel')}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              ..._reviews.map((r) => _ReviewCard(review: r)),
+            ],
+          ),
+      ],
+    );
+  }
+
   // Google Maps'e yol tarifi butonu
   Widget _buildDirectionsButton(Place p) {
     return SizedBox(
@@ -914,6 +1107,261 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Bir yorum kartı (kullanıcı adı + yıldızlar + tarih + metin)
+class _ReviewCard extends StatelessWidget {
+  final Review review;
+  const _ReviewCard({required this.review});
+
+  @override
+  Widget build(BuildContext context) {
+    final daysAgo = DateTime.now().difference(review.createdAt).inDays;
+    final timeText = daysAgo == 0
+        ? 'Bugün'
+        : daysAgo == 1
+            ? 'Dün'
+            : '$daysAgo gün önce';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: AppTheme.accentOrange,
+                child: Text(
+                  review.displayName.isNotEmpty
+                      ? review.displayName[0].toUpperCase()
+                      : '?',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      review.displayName,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primary,
+                      ),
+                    ),
+                    Text(
+                      timeText,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Row(
+                children: List.generate(5, (i) {
+                  return Icon(
+                    i < review.rating ? Icons.star : Icons.star_border,
+                    size: 14,
+                    color: const Color(0xFFEAB308),
+                  );
+                }),
+              ),
+            ],
+          ),
+          if (review.comment.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              review.comment,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppTheme.textPrimary,
+                height: 1.5,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Alt sayfa: yorum yaz/düzenle modali
+class _ReviewSheet extends StatefulWidget {
+  final String placeId;
+  final Review? existing;
+  const _ReviewSheet({required this.placeId, this.existing});
+
+  @override
+  State<_ReviewSheet> createState() => _ReviewSheetState();
+}
+
+class _ReviewSheetState extends State<_ReviewSheet> {
+  late int _rating;
+  late TextEditingController _commentCtrl;
+  bool _submitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _rating = widget.existing?.rating ?? 5;
+    _commentCtrl =
+        TextEditingController(text: widget.existing?.comment ?? '');
+  }
+
+  @override
+  void dispose() {
+    _commentCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_rating < 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(I18n.t('review.ratingRequired'))),
+      );
+      return;
+    }
+    setState(() => _submitting = true);
+    final review = await ReviewService.upsert(
+      placeId: widget.placeId,
+      rating: _rating,
+      comment: _commentCtrl.text,
+    );
+    if (!mounted) return;
+    Navigator.pop(context, review);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Drag handle
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              widget.existing == null
+                  ? I18n.t('review.writeReview')
+                  : I18n.t('review.editReview'),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primary,
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Yıldız seçici
+            Text(
+              I18n.t('review.yourRating'),
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppTheme.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: List.generate(5, (i) {
+                return IconButton(
+                  onPressed: () => setState(() => _rating = i + 1),
+                  icon: Icon(
+                    i < _rating ? Icons.star : Icons.star_border,
+                    size: 36,
+                    color: const Color(0xFFEAB308),
+                  ),
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                );
+              }),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              I18n.t('review.yourComment'),
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppTheme.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _commentCtrl,
+              maxLines: 4,
+              maxLength: 500,
+              decoration: InputDecoration(
+                hintText: I18n.t('review.commentHint'),
+                hintStyle: const TextStyle(fontSize: 13),
+                filled: true,
+                fillColor: const Color(0xFFF5F5F5),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _submitting ? null : _submit,
+                icon: _submitting
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.send, size: 16),
+                label: Text(I18n.t('review.submit')),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.accentOrange,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
