@@ -1,13 +1,15 @@
 {
-    "name": "travixx",
-    "short_name": "travixx",
+    "name": "Travixx — Türkiye'yi Keşfet",
+    "short_name": "Travixx",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F5F5F5",
+    "theme_color": "#1a2744",
+    "description": "Türkiye'nin 81 ilindeki tarihi mekanları QR ve GPS ile keşfeden akıllı turizm rehberi.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
+    "lang": "tr-TR",
+    "categories": ["travel", "lifestyle", "navigation"],
     "icons": [
         {
             "src": "icons/Icon-192.png",
