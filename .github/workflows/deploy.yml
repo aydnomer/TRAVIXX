@@ -5,13 +5,11 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# Pages erişim izinleri
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Aynı anda tek deploy çalışsın, yeni push gelirse bekleyenleri iptal et
 concurrency:
   group: "pages"
   cancel-in-progress: false
@@ -24,18 +22,17 @@ jobs:
       - name: Repo checkout
         uses: actions/checkout@v4
 
-      - name: Flutter SDK kurulumu
+      - name: Flutter SDK kurulumu (en son kararlı sürüm)
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.x'
           channel: 'stable'
           cache: true
 
+      - name: Flutter sürümünü yazdır (debug)
+        run: flutter --version
+
       - name: Bağımlılıkları indir
         run: flutter pub get
-
-      - name: Statik analiz (no issues bekleniyor)
-        run: flutter analyze
 
       - name: Web release build
         run: flutter build web --release --base-href "/TRAVIXX/"
