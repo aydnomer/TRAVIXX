@@ -1,3 +1,5 @@
+/// Mekan modeli — Supabase places tablosundan gelir.
+/// Eski kayıtlarda olmayan kolonlar için tüm yeni alanlar opsiyoneldir.
 class Place {
   final String id;
   final String cityId;
@@ -13,6 +15,27 @@ class Place {
   final bool isFeatured;
   final double rating;
 
+  // ─── Yeni opsiyonel alanlar ──────────────────────────────────
+  /// Adres (örn. "Sultanahmet Mh., Fatih/İstanbul")
+  final String? address;
+
+  /// Giriş ücreti açıklaması (örn. "50 TL", "100 TL / öğrenci 50 TL")
+  final String? admissionFee;
+
+  /// Açılış saatleri — JSON formatında ya da düz metin
+  /// Örn: "Pazartesi kapalı, Sal-Paz 09:00-17:00"
+  final String? openingHours;
+
+  /// Web sitesi URL'i
+  final String? website;
+
+  /// Telefon numarası (E.164 formatında ideal: "+90 212 ...")
+  final String? phone;
+
+  /// Foto galerisi — birden fazla görsel URL'i.
+  /// Boşsa veya null'sa emoji + gradient fallback gösterilir.
+  final List<String> images;
+
   Place({
     required this.id,
     required this.cityId,
@@ -27,6 +50,12 @@ class Place {
     required this.isFree,
     required this.isFeatured,
     required this.rating,
+    this.address,
+    this.admissionFee,
+    this.openingHours,
+    this.website,
+    this.phone,
+    this.images = const [],
   });
 
   factory Place.fromJson(Map<String, dynamic> json) {
@@ -44,6 +73,26 @@ class Place {
       isFree: json['is_free'] as bool? ?? false,
       isFeatured: json['is_featured'] as bool? ?? false,
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+      address: json['address'] as String?,
+      admissionFee: json['admission_fee'] as String?,
+      openingHours: json['opening_hours'] as String?,
+      website: json['website'] as String?,
+      phone: json['phone'] as String?,
+      images: _parseImages(json['images']),
     );
+  }
+
+  /// images Supabase'de JSONB array veya text[] olabilir.
+  /// İkisini de güvenle parse eder.
+  static List<String> _parseImages(dynamic raw) {
+    if (raw == null) return const [];
+    if (raw is List) {
+      return raw.map((e) => e.toString()).toList();
+    }
+    if (raw is String && raw.isNotEmpty) {
+      // Tek URL string olarak da kabul et
+      return [raw];
+    }
+    return const [];
   }
 }

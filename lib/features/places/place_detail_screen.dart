@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
@@ -22,6 +24,16 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   bool _loading = true;
   bool _isFavorite = false;
   bool _favLoading = false;
+
+  // Foto galerisi için PageController
+  final PageController _galleryCtrl = PageController();
+  int _galleryIdx = 0;
+
+  @override
+  void dispose() {
+    _galleryCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -138,6 +150,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     }
     final p = _place!;
     final hasMap = p.latitude != null && p.longitude != null;
+    final hasContact = (p.website?.isNotEmpty ?? false) ||
+        (p.phone?.isNotEmpty ?? false);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -157,11 +171,75 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                   _sectionTitle(I18n.t('place.description')),
                   const SizedBox(height: 10),
                   _buildDescriptionCard(p),
+                  // Açılış saatleri
+                  if ((p.openingHours?.isNotEmpty ?? false)) ...[
+                    const SizedBox(height: 20),
+                    _infoCard(
+                      icon: Icons.access_time,
+                      title: I18n.t('place.hours'),
+                      content: p.openingHours!,
+                    ),
+                  ],
+                  // Giriş ücreti (ücretsiz değilse ve detay varsa)
+                  if (!p.isFree && (p.admissionFee?.isNotEmpty ?? false)) ...[
+                    const SizedBox(height: 12),
+                    _infoCard(
+                      icon: Icons.confirmation_number_outlined,
+                      title: I18n.t('place.admission'),
+                      content: p.admissionFee!,
+                      accentColor: AppTheme.gold,
+                    ),
+                  ],
+                  // Adres
+                  if ((p.address?.isNotEmpty ?? false)) ...[
+                    const SizedBox(height: 12),
+                    _infoCard(
+                      icon: Icons.location_on_outlined,
+                      title: I18n.t('place.address'),
+                      content: p.address!,
+                      trailing: IconButton(
+                        icon: const Icon(Icons.copy, size: 18),
+                        onPressed: () async {
+                          await Clipboard.setData(
+                              ClipboardData(text: p.address!));
+                          if (mounted) {
+                            _showSnack(I18n.t('place.copyAddress'),
+                                isError: false);
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                  // İletişim
+                  if (hasContact) ...[
+                    const SizedBox(height: 20),
+                    _sectionTitle(I18n.t('place.contact')),
+                    const SizedBox(height: 10),
+                    if (p.website?.isNotEmpty ?? false)
+                      _linkRow(
+                        icon: Icons.language,
+                        label: I18n.t('place.website'),
+                        value: p.website!,
+                        onTap: () => _openUrl(p.website!),
+                      ),
+                    if ((p.website?.isNotEmpty ?? false) &&
+                        (p.phone?.isNotEmpty ?? false))
+                      const SizedBox(height: 8),
+                    if (p.phone?.isNotEmpty ?? false)
+                      _linkRow(
+                        icon: Icons.phone_outlined,
+                        label: I18n.t('place.phone'),
+                        value: p.phone!,
+                        onTap: () => _openUrl('tel:${p.phone}'),
+                      ),
+                  ],
                   if (hasMap) ...[
                     const SizedBox(height: 24),
                     _sectionTitle(I18n.t('place.location')),
                     const SizedBox(height: 10),
                     _buildMap(p),
+                    const SizedBox(height: 10),
+                    _buildDirectionsButton(p),
                   ],
                   const SizedBox(height: 24),
                   _buildActionButtons(),
@@ -175,16 +253,29 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     );
   }
 
+  // URL launcher — web sitesi, telefon, harita
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.parse(url);
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (_) {
+      // Sessizce geç
+    }
+  }
+
   Widget _buildHeroAppBar(Place p) {
+    final hasImages = p.images.isNotEmpty;
     return SliverAppBar(
-      expandedHeight: 240,
+      expandedHeight: 280,
       pinned: true,
       backgroundColor: AppTheme.primary,
       leading: IconButton(
         icon: Container(
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.25),
+            color: Colors.black.withValues(alpha: 0.35),
             shape: BoxShape.circle,
           ),
           child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
@@ -196,7 +287,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
           icon: Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.25),
+              color: Colors.black.withValues(alpha: 0.35),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -210,41 +301,240 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
         const SizedBox(width: 4),
       ],
       flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppTheme.primaryDark,
-                AppTheme.primary,
-                AppTheme.primaryLight,
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+        background: hasImages ? _buildGallery(p) : _buildEmojiHero(p),
+      ),
+    );
+  }
+
+  // Galeri: PageView ile birden fazla foto, alt dot indicator
+  Widget _buildGallery(Place p) {
+    return Stack(
+      children: [
+        PageView.builder(
+          controller: _galleryCtrl,
+          itemCount: p.images.length,
+          onPageChanged: (i) => setState(() => _galleryIdx = i),
+          itemBuilder: (context, i) {
+            return Image.network(
+              p.images[i],
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _buildEmojiHero(p),
+            );
+          },
+        ),
+        // Karanlık alt gradient (geri/favori ikonları okunaklı olsun)
+        Positioned.fill(
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.black.withValues(alpha: 0.55),
+                    Colors.transparent,
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.3),
+                  ],
+                  stops: const [0.0, 0.2, 0.7, 1.0],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
             ),
           ),
-          child: Stack(
-            children: [
-              // Sağ üstte yarı saydam büyük emoji
-              Positioned(
-                top: -10,
-                right: -10,
-                child: Opacity(
-                  opacity: 0.18,
-                  child: Text(
-                    p.emoji,
-                    style: const TextStyle(fontSize: 220),
+        ),
+        // Dot indicator (birden fazla foto varsa)
+        if (p.images.length > 1)
+          Positioned(
+            bottom: 12,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(p.images.length, (i) {
+                final active = i == _galleryIdx;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  width: active ? 22 : 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: active
+                        ? Colors.white
+                        : Colors.white.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                );
+              }),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildEmojiHero(Place p) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppTheme.primaryDark,
+            AppTheme.primary,
+            AppTheme.primaryLight,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            top: -10,
+            right: -10,
+            child: Opacity(
+              opacity: 0.18,
+              child: Text(p.emoji, style: const TextStyle(fontSize: 220)),
+            ),
+          ),
+          Center(
+            child: Text(p.emoji, style: const TextStyle(fontSize: 110)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Bilgi kartı (saat, ücret, adres ortak kartı)
+  Widget _infoCard({
+    required IconData icon,
+    required String title,
+    required String content,
+    Color accentColor = AppTheme.primary,
+    Widget? trailing,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.cardBorder),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: accentColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: accentColor, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textSecondary,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-              ),
-              // Ortada güzel duran emoji
-              Center(
-                child: Text(
-                  p.emoji,
-                  style: const TextStyle(fontSize: 110),
+                const SizedBox(height: 4),
+                Text(
+                  content,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppTheme.textPrimary,
+                    height: 1.4,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
+          if (trailing != null) trailing,
+        ],
+      ),
+    );
+  }
+
+  // Tıklanabilir link satırı (telefon, web)
+  Widget _linkRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.cardBorder),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: AppTheme.primary, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppTheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.open_in_new,
+                size: 16, color: AppTheme.textSecondary),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Google Maps'e yol tarifi butonu
+  Widget _buildDirectionsButton(Place p) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: () {
+          final url =
+              'https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}';
+          _openUrl(url);
+        },
+        icon: const Icon(Icons.directions, size: 18),
+        label: Text(
+          I18n.t('place.getDirections'),
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF22C55E),
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 0,
         ),
       ),
     );
