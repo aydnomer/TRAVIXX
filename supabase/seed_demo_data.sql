@@ -13,6 +13,13 @@
 
 
 -- ──────────────────────────────────────────────────────────────────
+-- 0. ÖN-KOŞUL: Eksik olabilecek kolonları ekle (idempotent)
+-- ──────────────────────────────────────────────────────────────────
+ALTER TABLE places ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT FALSE;
+ALTER TABLE places ADD COLUMN IF NOT EXISTS is_free BOOLEAN DEFAULT FALSE;
+
+
+-- ──────────────────────────────────────────────────────────────────
 -- 1. AYASOFYA — İstanbul
 -- ──────────────────────────────────────────────────────────────────
 UPDATE places SET
