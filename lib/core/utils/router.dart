@@ -12,7 +12,10 @@ import "../../features/favorites/favorites_screen.dart";
 import "../../features/profile/profile_screen.dart";
 import "../../features/collections/collection_detail_screen.dart";
 import "../../features/collections/collections_screen.dart";
+import "../../features/diary/diaries_screen.dart";
+import "../../features/diary/diary_detail_screen.dart";
 import "../../features/map/map_screen.dart";
+import "../../features/restaurants/restaurants_screen.dart";
 import "../../features/suggest/suggest_place_screen.dart";
 import "../../features/qr_scanner/qr_scanner_screen.dart";
 import "../../features/search/search_screen.dart";
@@ -118,6 +121,21 @@ final GoRouter appRouter = GoRouter(
         final id = state.pathParameters['id']!;
         return CollectionDetailScreen(collectionId: id);
       },
+    ),
+    GoRoute(
+      path: "/diaries",
+      builder: (context, state) => const DiariesScreen(),
+    ),
+    GoRoute(
+      path: "/diary/:id",
+      builder: (context, state) {
+        final id = state.pathParameters['id']!;
+        return DiaryDetailScreen(diaryId: id);
+      },
+    ),
+    GoRoute(
+      path: "/restaurants",
+      builder: (context, state) => const RestaurantsScreen(),
     ),
   ],
 );

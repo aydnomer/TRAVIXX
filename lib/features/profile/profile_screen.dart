@@ -438,6 +438,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const Divider(height: 1, indent: 56),
           _menuTile(
+            icon: Icons.book_outlined,
+            label: I18n.t('diary.menuLabel'),
+            onTap: () => context.push('/diaries'),
+          ),
+          const Divider(height: 1, indent: 56),
+          _menuTile(
             icon: Icons.add_location_alt_outlined,
             label: I18n.t('suggest.menuLabel'),
             onTap: () => context.push('/suggest'),
