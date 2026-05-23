@@ -94,6 +94,40 @@
       animation: spin 0.9s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* PWA install butonu — desteklenirse görünür */
+    #travixx-install-btn {
+      position: fixed;
+      bottom: 24px;
+      left: 24px;
+      z-index: 9000;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 18px;
+      border-radius: 28px;
+      background: linear-gradient(135deg, #1a2744 0%, #2d3e5e 100%);
+      color: white;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(26, 39, 68, 0.35);
+      transition: transform 0.15s ease;
+    }
+    #travixx-install-btn:hover { transform: translateY(-2px); }
+    #travixx-install-btn.show { display: inline-flex; }
+    #travixx-install-btn .pwa-icon {
+      width: 22px;
+      height: 22px;
+      background: #f97316;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+    }
   </style>
 </head>
 <body>
@@ -105,6 +139,12 @@
     <div class="loader-spinner"></div>
   </div>
 
+  <!-- PWA Install butonu — destekleniyorsa görünür -->
+  <button id="travixx-install-btn" type="button">
+    <span class="pwa-icon">📲</span>
+    <span id="travixx-install-label">Telefona Ekle</span>
+  </button>
+
   <script src="flutter_bootstrap.js" async></script>
   <script>
     // Flutter motoru başladığında yükleyiciyi gizle
@@ -114,6 +154,46 @@
         loader.classList.add('fade-out');
         setTimeout(() => loader.remove(), 600);
       }
+    });
+
+    // ─── PWA Install Prompt ────────────────────────────────────────
+    let deferredPrompt = null;
+    const installBtn = document.getElementById('travixx-install-btn');
+    const installLabel = document.getElementById('travixx-install-label');
+
+    // Tarayıcı dilini algılayıp etiketi çevir
+    const lang = (navigator.language || 'tr').slice(0, 2);
+    const labels = {
+      tr: 'Telefona Ekle',
+      en: 'Install App',
+      de: 'App installieren',
+      ar: 'تثبيت التطبيق',
+      fr: 'Installer',
+      ru: 'Установить'
+    };
+    installLabel.textContent = labels[lang] || labels.tr;
+
+    // Tarayıcı 'install edilebilir' deyince butonu göster
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault();
+      deferredPrompt = e;
+      // Flutter yüklendikten sonra göster (loader bitince)
+      setTimeout(() => installBtn.classList.add('show'), 2000);
+    });
+
+    // Butona tıklayınca native dialog'u tetikle
+    installBtn.addEventListener('click', async function () {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      installBtn.classList.remove('show');
+    });
+
+    // App yüklendikten sonra butonu kaldır
+    window.addEventListener('appinstalled', function () {
+      installBtn.classList.remove('show');
+      deferredPrompt = null;
     });
   </script>
 </body>
