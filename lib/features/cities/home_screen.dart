@@ -6,6 +6,9 @@ import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/database_service.dart';
 import '../../core/utils/gps_service.dart';
+import '../collections/collection_card.dart';
+import '../collections/collection_model.dart';
+import '../collections/collection_service.dart';
 import '../places/place_model.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -40,6 +43,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Position? _userPos;
   String _gpsStatus = '';
 
+  // Tematik koleksiyonlar
+  List<PlaceCollection> _collections = const [];
+
   @override
   void initState() {
     super.initState();
@@ -51,6 +57,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final posFuture = GpsService.getCurrentPosition();
     // Aynı anda mekanları çek
     final placesFuture = DatabaseService.getAllPlaces();
+    // Koleksiyonları da paralel çek (hata olursa boş kalır)
+    CollectionService.getCollections().then((list) {
+      if (mounted) setState(() => _collections = list);
+    });
 
     final pos = await posFuture;
     List<Place> raw;
@@ -119,6 +129,8 @@ class _HomeScreenState extends State<HomeScreen> {
       slivers: [
         _buildHeroSliver(user),
         SliverToBoxAdapter(child: _buildLocationBar()),
+        if (_collections.isNotEmpty)
+          SliverToBoxAdapter(child: _buildCollectionsStrip()),
         SliverToBoxAdapter(
           child: _buildSectionTitle(
             _userPos != null ? I18n.t('home.nearby') : I18n.t('home.popular'),
@@ -513,6 +525,71 @@ class _HomeScreenState extends State<HomeScreen> {
       await Supabase.instance.client.auth.signOut();
       if (mounted) context.go('/');
     }
+  }
+
+  // Tematik koleksiyon şeridi (yatay scroll)
+  Widget _buildCollectionsStrip() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 4),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      I18n.t('collections.title'),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primary,
+                      ),
+                    ),
+                    Text(
+                      I18n.t('collections.subtitle'),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              TextButton(
+                onPressed: () => context.push('/collections'),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: const Size(50, 30),
+                ),
+                child: Text(
+                  I18n.t('collections.seeAll'),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.accentOrange,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 140,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            itemCount: _collections.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemBuilder: (context, i) {
+              return CollectionCard(collection: _collections[i]);
+            },
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildLocationBar() {
