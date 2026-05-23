@@ -10,6 +10,7 @@ import "../../features/places/place_detail_screen.dart";
 import "../../features/ai_planner/ai_chat_screen.dart";
 import "../../features/favorites/favorites_screen.dart";
 import "../../features/profile/profile_screen.dart";
+import "../../features/map/map_screen.dart";
 import "../../features/suggest/suggest_place_screen.dart";
 import "../../features/qr_scanner/qr_scanner_screen.dart";
 import "../../features/search/search_screen.dart";
@@ -100,6 +101,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: "/suggest",
       builder: (context, state) => const SuggestPlaceScreen(),
+    ),
+    GoRoute(
+      path: "/map",
+      builder: (context, state) => const MapScreen(),
     ),
   ],
 );

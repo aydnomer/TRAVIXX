@@ -311,6 +311,10 @@ class I18n {
       'suggest.selectCity': 'Şehir seç',
       'suggest.loginRequired': 'Öneri için giriş yap',
       'suggest.menuLabel': 'Mekan Öner',
+      // Harita
+      'map.title': 'Türkiye Haritası',
+      'map.resetZoom': 'Türkiye geneline odakla',
+      'map.menuLabel': 'Harita',
 
       // Search
       'search.title': 'Mekan Ara',
@@ -584,6 +588,9 @@ class I18n {
       'suggest.selectCity': 'Select city',
       'suggest.loginRequired': 'Sign in to suggest',
       'suggest.menuLabel': 'Suggest Place',
+      'map.title': 'Türkiye Map',
+      'map.resetZoom': 'Reset to country view',
+      'map.menuLabel': 'Map',
 
       'search.title': 'Search Places',
       'search.hint': 'Place, city or category...',
@@ -853,6 +860,9 @@ class I18n {
       'suggest.selectCity': 'Stadt wählen',
       'suggest.loginRequired': 'Zum Vorschlagen bitte anmelden',
       'suggest.menuLabel': 'Ort vorschlagen',
+      'map.title': 'Türkei Karte',
+      'map.resetZoom': 'Landesweit zentrieren',
+      'map.menuLabel': 'Karte',
 
       'search.title': 'Orte suchen',
       'search.hint': 'Ort, Stadt oder Kategorie...',
@@ -1122,6 +1132,9 @@ class I18n {
       'suggest.selectCity': 'اختر المدينة',
       'suggest.loginRequired': 'سجّل الدخول للاقتراح',
       'suggest.menuLabel': 'اقترح مكاناً',
+      'map.title': 'خريطة تركيا',
+      'map.resetZoom': 'العرض الكامل',
+      'map.menuLabel': 'الخريطة',
 
       'search.title': 'ابحث عن مكان',
       'search.hint': 'مكان، مدينة أو فئة...',
@@ -1390,6 +1403,9 @@ class I18n {
       'suggest.selectCity': 'Choisir une ville',
       'suggest.loginRequired': 'Connectez-vous pour suggérer',
       'suggest.menuLabel': 'Suggérer un lieu',
+      'map.title': 'Carte de la Türkiye',
+      'map.resetZoom': 'Vue pays',
+      'map.menuLabel': 'Carte',
 
       'search.title': 'Rechercher un lieu',
       'search.hint': 'Lieu, ville ou catégorie...',
@@ -1661,6 +1677,9 @@ class I18n {
       'suggest.selectCity': 'Выберите город',
       'suggest.loginRequired': 'Войдите для предложения',
       'suggest.menuLabel': 'Предложить место',
+      'map.title': 'Карта Турции',
+      'map.resetZoom': 'Весь обзор',
+      'map.menuLabel': 'Карта',
 
       'search.title': 'Поиск мест',
       'search.hint': 'Место, город или категория...',

@@ -265,6 +265,11 @@ class _HomeScreenState extends State<HomeScreen> {
         'route': '/cities'
       },
       {
+        'icon': Icons.map_outlined,
+        'key': 'map.menuLabel',
+        'route': '/map'
+      },
+      {
         'icon': Icons.qr_code_scanner_outlined,
         'key': 'sidebar.qr',
         'route': '/qr-scan'
