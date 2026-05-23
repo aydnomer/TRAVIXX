@@ -443,6 +443,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onTap: () => context.push('/diaries'),
           ),
           const Divider(height: 1, indent: 56),
+          // Dark mode toggle
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: AppTheme.mode,
+            builder: (context, mode, _) {
+              final isDark = mode == ThemeMode.dark;
+              return ListTile(
+                leading: Icon(
+                  isDark ? Icons.dark_mode : Icons.light_mode,
+                  color: AppTheme.primary,
+                ),
+                title: Text(
+                  isDark ? I18n.t('theme.dark') : I18n.t('theme.light'),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                trailing: Switch(
+                  value: isDark,
+                  activeThumbColor: AppTheme.accentOrange,
+                  onChanged: (_) => AppTheme.toggleDark(),
+                ),
+                onTap: () => AppTheme.toggleDark(),
+              );
+            },
+          ),
+          const Divider(height: 1, indent: 56),
           _menuTile(
             icon: Icons.add_location_alt_outlined,
             label: I18n.t('suggest.menuLabel'),

@@ -15,6 +15,7 @@ import "../../features/collections/collections_screen.dart";
 import "../../features/diary/diaries_screen.dart";
 import "../../features/diary/diary_detail_screen.dart";
 import "../../features/map/map_screen.dart";
+import "../../features/onboarding/onboarding_screen.dart";
 import "../../features/restaurants/restaurants_screen.dart";
 import "../../features/suggest/suggest_place_screen.dart";
 import "../../features/qr_scanner/qr_scanner_screen.dart";
@@ -136,6 +137,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: "/restaurants",
       builder: (context, state) => const RestaurantsScreen(),
+    ),
+    GoRoute(
+      path: "/onboarding",
+      builder: (context, state) => const OnboardingScreen(),
     ),
   ],
 );
