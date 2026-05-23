@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/database_service.dart';
+import '../../core/utils/overpass_service.dart';
 import '../../core/utils/share_service.dart';
 import '../../core/utils/weather_service.dart';
 import '../gamification/badge_service.dart';
@@ -42,6 +43,11 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   Review? _myReview;
   bool _reviewsLoading = true;
 
+  // Yakındaki yemek mekanları
+  List<NearbyVenue> _nearbyFood = const [];
+  bool _foodLoading = false;
+  bool _foodAttempted = false;
+
   @override
   void dispose() {
     _galleryCtrl.dispose();
@@ -66,12 +72,32 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
         _checkFavorite();
         _loadWeather(p);
         _loadReviews(p.id);
+        _loadNearbyFood(p);
         // Ziyaret kaydı (gamification için, 24 saat deduplikasyon var)
         BadgeService.recordVisit(p.id);
       }
     } catch (e) {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _loadNearbyFood(Place p) async {
+    if (p.latitude == null || p.longitude == null) return;
+    setState(() {
+      _foodLoading = true;
+      _foodAttempted = true;
+    });
+    final venues = await OverpassService.nearbyFood(
+      lat: p.latitude!,
+      lng: p.longitude!,
+      radiusMeters: 1500,
+      limit: 12,
+    );
+    if (!mounted) return;
+    setState(() {
+      _nearbyFood = venues;
+      _foodLoading = false;
+    });
   }
 
   Future<void> _loadReviews(String placeId) async {
@@ -353,6 +379,12 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                   ],
                   const SizedBox(height: 24),
                   _buildActionButtons(),
+                  if (_foodAttempted) ...[
+                    const SizedBox(height: 28),
+                    _sectionTitle(I18n.t('food.title')),
+                    const SizedBox(height: 10),
+                    _buildNearbyFoodSection(),
+                  ],
                   const SizedBox(height: 28),
                   _sectionTitle(I18n.t('review.title')),
                   const SizedBox(height: 10),
@@ -868,6 +900,69 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     );
   }
 
+  // Yakındaki yemek mekanları bölümü
+  Widget _buildNearbyFoodSection() {
+    if (_foodLoading) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.cardBorder),
+        ),
+        child: Row(
+          children: [
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              I18n.t('food.loading'),
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    if (_nearbyFood.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.cardBorder),
+        ),
+        child: Center(
+          child: Text(
+            I18n.t('food.empty'),
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppTheme.textSecondary,
+            ),
+          ),
+        ),
+      );
+    }
+    return SizedBox(
+      height: 110,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: _nearbyFood.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        itemBuilder: (context, i) {
+          final v = _nearbyFood[i];
+          return _FoodCard(venue: v, onTap: () => _openUrl(v.mapsUrl));
+        },
+      ),
+    );
+  }
+
   // Yorumlar bölümü
   Widget _buildReviewsSection(Place p) {
     return Column(
@@ -1278,6 +1373,84 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
 }
 
 /// Bir yorum kartı (kullanıcı adı + yıldızlar + tarih + metin)
+/// Yakındaki yemek mekanı kartı (yatay scroll içinde)
+class _FoodCard extends StatelessWidget {
+  final NearbyVenue venue;
+  final VoidCallback onTap;
+  const _FoodCard({required this.venue, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: 140,
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppTheme.cardBorder),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accentOrange.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      venue.emoji,
+                      style: const TextStyle(fontSize: 18),
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    venue.distanceText,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppTheme.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                venue.name,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primary,
+                  height: 1.2,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                venue.cuisine ?? venue.typeLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ReviewCard extends StatelessWidget {
   final Review review;
   const _ReviewCard({required this.review});

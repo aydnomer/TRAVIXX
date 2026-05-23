@@ -315,6 +315,10 @@ class I18n {
       'map.title': 'Türkiye Haritası',
       'map.resetZoom': 'Türkiye geneline odakla',
       'map.menuLabel': 'Harita',
+      // Yakındaki yemek mekanları
+      'food.title': 'Yakındaki Yemek',
+      'food.empty': 'Yakında kayıtlı yemek mekanı bulunamadı.',
+      'food.loading': 'Çevre taranıyor...',
 
       // Search
       'search.title': 'Mekan Ara',
@@ -591,6 +595,9 @@ class I18n {
       'map.title': 'Türkiye Map',
       'map.resetZoom': 'Reset to country view',
       'map.menuLabel': 'Map',
+      'food.title': 'Nearby Food',
+      'food.empty': 'No food venues found nearby.',
+      'food.loading': 'Scanning area...',
 
       'search.title': 'Search Places',
       'search.hint': 'Place, city or category...',
@@ -863,6 +870,9 @@ class I18n {
       'map.title': 'Türkei Karte',
       'map.resetZoom': 'Landesweit zentrieren',
       'map.menuLabel': 'Karte',
+      'food.title': 'Essen in der Nähe',
+      'food.empty': 'Keine Gastronomie in der Nähe gefunden.',
+      'food.loading': 'Umgebung wird gescannt...',
 
       'search.title': 'Orte suchen',
       'search.hint': 'Ort, Stadt oder Kategorie...',
@@ -1135,6 +1145,9 @@ class I18n {
       'map.title': 'خريطة تركيا',
       'map.resetZoom': 'العرض الكامل',
       'map.menuLabel': 'الخريطة',
+      'food.title': 'الطعام القريب',
+      'food.empty': 'لا توجد أماكن طعام قريبة.',
+      'food.loading': 'جارٍ المسح...',
 
       'search.title': 'ابحث عن مكان',
       'search.hint': 'مكان، مدينة أو فئة...',
@@ -1406,6 +1419,9 @@ class I18n {
       'map.title': 'Carte de la Türkiye',
       'map.resetZoom': 'Vue pays',
       'map.menuLabel': 'Carte',
+      'food.title': 'À manger à proximité',
+      'food.empty': 'Aucun lieu de restauration à proximité.',
+      'food.loading': 'Recherche...',
 
       'search.title': 'Rechercher un lieu',
       'search.hint': 'Lieu, ville ou catégorie...',
@@ -1680,6 +1696,9 @@ class I18n {
       'map.title': 'Карта Турции',
       'map.resetZoom': 'Весь обзор',
       'map.menuLabel': 'Карта',
+      'food.title': 'Еда поблизости',
+      'food.empty': 'Поблизости не найдено заведений.',
+      'food.loading': 'Поиск...',
 
       'search.title': 'Поиск мест',
       'search.hint': 'Место, город или категория...',
