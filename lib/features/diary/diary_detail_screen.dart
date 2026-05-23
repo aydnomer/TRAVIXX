@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/database_service.dart';
+import '../../core/utils/storage_service.dart';
 import '../places/place_model.dart';
 import 'diary_models.dart';
 import 'diary_service.dart';
@@ -377,6 +378,25 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
     if (picked != null) setState(() => _selectedPlace = picked);
   }
 
+  bool _uploading = false;
+
+  Future<void> _uploadPhoto() async {
+    if (_uploading) return;
+    setState(() => _uploading = true);
+    final url = await StorageService.pickAndUploadImage(folder: 'diary');
+    if (!mounted) return;
+    setState(() => _uploading = false);
+    if (url != null) {
+      _photoUrlCtrl.text = url;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('📷 Foto yüklendi'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
   Future<void> _submit() async {
     if (_noteCtrl.text.trim().isEmpty) return;
     setState(() => _submitting = true);
@@ -510,16 +530,48 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
                 ),
               ),
               const SizedBox(height: 8),
-              TextField(
-                controller: _photoUrlCtrl,
-                decoration: InputDecoration(
-                  labelText: I18n.t('diary.photoUrl'),
-                  hintText: 'https://...',
-                  prefixIcon: const Icon(Icons.image, size: 18),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _photoUrlCtrl,
+                      decoration: InputDecoration(
+                        labelText: I18n.t('diary.photoUrl'),
+                        hintText: 'https://...',
+                        prefixIcon: const Icon(Icons.image, size: 18),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  // Galeriden seç + yükle
+                  Material(
+                    color: AppTheme.accentOrange,
+                    borderRadius: BorderRadius.circular(12),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: _uploadPhoto,
+                      child: Container(
+                        width: 56,
+                        height: 56,
+                        alignment: Alignment.center,
+                        child: _uploading
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.upload_outlined,
+                                color: Colors.white, size: 22),
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
               SizedBox(

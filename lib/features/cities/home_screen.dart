@@ -9,6 +9,7 @@ import '../../core/utils/gps_service.dart';
 import '../collections/collection_card.dart';
 import '../collections/collection_model.dart';
 import '../collections/collection_service.dart';
+import '../notifications/notification_bell.dart';
 import '../places/place_model.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -440,6 +441,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       actions: [
+        const NotificationBell(),
         IconButton(
           icon: const Icon(Icons.logout, color: Colors.white),
           tooltip: I18n.t('logout.tooltip'),

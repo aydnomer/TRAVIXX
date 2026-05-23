@@ -375,6 +375,10 @@ class I18n {
       'onboarding.p3.desc': 'Mekandaki QR kodu okut, tarihçesini öğren.',
       'onboarding.p4.title': '6 Dilde Hizmet',
       'onboarding.p4.desc': 'TR, EN, DE, AR, FR, RU dillerinde dolaş.',
+      // Bildirimler
+      'notifications.title': 'Bildirimler',
+      'notifications.empty': 'Henüz bildirim yok',
+      'notifications.markAllRead': 'Hepsini okundu işaretle',
 
       // Search
       'search.title': 'Mekan Ara',
@@ -706,6 +710,9 @@ class I18n {
       'onboarding.p3.desc': 'Scan the QR at any site and learn its story.',
       'onboarding.p4.title': '6 Languages',
       'onboarding.p4.desc': 'Travel in TR, EN, DE, AR, FR, RU.',
+      'notifications.title': 'Notifications',
+      'notifications.empty': 'No notifications yet',
+      'notifications.markAllRead': 'Mark all as read',
 
       'search.title': 'Search Places',
       'search.hint': 'Place, city or category...',
