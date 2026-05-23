@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/database_service.dart';
+import '../../core/utils/share_service.dart';
 import '../../core/utils/weather_service.dart';
 import '../gamification/badge_service.dart';
 import '../reviews/review_service.dart';
@@ -366,6 +367,157 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     );
   }
 
+  // Paylaşım alt sayfası
+  void _openShareSheet(Place p) {
+    final url = 'https://aydnomer.github.io/TRAVIXX/#/place/${p.id}';
+    final text = '${p.emoji} ${p.name} — Travixx ile keşfet!';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              I18n.t('share.title'),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              p.name,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Sosyal medya satırı
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _shareBtn(
+                  icon: '💬',
+                  label: I18n.t('share.whatsapp'),
+                  color: const Color(0xFF25D366),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    ShareService.shareToWhatsApp('$text $url');
+                  },
+                ),
+                _shareBtn(
+                  icon: '🐦',
+                  label: I18n.t('share.twitter'),
+                  color: const Color(0xFF1DA1F2),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    ShareService.shareToTwitter(text, url: url);
+                  },
+                ),
+                _shareBtn(
+                  icon: '👍',
+                  label: I18n.t('share.facebook'),
+                  color: const Color(0xFF1877F2),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    ShareService.shareToFacebook(url);
+                  },
+                ),
+                _shareBtn(
+                  icon: '📧',
+                  label: I18n.t('share.email'),
+                  color: AppTheme.textSecondary,
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    ShareService.shareViaEmail(
+                      subject: text,
+                      body: '$text\n\n$url',
+                    );
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            // Link kopyala
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  final ok = await ShareService.copyToClipboard(url);
+                  if (!ctx.mounted) return;
+                  Navigator.pop(ctx);
+                  if (ok && mounted) {
+                    _showSnack(I18n.t('share.linkCopied'), isError: false);
+                  }
+                },
+                icon: const Icon(Icons.link, size: 18),
+                label: Text(I18n.t('share.copyLink')),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.primary,
+                  side: const BorderSide(color: AppTheme.primary),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _shareBtn({
+    required String icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Column(
+      children: [
+        Material(
+          color: color.withValues(alpha: 0.1),
+          shape: const CircleBorder(),
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: onTap,
+            child: Container(
+              width: 56,
+              height: 56,
+              alignment: Alignment.center,
+              child: Text(icon, style: const TextStyle(fontSize: 26)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
+        ),
+      ],
+    );
+  }
+
   // URL launcher — web sitesi, telefon, harita
   Future<void> _openUrl(String url) async {
     final uri = Uri.parse(url);
@@ -396,6 +548,19 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
         onPressed: () => context.pop(),
       ),
       actions: [
+        IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.35),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.share_outlined,
+                color: Colors.white, size: 20),
+          ),
+          onPressed: () => _openShareSheet(p),
+          tooltip: I18n.t('share.button'),
+        ),
         IconButton(
           icon: Container(
             padding: const EdgeInsets.all(6),
