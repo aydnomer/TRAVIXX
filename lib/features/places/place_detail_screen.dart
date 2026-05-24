@@ -12,6 +12,7 @@ import '../../core/utils/database_service.dart';
 import '../../core/utils/overpass_service.dart';
 import '../../core/utils/share_service.dart';
 import '../../core/utils/weather_service.dart';
+import '../../core/utils/wikipedia_service.dart';
 import '../gamification/badge_service.dart';
 import '../reviews/review_service.dart';
 import 'place_model.dart';
@@ -48,6 +49,9 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   bool _foodLoading = false;
   bool _foodAttempted = false;
 
+  // Wikipedia fallback foto (DB'de yoksa)
+  String? _wikiPhoto;
+
   @override
   void dispose() {
     _galleryCtrl.dispose();
@@ -73,11 +77,31 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
         _loadWeather(p);
         _loadReviews(p.id);
         _loadNearbyFood(p);
+        _loadWikiPhotoIfNeeded(p);
         // Ziyaret kaydı (gamification için, 24 saat deduplikasyon var)
         BadgeService.recordVisit(p.id);
       }
     } catch (e) {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  // DB'de foto yoksa Wikipedia'dan çekmeyi dene
+  Future<void> _loadWikiPhotoIfNeeded(Place p) async {
+    if (p.images.isNotEmpty) return; // zaten foto var
+    final url = await WikipediaService.fetchThumbnail(
+      name: p.name,
+      nameEn: p.nameEn.isNotEmpty ? p.nameEn : null,
+    );
+    if (!mounted) return;
+    if (url != null) {
+      setState(() => _wikiPhoto = url);
+      // Best-effort: Supabase'e geri yaz (sessizce, hata olursa atla)
+      Supabase.instance.client
+          .from('places')
+          .update({'images': [url]})
+          .eq('id', p.id)
+          .then((_) {}, onError: (_) {});
     }
   }
 
@@ -562,8 +586,16 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     }
   }
 
+  /// Place'in görsellerini + Wikipedia fallback'i birlikte döner
+  List<String> _effectiveImages(Place p) {
+    if (p.images.isNotEmpty) return p.images;
+    if (_wikiPhoto != null) return [_wikiPhoto!];
+    return const [];
+  }
+
   Widget _buildHeroAppBar(Place p) {
-    final hasImages = p.images.isNotEmpty;
+    final images = _effectiveImages(p);
+    final hasImages = images.isNotEmpty;
     return SliverAppBar(
       expandedHeight: 280,
       pinned: true,
@@ -611,22 +643,24 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
         const SizedBox(width: 4),
       ],
       flexibleSpace: FlexibleSpaceBar(
-        background: hasImages ? _buildGallery(p) : _buildEmojiHero(p),
+        background: hasImages
+            ? _buildGallery(p, images)
+            : _buildEmojiHero(p),
       ),
     );
   }
 
   // Galeri: PageView ile birden fazla foto, alt dot indicator
-  Widget _buildGallery(Place p) {
+  Widget _buildGallery(Place p, List<String> images) {
     return Stack(
       children: [
         PageView.builder(
           controller: _galleryCtrl,
-          itemCount: p.images.length,
+          itemCount: images.length,
           onPageChanged: (i) => setState(() => _galleryIdx = i),
           itemBuilder: (context, i) {
             return Image.network(
-              p.images[i],
+              images[i],
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => _buildEmojiHero(p),
             );
@@ -653,14 +687,14 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
           ),
         ),
         // Dot indicator (birden fazla foto varsa)
-        if (p.images.length > 1)
+        if (images.length > 1)
           Positioned(
             bottom: 12,
             left: 0,
             right: 0,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(p.images.length, (i) {
+              children: List.generate(images.length, (i) {
                 final active = i == _galleryIdx;
                 return AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
