@@ -290,6 +290,11 @@ class _HomeScreenState extends State<HomeScreen> {
         'route': '/restaurants'
       },
       {
+        'icon': Icons.mood,
+        'key': 'mood.title',
+        'route': '/mood'
+      },
+      {
         'icon': Icons.qr_code_scanner_outlined,
         'key': 'sidebar.qr',
         'route': '/qr-scan'
