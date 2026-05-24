@@ -22,6 +22,8 @@ import "../../features/onboarding/onboarding_screen.dart";
 import "../../features/restaurants/restaurants_screen.dart";
 import "../../features/stats/stats_screen.dart";
 import "../../features/top_rated/top_rated_screen.dart";
+import "../../features/trip_tools/budget_screen.dart";
+import "../../features/trip_tools/packing_screen.dart";
 import "../../features/wrapped/wrapped_screen.dart";
 import "../../features/suggest/suggest_place_screen.dart";
 import "../../features/qr_scanner/qr_scanner_screen.dart";
@@ -174,6 +176,14 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: "/wrapped",
       builder: (context, state) => const WrappedScreen(),
+    ),
+    GoRoute(
+      path: "/budget",
+      builder: (context, state) => const BudgetScreen(),
+    ),
+    GoRoute(
+      path: "/packing",
+      builder: (context, state) => const PackingScreen(),
     ),
   ],
 );

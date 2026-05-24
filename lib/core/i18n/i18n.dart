@@ -440,6 +440,13 @@ class I18n {
       'topRated.title': 'En Yüksek Puanlı Mekanlar',
       // Son görüntülenenler
       'recent.title': 'Son Görüntülenenler',
+      // Bütçe + Eşya
+      'budget.title': 'Gezi Bütçesi',
+      'budget.days': 'Gün sayısı',
+      'budget.estimatedTotal': 'TAHMİNİ TOPLAM',
+      'budget.menuLabel': 'Bütçe Planla',
+      'packing.title': 'Eşya Listesi',
+      'packing.menuLabel': 'Eşya Listesi',
 
       // Search
       'search.title': 'Mekan Ara',
@@ -826,6 +833,12 @@ class I18n {
       'wrapped.thankYou.subtitle': 'Ready for new adventures?',
       'topRated.title': 'Top Rated Places',
       'recent.title': 'Recently Viewed',
+      'budget.title': 'Trip Budget',
+      'budget.days': 'Days',
+      'budget.estimatedTotal': 'ESTIMATED TOTAL',
+      'budget.menuLabel': 'Budget Planner',
+      'packing.title': 'Packing List',
+      'packing.menuLabel': 'Packing List',
 
       'search.title': 'Search Places',
       'search.hint': 'Place, city or category...',

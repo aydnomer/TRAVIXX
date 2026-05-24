@@ -450,6 +450,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const Divider(height: 1, indent: 56),
           _menuTile(
+            icon: Icons.account_balance_wallet_outlined,
+            label: I18n.t('budget.menuLabel'),
+            onTap: () => context.push('/budget'),
+          ),
+          const Divider(height: 1, indent: 56),
+          _menuTile(
+            icon: Icons.luggage_outlined,
+            label: I18n.t('packing.menuLabel'),
+            onTap: () => context.push('/packing'),
+          ),
+          const Divider(height: 1, indent: 56),
+          _menuTile(
+            icon: Icons.workspace_premium_outlined,
+            label: I18n.t('topRated.title'),
+            onTap: () => context.push('/top-rated'),
+          ),
+          const Divider(height: 1, indent: 56),
+          _menuTile(
             icon: Icons.book_outlined,
             label: I18n.t('diary.menuLabel'),
             onTap: () => context.push('/diaries'),

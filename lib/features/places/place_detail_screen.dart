@@ -929,44 +929,87 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFBAE6FD)),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Text(w.emoji, style: const TextStyle(fontSize: 28)),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${w.temperatureC.toStringAsFixed(0)}°C',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primary,
-                ),
-              ),
-              Text(
-                I18n.t('place.weatherNow'),
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: AppTheme.textSecondary,
-                ),
-              ),
-            ],
-          ),
-          const Spacer(),
           Row(
             children: [
-              const Icon(Icons.air, size: 14, color: AppTheme.textSecondary),
-              const SizedBox(width: 4),
-              Text(
-                '${w.windKmh.toStringAsFixed(0)} km/h',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.textSecondary,
-                ),
+              Text(w.emoji, style: const TextStyle(fontSize: 28)),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${w.temperatureC.toStringAsFixed(0)}°C',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primary,
+                    ),
+                  ),
+                  Text(
+                    I18n.t('place.weatherNow'),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              Row(
+                children: [
+                  const Icon(Icons.air,
+                      size: 14, color: AppTheme.textSecondary),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${w.windKmh.toStringAsFixed(0)} km/h',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
+          // 7 günlük forecast şeridi
+          if (w.forecast.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const Divider(height: 1),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 60,
+              child: Row(
+                children: w.forecast.asMap().entries.map((e) {
+                  final d = e.value;
+                  return Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          e.key == 0 ? 'Bugün' : d.dayLabel(e.key),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: AppTheme.textSecondary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(d.emoji, style: const TextStyle(fontSize: 18)),
+                        Text(
+                          '${d.maxC.toStringAsFixed(0)}°',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
         ],
       ),
     );
