@@ -22,20 +22,26 @@ jobs:
       - name: Repo checkout
         uses: actions/checkout@v4
 
-      - name: Flutter SDK kurulumu (en son kararlı sürüm)
+      - name: Flutter SDK kurulumu (stable)
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           cache: true
 
-      - name: Flutter sürümünü yazdır (debug)
-        run: flutter --version
+      - name: Flutter sürümü kontrol
+        run: |
+          flutter --version
+          dart --version
 
       - name: Bağımlılıkları indir
         run: flutter pub get
 
+      - name: Statik analiz (continue on error)
+        run: flutter analyze --no-fatal-warnings --no-fatal-infos
+        continue-on-error: true
+
       - name: Web release build
-        run: flutter build web --release --base-href "/TRAVIXX/"
+        run: flutter build web --release --base-href "/TRAVIXX/" --no-tree-shake-icons
 
       - name: Pages artifact yükle
         uses: actions/upload-pages-artifact@v3
