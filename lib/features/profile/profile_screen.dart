@@ -438,6 +438,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const Divider(height: 1, indent: 56),
           _menuTile(
+            icon: Icons.bar_chart,
+            label: I18n.t('stats.title'),
+            onTap: () => context.push('/stats'),
+          ),
+          const Divider(height: 1, indent: 56),
+          _menuTile(
             icon: Icons.timeline,
             label: I18n.t('activity.title'),
             onTap: () => context.push('/activity'),

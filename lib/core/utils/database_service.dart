@@ -59,6 +59,40 @@ class DatabaseService {
 
   /// Kullanıcının favori mekanlarını döner (places ile join).
   /// userId null veya boş ise boş liste döner (giriş yapılmamış demek).
+  /// Birden çok id ile mekan listesi getir (order verilen liste sırası)
+  static Future<List<Place>> getPlacesByIds(List<String> ids) async {
+    if (ids.isEmpty) return const [];
+    try {
+      final response =
+          await _supabase.from('places').select().inFilter('id', ids);
+      final list = (response as List)
+          .map((r) => Place.fromJson(r as Map<String, dynamic>))
+          .toList();
+      // İstenen sıraya göre yeniden düzenle
+      final byId = {for (final p in list) p.id: p};
+      return ids.map((id) => byId[id]).whereType<Place>().toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  /// En yüksek puanlı mekanlar (top rated)
+  static Future<List<Place>> getTopRated({int limit = 50, double minRating = 4.5}) async {
+    try {
+      final response = await _supabase
+          .from('places')
+          .select()
+          .gte('rating', minRating)
+          .order('rating', ascending: false)
+          .limit(limit);
+      return (response as List)
+          .map((r) => Place.fromJson(r as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
   static Future<List<Place>> getFavorites(String? userId) async {
     if (userId == null || userId.isEmpty) return const [];
     final response = await _supabase

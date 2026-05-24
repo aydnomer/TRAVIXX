@@ -11,6 +11,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/database_service.dart';
 import '../../core/utils/overpass_service.dart';
 import '../../core/utils/currency_service.dart';
+import '../../core/utils/recent_places.dart';
 import '../../core/utils/share_service.dart';
 import '../../core/utils/tts_service.dart';
 import '../../core/utils/weather_service.dart';
@@ -89,6 +90,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
         _convertCurrency(p);
         // Ziyaret kaydı (gamification için, 24 saat deduplikasyon var)
         BadgeService.recordVisit(p.id);
+        // Son görüntülenenler listesine ekle
+        RecentPlaces.add(p.id);
       }
     } catch (e) {
       if (mounted) setState(() => _loading = false);

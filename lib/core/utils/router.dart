@@ -20,6 +20,9 @@ import "../../features/mood/mood_screen.dart";
 import "../../features/notifications/notifications_screen.dart";
 import "../../features/onboarding/onboarding_screen.dart";
 import "../../features/restaurants/restaurants_screen.dart";
+import "../../features/stats/stats_screen.dart";
+import "../../features/top_rated/top_rated_screen.dart";
+import "../../features/wrapped/wrapped_screen.dart";
 import "../../features/suggest/suggest_place_screen.dart";
 import "../../features/qr_scanner/qr_scanner_screen.dart";
 import "../../features/search/search_screen.dart";
@@ -159,6 +162,18 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: "/activity",
       builder: (context, state) => const ActivityScreen(),
+    ),
+    GoRoute(
+      path: "/top-rated",
+      builder: (context, state) => const TopRatedScreen(),
+    ),
+    GoRoute(
+      path: "/stats",
+      builder: (context, state) => const StatsScreen(),
+    ),
+    GoRoute(
+      path: "/wrapped",
+      builder: (context, state) => const WrappedScreen(),
     ),
   ],
 );
