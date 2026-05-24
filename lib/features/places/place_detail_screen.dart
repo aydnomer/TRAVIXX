@@ -10,7 +10,9 @@ import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/database_service.dart';
 import '../../core/utils/overpass_service.dart';
+import '../../core/utils/currency_service.dart';
 import '../../core/utils/share_service.dart';
+import '../../core/utils/tts_service.dart';
 import '../../core/utils/weather_service.dart';
 import '../../core/utils/wikipedia_service.dart';
 import '../gamification/badge_service.dart';
@@ -52,6 +54,12 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   // Wikipedia fallback foto (DB'de yoksa)
   String? _wikiPhoto;
 
+  // TTS speaking state
+  bool _isSpeaking = false;
+
+  // Currency conversion (admission_fee için)
+  String? _convertedFee;
+
   @override
   void dispose() {
     _galleryCtrl.dispose();
@@ -78,11 +86,38 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
         _loadReviews(p.id);
         _loadNearbyFood(p);
         _loadWikiPhotoIfNeeded(p);
+        _convertCurrency(p);
         // Ziyaret kaydı (gamification için, 24 saat deduplikasyon var)
         BadgeService.recordVisit(p.id);
       }
     } catch (e) {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _convertCurrency(Place p) async {
+    if (p.admissionFee == null || p.admissionFee!.isEmpty) return;
+    final converted = await CurrencyService.formatWithConversion(p.admissionFee!);
+    if (!mounted) return;
+    if (converted != p.admissionFee) {
+      setState(() => _convertedFee = converted);
+    }
+  }
+
+  void _toggleSpeak(Place p) {
+    if (_isSpeaking) {
+      TtsService.stop();
+      setState(() => _isSpeaking = false);
+    } else {
+      final text = '${p.name}. ${p.description}';
+      TtsService.speak(text, langCode: I18n.language.value);
+      setState(() => _isSpeaking = true);
+      // 30 saniye sonra otomatik state reset (uzun metin biterse)
+      Future.delayed(const Duration(seconds: 60), () {
+        if (mounted && !TtsService.isSpeaking()) {
+          setState(() => _isSpeaking = false);
+        }
+      });
     }
   }
 
@@ -346,7 +381,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                     _infoCard(
                       icon: Icons.confirmation_number_outlined,
                       title: I18n.t('place.admission'),
-                      content: p.admissionFee!,
+                      content: _convertedFee ?? p.admissionFee!,
                       accentColor: AppTheme.gold,
                     ),
                   ],
@@ -1157,14 +1192,40 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          p.name,
-          style: const TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.primary,
-            height: 1.2,
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                p.name,
+                style: const TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primary,
+                  height: 1.2,
+                ),
+              ),
+            ),
+            // TTS Sesli Dinle butonu
+            Material(
+              color: _isSpeaking
+                  ? Colors.red.withValues(alpha: 0.15)
+                  : AppTheme.accentOrange.withValues(alpha: 0.15),
+              shape: const CircleBorder(),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () => _toggleSpeak(p),
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.center,
+                  child: Icon(
+                    _isSpeaking ? Icons.stop : Icons.volume_up,
+                    color: _isSpeaking ? Colors.red : AppTheme.accentOrange,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
         if (p.nameEn.isNotEmpty && p.nameEn != p.name) ...[
           const SizedBox(height: 4),

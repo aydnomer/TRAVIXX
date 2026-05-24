@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/daily_challenge.dart';
 import '../../core/utils/database_service.dart';
 import '../../core/utils/gps_service.dart';
 import '../collections/collection_card.dart';
@@ -130,6 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
       slivers: [
         _buildHeroSliver(user),
         SliverToBoxAdapter(child: _buildLocationBar()),
+        SliverToBoxAdapter(child: _buildDailyChallenge()),
         if (_collections.isNotEmpty)
           SliverToBoxAdapter(child: _buildCollectionsStrip()),
         SliverToBoxAdapter(
@@ -532,6 +534,93 @@ class _HomeScreenState extends State<HomeScreen> {
       await Supabase.instance.client.auth.signOut();
       if (mounted) context.go('/');
     }
+  }
+
+  // Günün görevi kartı
+  Widget _buildDailyChallenge() {
+    final c = DailyChallenge.today();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () {
+            if (c.category.isNotEmpty) {
+              context.push('/cities');
+            } else {
+              context.push('/cities');
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [AppTheme.accentOrange, Color(0xFFEAB308)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.accentOrange.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Text(c.emoji, style: const TextStyle(fontSize: 30)),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        I18n.t('challenge.title'),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        I18n.t(c.titleKey),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        I18n.t(c.descKey),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withValues(alpha: 0.9),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.arrow_forward, color: Colors.white, size: 22),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   // Tematik koleksiyon şeridi (yatay scroll)
