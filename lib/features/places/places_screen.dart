@@ -1,6 +1,7 @@
 ﻿import "package:flutter/material.dart";
 import "package:go_router/go_router.dart";
 import "../../core/utils/database_service.dart";
+import "../../shared/widgets/skeleton.dart";
 import "place_model.dart";
 
 class PlacesScreen extends StatefulWidget {
@@ -44,7 +45,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
         foregroundColor: Colors.white,
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? Skeleton.list(count: 8)
           : _places.isEmpty
               ? const Center(child: Text("Bu sehirde mekan bulunamadi"))
               : ListView.builder(

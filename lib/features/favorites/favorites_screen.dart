@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
+import '../../shared/widgets/skeleton.dart';
 import '../../core/utils/database_service.dart';
 import '../places/place_model.dart';
 
@@ -57,7 +58,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       body: user == null
           ? _buildLoginRequired()
           : _loading
-              ? const Center(child: CircularProgressIndicator())
+              ? Skeleton.list(count: 6)
               : _favorites.isEmpty
                   ? _buildEmpty()
                   : RefreshIndicator(

@@ -5,6 +5,7 @@ import 'core/constants/supabase_constants.dart';
 import 'core/i18n/i18n.dart';
 import 'core/theme/app_theme.dart';
 import 'core/utils/router.dart';
+import 'features/compare/compare_service.dart';
 import 'features/onboarding/onboarding_screen.dart';
 
 void main() async {
@@ -12,6 +13,8 @@ void main() async {
   await initializeDateFormatting('tr_TR', null);
   await I18n.load();
   await AppTheme.load();
+  await CompareService.load();
+
   await Supabase.initialize(
     url: SupabaseConstants.supabaseUrl,
     anonKey: SupabaseConstants.supabaseAnonKey,

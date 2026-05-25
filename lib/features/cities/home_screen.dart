@@ -295,6 +295,11 @@ class _HomeScreenState extends State<HomeScreen> {
         'route': '/mood'
       },
       {
+        'icon': Icons.compare_arrows,
+        'key': 'compare.menuLabel',
+        'route': '/compare'
+      },
+      {
         'icon': Icons.qr_code_scanner_outlined,
         'key': 'sidebar.qr',
         'route': '/qr-scan'

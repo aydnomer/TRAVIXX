@@ -13,6 +13,7 @@ import '../../core/utils/overpass_service.dart';
 import '../../core/utils/currency_service.dart';
 import '../../core/utils/recent_places.dart';
 import '../../core/utils/share_service.dart';
+import '../compare/compare_service.dart';
 import '../../core/utils/tts_service.dart';
 import '../../core/utils/weather_service.dart';
 import '../../core/utils/wikipedia_service.dart';
@@ -662,6 +663,45 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
           ),
           onPressed: () => _openShareSheet(p),
           tooltip: I18n.t('share.button'),
+        ),
+        // Karşılaştırmaya ekle/çıkar (reaktif)
+        ValueListenableBuilder<List<String>>(
+          valueListenable: CompareService.basket,
+          builder: (context, basket, _) {
+            final inBasket = basket.contains(p.id);
+            return IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.35),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  inBasket
+                      ? Icons.compare_arrows
+                      : Icons.compare_arrows_outlined,
+                  color: inBasket ? AppTheme.accentOrange : Colors.white,
+                  size: 20,
+                ),
+              ),
+              tooltip: I18n.t('compare.addToCompare'),
+              onPressed: () async {
+                final ok = await CompareService.toggle(p.id);
+                if (!mounted) return;
+                if (!ok) {
+                  _showSnack(I18n.t('compare.full'), isError: true);
+                } else {
+                  final nowIn = CompareService.basket.value.contains(p.id);
+                  _showSnack(
+                    nowIn
+                        ? I18n.t('compare.added')
+                        : I18n.t('compare.removed'),
+                    isError: false,
+                  );
+                }
+              },
+            );
+          },
         ),
         IconButton(
           icon: Container(

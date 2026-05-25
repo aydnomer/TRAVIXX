@@ -3,6 +3,7 @@ import "package:go_router/go_router.dart";
 import "../../core/i18n/i18n.dart";
 import "../../core/theme/app_theme.dart";
 import "../../core/utils/database_service.dart";
+import "../../shared/widgets/skeleton.dart";
 import "city_model.dart";
 
 class CitiesScreen extends StatefulWidget {
@@ -180,7 +181,7 @@ class _CitiesScreenState extends State<CitiesScreen> {
           const SizedBox(height: 8),
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator())
+                ? Skeleton.grid(count: 8)
                 : _filteredCities.isEmpty
                     ? _buildEmpty()
                     : GridView.builder(

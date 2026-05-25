@@ -16,6 +16,7 @@ import "../../features/diary/diaries_screen.dart";
 import "../../features/diary/diary_detail_screen.dart";
 import "../../features/map/map_screen.dart";
 import "../../features/activity/activity_screen.dart";
+import "../../features/compare/compare_screen.dart";
 import "../../features/mood/mood_screen.dart";
 import "../../features/notifications/notifications_screen.dart";
 import "../../features/onboarding/onboarding_screen.dart";
@@ -184,6 +185,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: "/packing",
       builder: (context, state) => const PackingScreen(),
+    ),
+    GoRoute(
+      path: "/compare",
+      builder: (context, state) => const CompareScreen(),
     ),
   ],
 );
