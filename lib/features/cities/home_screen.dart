@@ -7,6 +7,8 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/daily_challenge.dart';
 import '../../core/utils/database_service.dart';
 import '../../core/utils/gps_service.dart';
+import '../../core/utils/weather_service.dart';
+import '../../shared/widgets/responsive.dart';
 import '../collections/collection_card.dart';
 import '../collections/collection_model.dart';
 import '../collections/collection_service.dart';
@@ -47,6 +49,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Tematik koleksiyonlar
   List<PlaceCollection> _collections = const [];
+
+  // Hava durumu (kullanıcı konumu için)
+  WeatherInfo? _weather;
 
   @override
   void initState() {
@@ -102,6 +107,14 @@ class _HomeScreenState extends State<HomeScreen> {
       _gpsStatus = pos != null ? I18n.t('home.gpsActive') : I18n.t('home.gpsOff');
       _loading = false;
     });
+
+    // Hava durumunu da çek (paralel, hata olursa atla)
+    if (pos != null) {
+      WeatherService.currentWeather(lat: pos.latitude, lng: pos.longitude)
+          .then((w) {
+        if (mounted && w != null) setState(() => _weather = w);
+      });
+    }
   }
 
   @override
@@ -348,39 +361,136 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   SliverAppBar _buildHeroSliver(user) {
+    final userName = user?.email?.split('@')[0] ??
+        I18n.t('profile.travelerName');
+    final initial = userName.isNotEmpty
+        ? userName[0].toUpperCase()
+        : '?';
     return SliverAppBar(
       expandedHeight: 260,
       pinned: true,
       backgroundColor: const Color(0xFF60A5FA),
       flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF3B82F6), Color(0xFF60A5FA), Color(0xFF93C5FD)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+        background: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Arka plan: Kapadokya fotoğrafı (yarı saydam) + gradient overlay
+            Image.network(
+              'https://images.unsplash.com/photo-1641128324972-af3212f0f6bd?w=1600&q=80&auto=format&fit=crop',
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
             ),
-          ),
-          padding: const EdgeInsets.fromLTRB(20, 60, 20, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                I18n.tp('home.greeting', {
-                  'name': user?.email?.split('@')[0] ??
-                      I18n.t('profile.travelerName')
-                }),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF1A2744).withValues(alpha: 0.85),
+                    const Color(0xFF3B82F6).withValues(alpha: 0.75),
+                    const Color(0xFF60A5FA).withValues(alpha: 0.7),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
               ),
-              Text(
-                I18n.t('home.subtitle'),
-                style: const TextStyle(color: Color(0xFFE0F2FE), fontSize: 13),
-              ),
+            ),
+            // İçerik
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 60, 20, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      // Avatar
+                      Container(
+                        width: 38,
+                        height: 38,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [
+                              AppTheme.accentOrange,
+                              Color(0xFFEAB308),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.25),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          initial,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              I18n.tp('home.greeting', {'name': userName}),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              I18n.t('home.subtitle'),
+                              style: const TextStyle(
+                                color: Color(0xFFE0F2FE),
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Hava chip (varsa)
+                      if (_weather != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Text(
+                                _weather!.emoji,
+                                style: const TextStyle(fontSize: 18),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${_weather!.temperatureC.toStringAsFixed(0)}°',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
               const SizedBox(height: 12),
               Container(
                 decoration: BoxDecoration(
@@ -426,30 +536,35 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
+              const SizedBox(height: 8),
+              // İnce şık 'Şehirleri Keşfet' linki (büyük turuncu buton yerine)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
                   onPressed: () => context.push('/cities'),
-                  icon: const Icon(Icons.explore, size: 18),
+                  icon: const Icon(Icons.explore, size: 14, color: Colors.white),
                   label: Text(
-                    I18n.t('home.exploreBtn'),
+                    '${I18n.t('home.exploreBtn')} →',
                     style: const TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.bold),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.accentOrange,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
                     ),
-                    elevation: 0,
+                  ),
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.white.withValues(alpha: 0.18),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                   ),
                 ),
               ),
             ],
           ),
+        ),
+          ],
         ),
       ),
       actions: [
@@ -782,35 +897,39 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildPlaceCard(_PlaceWithDistance pwd, bool isNearest) {
     final p = pwd.place;
     final hasDistance = pwd.km != null;
-    return InkWell(
-      onTap: () => context.push('/place/${p.id}'),
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isNearest && hasDistance
-                ? AppTheme.primary
-                : AppTheme.cardBorder,
-            width: isNearest && hasDistance ? 1.5 : 0.5,
+    final hasImage = p.images.isNotEmpty;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+      child: HoverCard(
+        onTap: () => context.push('/place/${p.id}'),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isNearest && hasDistance
+                  ? AppTheme.primary
+                  : AppTheme.cardBorder,
+              width: isNearest && hasDistance ? 1.5 : 0.5,
+            ),
           ),
-        ),
         child: Row(
           children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: const BoxDecoration(
-                color: Color(0xFFEFF6FF),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(14),
-                  bottomLeft: Radius.circular(14),
-                ),
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(14),
+                bottomLeft: Radius.circular(14),
               ),
-              child: Center(
-                child: Text(p.emoji, style: const TextStyle(fontSize: 28)),
+              child: SizedBox(
+                width: 72,
+                height: 72,
+                child: hasImage
+                    ? Image.network(
+                        p.images[0],
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _emojiBox(p.emoji),
+                      )
+                    : _emojiBox(p.emoji),
               ),
             ),
             Expanded(
@@ -901,7 +1020,17 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
+        ),
       ),
+    );
+  }
+
+  // Emoji fallback kutusu — foto yokken kullanılır
+  Widget _emojiBox(String emoji) {
+    return Container(
+      color: const Color(0xFFEFF6FF),
+      alignment: Alignment.center,
+      child: Text(emoji, style: const TextStyle(fontSize: 28)),
     );
   }
 
