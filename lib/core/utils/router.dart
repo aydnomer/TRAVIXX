@@ -29,6 +29,10 @@ import "../../features/wrapped/wrapped_screen.dart";
 import "../../features/suggest/suggest_place_screen.dart";
 import "../../features/qr_scanner/qr_scanner_screen.dart";
 import "../../features/search/search_screen.dart";
+import "../../features/trip_wizard/trip_wizard_screen.dart";
+import "../../features/videos/videos_screen.dart";
+import "../../features/community/community_screen.dart";
+import "../../features/accommodation/accommodation_screen.dart";
 
 /// Supabase auth state değişimlerinde router'ı tetiklemek için.
 class _AuthRefreshListenable extends ChangeNotifier {
@@ -189,6 +193,22 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: "/compare",
       builder: (context, state) => const CompareScreen(),
+    ),
+    GoRoute(
+      path: "/trip-wizard",
+      builder: (context, state) => const TripWizardScreen(),
+    ),
+    GoRoute(
+      path: "/videos",
+      builder: (context, state) => const VideosScreen(),
+    ),
+    GoRoute(
+      path: "/community",
+      builder: (context, state) => const CommunityScreen(),
+    ),
+    GoRoute(
+      path: "/accommodation",
+      builder: (context, state) => const AccommodationScreen(),
     ),
   ],
 );

@@ -145,6 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildHeroSliver(user),
         SliverToBoxAdapter(child: _buildLocationBar()),
         SliverToBoxAdapter(child: _buildDailyChallenge()),
+        SliverToBoxAdapter(child: _buildNewFeaturesStrip()),
         if (_collections.isNotEmpty)
           SliverToBoxAdapter(child: _buildCollectionsStrip()),
         SliverToBoxAdapter(
@@ -659,6 +660,91 @@ class _HomeScreenState extends State<HomeScreen> {
       await Supabase.instance.client.auth.signOut();
       if (mounted) context.go('/');
     }
+  }
+
+  // Yeni özellikler şeridi
+  Widget _buildNewFeaturesStrip() {
+    final features = [
+      {
+        'emoji': '🗺️',
+        'label': 'Rota\nSihirbazı',
+        'route': '/trip-wizard',
+        'color': AppTheme.primary,
+      },
+      {
+        'emoji': '▶️',
+        'label': 'Video\nRehberler',
+        'route': '/videos',
+        'color': Colors.red,
+      },
+      {
+        'emoji': '📍',
+        'label': 'Gizli\nMekanlar',
+        'route': '/community',
+        'color': AppTheme.accentOrange,
+      },
+      {
+        'emoji': '🏡',
+        'label': 'Konaklama',
+        'route': '/accommodation',
+        'color': const Color(0xFF27AE60),
+      },
+    ];
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Özellikler',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.primary,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: features.map((f) {
+              final color = f['color'] as Color;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => context.push(f['route'] as String),
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: color.withValues(alpha: 0.25)),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          f['emoji'] as String,
+                          style: const TextStyle(fontSize: 26),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          f['label'] as String,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: color,
+                            height: 1.2,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
   }
 
   // Günün görevi kartı

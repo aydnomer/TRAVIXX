@@ -146,6 +146,86 @@ class AiPlannerService {
     return '${city.name} için ${days.length} günlük rota — toplam $totalPlaces seçili mekan';
   }
 
+  // ─── Trip Wizard için ────────────────────────────────────────────
+
+  static const _interestCategories = <String, List<String>>{
+    'Tarih & Kültür': ['tarih', 'müze', 'tarihi', 'kültür', 'arkeoloji', 'cami', 'kilise', 'saray', 'kale'],
+    'Doğa & Açık Hava': ['doğa', 'park', 'göl', 'plaj', 'dağ', 'orman', 'şelale', 'mağara', 'kanyon'],
+    'Gastronomi': ['restoran', 'kafe', 'çarşı', 'pazar', 'market', 'yemek', 'mutfak'],
+    'Sanat & Müzeler': ['müze', 'galeri', 'sanat', 'sergi', 'tiyatro', 'opera'],
+    'Aktif & Macera': ['spor', 'yürüyüş', 'macera', 'tırmanış', 'bisiklet', 'rafting'],
+    'Romantik': ['sahil', 'vadi', 'plaj', 'orman', 'gün batımı', 'göl'],
+  };
+
+  static Future<TripPlan?> planWithFilters({
+    required City city,
+    required int days,
+    required String budget,
+    required List<String> interests,
+  }) async {
+    final places = await DatabaseService.getPlacesByCity(city.id);
+    if (places.isEmpty) {
+      return TripPlan(city: city, days: days, itinerary: const [], summary: '');
+    }
+
+    List<Place> sorted = List.from(places);
+
+    // Bütçe sıralaması
+    if (budget == 'ekonomik') {
+      sorted.sort((a, b) {
+        if (a.isFree && !b.isFree) return -1;
+        if (!a.isFree && b.isFree) return 1;
+        return b.rating.compareTo(a.rating);
+      });
+    } else if (budget == 'lüks') {
+      sorted.sort((a, b) {
+        if (!a.isFree && b.isFree) return -1;
+        if (a.isFree && !b.isFree) return 1;
+        return b.rating.compareTo(a.rating);
+      });
+    } else {
+      sorted.sort((a, b) => b.rating.compareTo(a.rating));
+    }
+
+    // İlgi alanı önceliklendirmesi
+    if (interests.isNotEmpty) {
+      final keywords = <String>[];
+      for (final interest in interests) {
+        keywords.addAll(_interestCategories[interest] ?? []);
+      }
+      sorted.sort((a, b) {
+        final cat = a.category.toLowerCase();
+        final bCat = b.category.toLowerCase();
+        final aMatch = keywords.any((k) => cat.contains(k));
+        final bMatch = keywords.any((k) => bCat.contains(k));
+        if (aMatch && !bMatch) return -1;
+        if (!aMatch && bMatch) return 1;
+        return 0;
+      });
+    }
+
+    const perDay = 4;
+    final itinerary = <TripDay>[];
+    for (int d = 0; d < days; d++) {
+      final start = d * perDay;
+      if (start >= sorted.length) break;
+      final end = (start + perDay).clamp(0, sorted.length);
+      itinerary.add(TripDay(dayNumber: d + 1, places: sorted.sublist(start, end)));
+    }
+
+    final budgetLabel = {'ekonomik': '💰 Ekonomik', 'orta': '💳 Orta Bütçe', 'lüks': '✨ Lüks'}[budget] ?? '';
+    final interestLabel = interests.isEmpty ? '' : ' · ${interests.join(', ')}';
+    final total = itinerary.fold<int>(0, (s, d) => s + d.places.length);
+    final summary = '${city.name} · ${itinerary.length} gün · $budgetLabel$interestLabel — $total mekan';
+
+    return TripPlan(
+      city: city,
+      days: itinerary.length,
+      itinerary: itinerary,
+      summary: summary,
+    );
+  }
+
   static Future<List<City>> _getCities() async {
     if (_citiesCache != null) return _citiesCache!;
     try {

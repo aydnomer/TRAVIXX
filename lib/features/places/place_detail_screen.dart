@@ -8,6 +8,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
+import '../../shared/widgets/photo_viewer.dart';
+import '../../shared/widgets/logistics_card.dart';
 import '../../core/utils/database_service.dart';
 import '../../core/utils/overpass_service.dart';
 import '../../core/utils/currency_service.dart';
@@ -448,6 +450,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                     const SizedBox(height: 10),
                     _buildNearbyFoodSection(),
                   ],
+                  const SizedBox(height: 24),
+                  LogisticsCard(searchQuery: p.name),
                   const SizedBox(height: 28),
                   _sectionTitle(I18n.t('review.title')),
                   const SizedBox(height: 10),
@@ -737,10 +741,14 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
           itemCount: images.length,
           onPageChanged: (i) => setState(() => _galleryIdx = i),
           itemBuilder: (context, i) {
-            return Image.network(
-              images[i],
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => _buildEmojiHero(p),
+            return GestureDetector(
+              onTap: () =>
+                  PhotoViewer.show(context, images, initialIndex: i),
+              child: Image.network(
+                images[i],
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _buildEmojiHero(p),
+              ),
             );
           },
         ),
@@ -760,6 +768,25 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
+              ),
+            ),
+          ),
+        ),
+        // Büyütme ipucu (sağ üst köşe)
+        Positioned(
+          top: 8,
+          right: 8,
+          child: IgnorePointer(
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.35),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(
+                Icons.zoom_out_map,
+                color: Colors.white,
+                size: 18,
               ),
             ),
           ),
