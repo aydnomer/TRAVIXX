@@ -8,7 +8,7 @@ import '../../core/utils/daily_challenge.dart';
 import '../../core/utils/database_service.dart';
 import '../../core/utils/gps_service.dart';
 import '../../core/utils/weather_service.dart';
-import '../../shared/widgets/responsive.dart';
+import '../cities/city_model.dart';
 import '../collections/collection_card.dart';
 import '../collections/collection_model.dart';
 import '../collections/collection_service.dart';
@@ -22,7 +22,6 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-/// Bir mekanı kullanıcıya olan mesafesiyle birlikte tutan basit sınıf.
 class _PlaceWithDistance {
   final Place place;
   final double? km;
@@ -33,24 +32,13 @@ class _PlaceWithDistance {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
-  final _searchController = TextEditingController();
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  // Gerçek Supabase verisi + GPS mesafe sıralaması
   List<_PlaceWithDistance> _places = [];
   bool _loading = true;
   Position? _userPos;
-  String _gpsStatus = '';
 
-  // Tematik koleksiyonlar
+  List<City> _cities = [];
   List<PlaceCollection> _collections = const [];
-
-  // Hava durumu (kullanıcı konumu için)
   WeatherInfo? _weather;
 
   @override
@@ -60,11 +48,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadData() async {
-    // Önce GPS izni iste (paralel)
     final posFuture = GpsService.getCurrentPosition();
-    // Aynı anda mekanları çek
     final placesFuture = DatabaseService.getAllPlaces();
-    // Koleksiyonları da paralel çek (hata olursa boş kalır)
+
+    DatabaseService.getCities().then((list) {
+      if (mounted) setState(() => _cities = list.take(15).toList());
+    });
     CollectionService.getCollections().then((list) {
       if (mounted) setState(() => _collections = list);
     });
@@ -79,7 +68,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (!mounted) return;
 
-    // Mesafe hesapla ve sırala
     final list = raw.map((p) {
       double? km;
       int? min;
@@ -91,7 +79,6 @@ class _HomeScreenState extends State<HomeScreen> {
       return _PlaceWithDistance(place: p, km: km, minutes: min);
     }).toList();
 
-    // GPS varsa mesafeye göre sırala, yoksa rating'e göre
     if (pos != null) {
       list.sort((a, b) {
         if (a.km == null && b.km == null) return 0;
@@ -103,12 +90,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
     setState(() {
       _userPos = pos;
-      _places = list.take(20).toList(); // ilk 20
-      _gpsStatus = pos != null ? I18n.t('home.gpsActive') : I18n.t('home.gpsOff');
+      _places = list.take(20).toList();
       _loading = false;
     });
 
-    // Hava durumunu da çek (paralel, hata olursa atla)
     if (pos != null) {
       WeatherService.currentWeather(lat: pos.latitude, lng: pos.longitude)
           .then((w) {
@@ -139,45 +124,28 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ═══════════════════════════════════════════════════════════════
+  // MOBILE: Netflix şeritler
+  // ═══════════════════════════════════════════════════════════════
+
   Widget _buildMobileLayout(user) {
     return CustomScrollView(
       slivers: [
-        _buildHeroSliver(user),
-        SliverToBoxAdapter(child: _buildLocationBar()),
-        SliverToBoxAdapter(child: _buildDailyChallenge()),
-        SliverToBoxAdapter(child: _buildNewFeaturesStrip()),
+        _buildCompactHero(user),
+        SliverToBoxAdapter(child: _buildNearbyStrip()),
+        SliverToBoxAdapter(child: _buildFeaturesHorizontal()),
+        SliverToBoxAdapter(child: _buildCitiesStrip()),
         if (_collections.isNotEmpty)
           SliverToBoxAdapter(child: _buildCollectionsStrip()),
-        SliverToBoxAdapter(
-          child: _buildSectionTitle(
-            _userPos != null ? I18n.t('home.nearby') : I18n.t('home.popular'),
-            _userPos != null
-                ? I18n.t('home.nearbySub')
-                : I18n.t('home.popularSub'),
-          ),
-        ),
-        if (_loading)
-          const SliverFillRemaining(
-            hasScrollBody: false,
-            child: Center(child: CircularProgressIndicator()),
-          )
-        else if (_places.isEmpty)
-          const SliverFillRemaining(
-            hasScrollBody: false,
-            child: Center(child: Text('Mekan bulunamadı')),
-          )
-        else
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) =>
-                  _buildPlaceCard(_places[index], index == 0),
-              childCount: _places.length,
-            ),
-          ),
-        const SliverToBoxAdapter(child: SizedBox(height: 20)),
+        SliverToBoxAdapter(child: _buildDailyChallenge()),
+        const SliverToBoxAdapter(child: SizedBox(height: 100)),
       ],
     );
   }
+
+  // ═══════════════════════════════════════════════════════════════
+  // WEB: Yan menü + şeritler
+  // ═══════════════════════════════════════════════════════════════
 
   Widget _buildWebLayout(user) {
     return Row(
@@ -186,53 +154,547 @@ class _HomeScreenState extends State<HomeScreen> {
         Expanded(
           child: CustomScrollView(
             slivers: [
-              _buildHeroSliver(user),
-              SliverToBoxAdapter(child: _buildLocationBar()),
-              SliverToBoxAdapter(
-                child: _buildSectionTitle(
-                  _userPos != null
-                      ? I18n.t('home.nearby')
-                      : I18n.t('home.popular'),
-                  _userPos != null
-                      ? I18n.t('home.nearbySub')
-                      : I18n.t('home.popularSub'),
-                ),
-              ),
-              if (_loading)
-                const SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else if (_places.isEmpty)
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Center(child: Text(I18n.t('home.notFound'))),
-                )
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  sliver: SliverGrid(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 3.5,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) =>
-                          _buildPlaceCard(_places[index], index == 0),
-                      childCount: _places.length,
-                    ),
-                  ),
-                ),
-              const SliverToBoxAdapter(child: SizedBox(height: 20)),
+              _buildCompactHero(user),
+              SliverToBoxAdapter(child: _buildNearbyStrip()),
+              SliverToBoxAdapter(child: _buildFeaturesHorizontal()),
+              SliverToBoxAdapter(child: _buildCitiesStrip()),
+              if (_collections.isNotEmpty)
+                SliverToBoxAdapter(child: _buildCollectionsStrip()),
+              SliverToBoxAdapter(child: _buildDailyChallenge()),
+              const SliverToBoxAdapter(child: SizedBox(height: 40)),
             ],
           ),
         ),
       ],
     );
   }
+
+  // ═══════════════════════════════════════════════════════════════
+  // KOMPAKT HERO (160 px)
+  // ═══════════════════════════════════════════════════════════════
+
+  SliverAppBar _buildCompactHero(user) {
+    final userName =
+        user?.email?.split('@')[0] ?? I18n.t('profile.travelerName');
+    final initial = userName.isNotEmpty ? userName[0].toUpperCase() : '?';
+    final gpsActive = _userPos != null;
+
+    return SliverAppBar(
+      expandedHeight: 160,
+      pinned: true,
+      backgroundColor: AppTheme.primary,
+      actions: [
+        const NotificationBell(),
+        IconButton(
+          icon: const Icon(Icons.logout, color: Colors.white),
+          tooltip: I18n.t('logout.tooltip'),
+          onPressed: _confirmLogout,
+        ),
+      ],
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppTheme.primary, Color(0xFF1D4ED8)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  // Selamlama satırı
+                  Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        alignment: Alignment.center,
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [AppTheme.accentOrange, Color(0xFFEAB308)],
+                          ),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          initial,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              I18n.tp('home.greeting', {'name': userName}),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Row(
+                              children: [
+                                Icon(
+                                  gpsActive
+                                      ? Icons.my_location
+                                      : Icons.location_disabled,
+                                  color: gpsActive
+                                      ? Colors.greenAccent
+                                      : Colors.white38,
+                                  size: 11,
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  gpsActive ? 'Konum aktif' : 'Konum kapalı',
+                                  style: TextStyle(
+                                    color: gpsActive
+                                        ? Colors.greenAccent
+                                        : Colors.white54,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (_weather != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white24),
+                          ),
+                          child: Row(
+                            children: [
+                              Text(_weather!.emoji,
+                                  style: const TextStyle(fontSize: 16)),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${_weather!.temperatureC.toStringAsFixed(0)}°',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Arama çubuğu — tıklanınca /search açılır
+                  GestureDetector(
+                    onTap: () => context.push('/search'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.12),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.search,
+                              color: AppTheme.textSecondary, size: 20),
+                          const SizedBox(width: 10),
+                          Text(
+                            I18n.t('home.searchHint'),
+                            style: const TextStyle(
+                                color: AppTheme.textSecondary, fontSize: 14),
+                          ),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color:
+                                  AppTheme.accentOrange.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              '81 il',
+                              style: TextStyle(
+                                color: AppTheme.accentOrange,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // ŞERİT 1 — Yakın / Popüler Mekanlar
+  // ═══════════════════════════════════════════════════════════════
+
+  Widget _buildNearbyStrip() {
+    final title = _userPos != null ? '📍 Yakınındakiler' : '⭐ Popüler Mekanlar';
+    final sub =
+        _userPos != null ? 'GPS\'e göre sıralı' : 'En yüksek puanlılar';
+
+    return _StripWrapper(
+      title: title,
+      subtitle: sub,
+      onSeeAll: () => context.push('/cities'),
+      child: SizedBox(
+        height: 195,
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _places.isEmpty
+                ? const Center(
+                    child: Text('Mekan bulunamadı',
+                        style: TextStyle(color: AppTheme.textSecondary)))
+                : ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    itemCount: _places.length.clamp(0, 12),
+                    separatorBuilder: (_, __) => const SizedBox(width: 10),
+                    itemBuilder: (context, i) => _PlaceCard(
+                      pwd: _places[i],
+                      onTap: () =>
+                          context.push('/place/${_places[i].place.id}'),
+                    ),
+                  ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // ŞERİT 2 — Hızlı Erişim
+  // ═══════════════════════════════════════════════════════════════
+
+  Widget _buildFeaturesHorizontal() {
+    const features = [
+      {'emoji': '🗺️', 'label': 'Rota\nSihirbazı', 'route': '/trip-wizard', 'color': 0xFF1A2744},
+      {'emoji': '▶️', 'label': 'Video\nRehberler', 'route': '/videos', 'color': 0xFFDC2626},
+      {'emoji': '📍', 'label': 'Gizli\nMekanlar', 'route': '/community', 'color': 0xFFF97316},
+      {'emoji': '🏡', 'label': 'Konaklama', 'route': '/accommodation', 'color': 0xFF16A34A},
+      {'emoji': '🗺', 'label': 'Harita', 'route': '/map', 'color': 0xFF7C3AED},
+      {'emoji': '🏆', 'label': 'En İyiler', 'route': '/top-rated', 'color': 0xFFB45309},
+      {'emoji': '📓', 'label': 'Günlük', 'route': '/diaries', 'color': 0xFF0369A1},
+      {'emoji': '🏙️', 'label': 'Şehirler', 'route': '/cities', 'color': 0xFF1A2744},
+    ];
+
+    return _StripWrapper(
+      title: '⚡ Hızlı Erişim',
+      subtitle: 'Tüm özellikler',
+      child: SizedBox(
+        height: 88,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+          itemCount: features.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (context, i) {
+            final f = features[i];
+            final color = Color(f['color'] as int);
+            return GestureDetector(
+              onTap: () => context.push(f['route'] as String),
+              child: Container(
+                width: 76,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.07),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: color.withValues(alpha: 0.2)),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(f['emoji'] as String,
+                        style: const TextStyle(fontSize: 24)),
+                    const SizedBox(height: 5),
+                    Text(
+                      f['label'] as String,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: color,
+                        height: 1.2,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // ŞERİT 3 — Popüler Şehirler
+  // ═══════════════════════════════════════════════════════════════
+
+  Widget _buildCitiesStrip() {
+    return _StripWrapper(
+      title: '🏙️ Popüler Şehirler',
+      subtitle: '81 il keşfetmeye hazır',
+      onSeeAll: () => context.push('/cities'),
+      child: SizedBox(
+        height: 118,
+        child: _cities.isEmpty
+            ? const Center(child: CircularProgressIndicator())
+            : ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                itemCount: _cities.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 10),
+                itemBuilder: (context, i) {
+                  final c = _cities[i];
+                  return GestureDetector(
+                    onTap: () =>
+                        context.push('/city/${c.id}', extra: c.name),
+                    child: Container(
+                      width: 96,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppTheme.cardBorder),
+                        color: Colors.white,
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          c.imageUrl != null
+                              ? Image.network(
+                                  c.imageUrl!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => _cityFallback(c),
+                                )
+                              : _cityFallback(c),
+                          // Alt gradient + isim
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.fromLTRB(6, 20, 6, 7),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.black.withValues(alpha: 0.72),
+                                  ],
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                ),
+                              ),
+                              child: Text(
+                                c.name,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+      ),
+    );
+  }
+
+  Widget _cityFallback(City c) {
+    return Container(
+      color: AppTheme.primary.withValues(alpha: 0.08),
+      child: Center(
+          child: Text(c.emoji, style: const TextStyle(fontSize: 30))),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // ŞERİT 4 — Tematik Koleksiyonlar (mevcut)
+  // ═══════════════════════════════════════════════════════════════
+
+  Widget _buildCollectionsStrip() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 4),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      I18n.t('collections.title'),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primary,
+                      ),
+                    ),
+                    Text(
+                      I18n.t('collections.subtitle'),
+                      style: const TextStyle(
+                          fontSize: 11, color: AppTheme.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              TextButton(
+                onPressed: () => context.push('/collections'),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: const Size(50, 30),
+                ),
+                child: Text(
+                  I18n.t('collections.seeAll'),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.accentOrange,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 140,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            itemCount: _collections.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemBuilder: (context, i) =>
+                CollectionCard(collection: _collections[i]),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // GÜNÜN GÖREVİ (alt kısım)
+  // ═══════════════════════════════════════════════════════════════
+
+  Widget _buildDailyChallenge() {
+    final c = DailyChallenge.today();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () => context.push('/cities'),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [AppTheme.accentOrange, Color(0xFFEAB308)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.accentOrange.withValues(alpha: 0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Text(c.emoji, style: const TextStyle(fontSize: 28)),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      I18n.t('challenge.title'),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.white.withValues(alpha: 0.85),
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      I18n.t(c.titleKey),
+                      style: const TextStyle(
+                          fontSize: 15,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      I18n.t(c.descKey),
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withValues(alpha: 0.9)),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // WEB SIDEBAR
+  // ═══════════════════════════════════════════════════════════════
 
   Widget _buildWebSidebar() {
     return Container(
@@ -288,55 +750,21 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Widget> _buildSidebarItems() {
     final items = [
       {'icon': Icons.home_outlined, 'key': 'sidebar.home', 'route': '/home'},
-      {
-        'icon': Icons.location_city_outlined,
-        'key': 'sidebar.cities',
-        'route': '/cities'
-      },
-      {
-        'icon': Icons.map_outlined,
-        'key': 'map.menuLabel',
-        'route': '/map'
-      },
-      {
-        'icon': Icons.restaurant_outlined,
-        'key': 'restaurants.menuLabel',
-        'route': '/restaurants'
-      },
-      {
-        'icon': Icons.mood,
-        'key': 'mood.title',
-        'route': '/mood'
-      },
-      {
-        'icon': Icons.compare_arrows,
-        'key': 'compare.menuLabel',
-        'route': '/compare'
-      },
-      {
-        'icon': Icons.qr_code_scanner_outlined,
-        'key': 'sidebar.qr',
-        'route': '/qr-scan'
-      },
-      {
-        'icon': Icons.favorite_outline,
-        'key': 'sidebar.favorites',
-        'route': '/favorites'
-      },
-      {
-        'icon': Icons.person_outline,
-        'key': 'sidebar.profile',
-        'route': '/profile'
-      },
+      {'icon': Icons.location_city_outlined, 'key': 'sidebar.cities', 'route': '/cities'},
+      {'icon': Icons.map_outlined, 'key': 'map.menuLabel', 'route': '/map'},
+      {'icon': Icons.restaurant_outlined, 'key': 'restaurants.menuLabel', 'route': '/restaurants'},
+      {'icon': Icons.mood, 'key': 'mood.title', 'route': '/mood'},
+      {'icon': Icons.compare_arrows, 'key': 'compare.menuLabel', 'route': '/compare'},
+      {'icon': Icons.qr_code_scanner_outlined, 'key': 'sidebar.qr', 'route': '/qr-scan'},
+      {'icon': Icons.favorite_outline, 'key': 'sidebar.favorites', 'route': '/favorites'},
+      {'icon': Icons.person_outline, 'key': 'sidebar.profile', 'route': '/profile'},
     ];
     return items.asMap().entries.map((e) {
       final isSelected = e.key == _currentIndex;
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
         child: ListTile(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           leading: Icon(
             e.value['icon'] as IconData,
             color: isSelected ? AppTheme.primary : AppTheme.textSecondary,
@@ -361,789 +789,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }).toList();
   }
 
-  SliverAppBar _buildHeroSliver(user) {
-    final userName = user?.email?.split('@')[0] ??
-        I18n.t('profile.travelerName');
-    final initial = userName.isNotEmpty
-        ? userName[0].toUpperCase()
-        : '?';
-    return SliverAppBar(
-      expandedHeight: 260,
-      pinned: true,
-      backgroundColor: const Color(0xFF60A5FA),
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Arka plan: Kapadokya fotoğrafı (yarı saydam) + gradient overlay
-            Image.network(
-              'https://images.unsplash.com/photo-1641128324972-af3212f0f6bd?w=1600&q=80&auto=format&fit=crop',
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-            ),
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFF1A2744).withValues(alpha: 0.85),
-                    const Color(0xFF3B82F6).withValues(alpha: 0.75),
-                    const Color(0xFF60A5FA).withValues(alpha: 0.7),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-            ),
-            // İçerik
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 60, 20, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      // Avatar
-                      Container(
-                        width: 38,
-                        height: 38,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [
-                              AppTheme.accentOrange,
-                              Color(0xFFEAB308),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.25),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          initial,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              I18n.tp('home.greeting', {'name': userName}),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Text(
-                              I18n.t('home.subtitle'),
-                              style: const TextStyle(
-                                color: Color(0xFFE0F2FE),
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Hava chip (varsa)
-                      if (_weather != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.3),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Text(
-                                _weather!.emoji,
-                                style: const TextStyle(fontSize: 18),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${_weather!.temperatureC.toStringAsFixed(0)}°',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-              const SizedBox(height: 12),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 4,
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.search, color: Color(0xFF3B82F6)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextField(
-                        controller: _searchController,
-                        textInputAction: TextInputAction.search,
-                        onTap: () {
-                          // Doğrudan dokunduğunda da arama ekranını aç
-                          if (_searchController.text.isEmpty) {
-                            context.push('/search');
-                          }
-                        },
-                        onSubmitted: (q) {
-                          final query = q.trim();
-                          if (query.isEmpty) {
-                            context.push('/search');
-                          } else {
-                            context.push('/search?q=${Uri.encodeComponent(query)}');
-                          }
-                        },
-                        decoration: InputDecoration(
-                          hintText: I18n.t('home.searchHint'),
-                          border: InputBorder.none,
-                          hintStyle: const TextStyle(
-                            color: AppTheme.textSecondary,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              // İnce şık 'Şehirleri Keşfet' linki (büyük turuncu buton yerine)
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  onPressed: () => context.push('/cities'),
-                  icon: const Icon(Icons.explore, size: 14, color: Colors.white),
-                  label: Text(
-                    '${I18n.t('home.exploreBtn')} →',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: TextButton.styleFrom(
-                    backgroundColor: Colors.white.withValues(alpha: 0.18),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-          ],
-        ),
-      ),
-      actions: [
-        const NotificationBell(),
-        IconButton(
-          icon: const Icon(Icons.logout, color: Colors.white),
-          tooltip: I18n.t('logout.tooltip'),
-          onPressed: _confirmLogout,
-        ),
-      ],
-    );
-  }
-
-  // Çıkış onay dialog'u — profesyonel görünüm
-  Future<void> _confirmLogout() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      barrierDismissible: true,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppTheme.accentOrange.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.logout,
-                color: AppTheme.accentOrange,
-                size: 22,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                I18n.t('logout.title'),
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primary,
-                ),
-              ),
-            ),
-          ],
-        ),
-        content: Text(
-          I18n.t('logout.confirm'),
-          style: const TextStyle(
-            fontSize: 14,
-            color: AppTheme.textSecondary,
-            height: 1.5,
-          ),
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            style: TextButton.styleFrom(
-              foregroundColor: AppTheme.textSecondary,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            ),
-            child: Text(
-              I18n.t('common.cancel'),
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.accentOrange,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              elevation: 0,
-            ),
-            child: Text(
-              I18n.t('logout.title'),
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true && mounted) {
-      await Supabase.instance.client.auth.signOut();
-      if (mounted) context.go('/');
-    }
-  }
-
-  // Yeni özellikler şeridi
-  Widget _buildNewFeaturesStrip() {
-    final features = [
-      {
-        'emoji': '🗺️',
-        'label': 'Rota\nSihirbazı',
-        'route': '/trip-wizard',
-        'color': AppTheme.primary,
-      },
-      {
-        'emoji': '▶️',
-        'label': 'Video\nRehberler',
-        'route': '/videos',
-        'color': Colors.red,
-      },
-      {
-        'emoji': '📍',
-        'label': 'Gizli\nMekanlar',
-        'route': '/community',
-        'color': AppTheme.accentOrange,
-      },
-      {
-        'emoji': '🏡',
-        'label': 'Konaklama',
-        'route': '/accommodation',
-        'color': const Color(0xFF27AE60),
-      },
-    ];
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Özellikler',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.primary,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: features.map((f) {
-              final color = f['color'] as Color;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => context.push(f['route'] as String),
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: color.withValues(alpha: 0.25)),
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          f['emoji'] as String,
-                          style: const TextStyle(fontSize: 26),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          f['label'] as String,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: color,
-                            height: 1.2,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Günün görevi kartı
-  Widget _buildDailyChallenge() {
-    final c = DailyChallenge.today();
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(14),
-          onTap: () {
-            if (c.category.isNotEmpty) {
-              context.push('/cities');
-            } else {
-              context.push('/cities');
-            }
-          },
-          child: Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppTheme.accentOrange, Color(0xFFEAB308)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.accentOrange.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.25),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Text(c.emoji, style: const TextStyle(fontSize: 30)),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        I18n.t('challenge.title'),
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.white.withValues(alpha: 0.85),
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        I18n.t(c.titleKey),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        I18n.t(c.descKey),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.white.withValues(alpha: 0.9),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.arrow_forward, color: Colors.white, size: 22),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Tematik koleksiyon şeridi (yatay scroll)
-  Widget _buildCollectionsStrip() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 18, 16, 4),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      I18n.t('collections.title'),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primary,
-                      ),
-                    ),
-                    Text(
-                      I18n.t('collections.subtitle'),
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppTheme.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              TextButton(
-                onPressed: () => context.push('/collections'),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  minimumSize: const Size(50, 30),
-                ),
-                child: Text(
-                  I18n.t('collections.seeAll'),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.accentOrange,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        SizedBox(
-          height: 140,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            itemCount: _collections.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 10),
-            itemBuilder: (context, i) {
-              return CollectionCard(collection: _collections[i]);
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLocationBar() {
-    final gpsActive = _userPos != null;
-    return Container(
-      color: const Color(0xFFEFF6FF),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          Icon(
-            gpsActive ? Icons.my_location : Icons.location_disabled,
-            color: gpsActive ? AppTheme.primary : Colors.grey,
-            size: 16,
-          ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              _gpsStatus,
-              style: TextStyle(
-                color: gpsActive ? AppTheme.primary : AppTheme.textSecondary,
-                fontWeight: FontWeight.w500,
-                fontSize: 13,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          if (!gpsActive)
-            TextButton(
-              onPressed: () {
-                GpsService.clearCache();
-                setState(() => _loading = true);
-                _loadData();
-              },
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                minimumSize: const Size(50, 28),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: const Text(
-                'Tekrar dene',
-                style: TextStyle(fontSize: 11),
-              ),
-            )
-          else
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: Colors.green.shade50,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Text(
-                'GPS aktif',
-                style: TextStyle(color: Colors.green, fontSize: 11),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionTitle(String title, String hint) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.textPrimary,
-            ),
-          ),
-          Text(
-            hint,
-            style: const TextStyle(fontSize: 11, color: AppTheme.primaryLight),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPlaceCard(_PlaceWithDistance pwd, bool isNearest) {
-    final p = pwd.place;
-    final hasDistance = pwd.km != null;
-    final hasImage = p.images.isNotEmpty;
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-      child: HoverCard(
-        onTap: () => context.push('/place/${p.id}'),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isNearest && hasDistance
-                  ? AppTheme.primary
-                  : AppTheme.cardBorder,
-              width: isNearest && hasDistance ? 1.5 : 0.5,
-            ),
-          ),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(14),
-                bottomLeft: Radius.circular(14),
-              ),
-              child: SizedBox(
-                width: 72,
-                height: 72,
-                child: hasImage
-                    ? Image.network(
-                        p.images[0],
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _emojiBox(p.emoji),
-                      )
-                    : _emojiBox(p.emoji),
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            p.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.textPrimary,
-                            ),
-                          ),
-                        ),
-                        if (isNearest && hasDistance) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppTheme.primary,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Text(
-                              'En Yakın',
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 9),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      p.category.isNotEmpty ? p.category : 'Mekan',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppTheme.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        if (hasDistance) ...[
-                          _distBadge(
-                            Icons.route,
-                            '${pwd.km!.toStringAsFixed(1)} km',
-                            const Color(0xFFEFF6FF),
-                            AppTheme.primary,
-                          ),
-                          const SizedBox(width: 6),
-                          _distBadge(
-                            Icons.access_time,
-                            '${pwd.minutes} dk',
-                            const Color(0xFFFEF9C3),
-                            const Color(0xFFB45309),
-                          ),
-                        ] else ...[
-                          _distBadge(
-                            Icons.star,
-                            p.rating.toStringAsFixed(1),
-                            const Color(0xFFFEF9C3),
-                            const Color(0xFFB45309),
-                          ),
-                        ],
-                        const SizedBox(width: 6),
-                        _distBadge(
-                          Icons.qr_code_scanner,
-                          'QR',
-                          AppTheme.primary,
-                          Colors.white,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-        ),
-      ),
-    );
-  }
-
-  // Emoji fallback kutusu — foto yokken kullanılır
-  Widget _emojiBox(String emoji) {
-    return Container(
-      color: const Color(0xFFEFF6FF),
-      alignment: Alignment.center,
-      child: Text(emoji, style: const TextStyle(fontSize: 28)),
-    );
-  }
-
-  Widget _distBadge(IconData icon, String label, Color bg, Color fg) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 11, color: fg),
-          const SizedBox(width: 3),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              color: fg,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // ═══════════════════════════════════════════════════════════════
+  // BOTTOM NAV
+  // ═══════════════════════════════════════════════════════════════
 
   Widget _buildBottomNav() {
     return BottomNavigationBar(
@@ -1160,26 +808,284 @@ class _HomeScreenState extends State<HomeScreen> {
       type: BottomNavigationBarType.fixed,
       items: const [
         BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),
-          label: 'Ana Sayfa',
-        ),
+            icon: Icon(Icons.home_outlined), label: 'Ana Sayfa'),
         BottomNavigationBarItem(
-          icon: Icon(Icons.location_city_outlined),
-          label: 'Şehirler',
-        ),
+            icon: Icon(Icons.location_city_outlined), label: 'Şehirler'),
         BottomNavigationBarItem(
-          icon: Icon(Icons.qr_code_scanner_outlined),
-          label: 'QR Tara',
-        ),
+            icon: Icon(Icons.qr_code_scanner_outlined), label: 'QR Tara'),
         BottomNavigationBarItem(
-          icon: Icon(Icons.favorite_outline),
-          label: 'Favoriler',
-        ),
+            icon: Icon(Icons.favorite_outline), label: 'Favoriler'),
         BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline),
-          label: 'Profil',
-        ),
+            icon: Icon(Icons.person_outline), label: 'Profil'),
       ],
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // ÇIKIŞ DİALOGU
+  // ═══════════════════════════════════════════════════════════════
+
+  Future<void> _confirmLogout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.accentOrange.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.logout,
+                  color: AppTheme.accentOrange, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                I18n.t('logout.title'),
+                style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primary),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          I18n.t('logout.confirm'),
+          style: const TextStyle(
+              fontSize: 14, color: AppTheme.textSecondary, height: 1.5),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            style: TextButton.styleFrom(
+              foregroundColor: AppTheme.textSecondary,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
+            child: Text(I18n.t('common.cancel'),
+                style: const TextStyle(fontWeight: FontWeight.w600)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.accentOrange,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              elevation: 0,
+            ),
+            child: Text(I18n.t('logout.title'),
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await Supabase.instance.client.auth.signOut();
+      if (mounted) context.go('/');
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// YARDIMCİ WİDGET'LAR
+// ═══════════════════════════════════════════════════════════════
+
+/// Şerit başlığı + "Tümü →" butonu + içerik
+class _StripWrapper extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final VoidCallback? onSeeAll;
+  final Widget child;
+
+  const _StripWrapper({
+    required this.title,
+    required this.subtitle,
+    this.onSeeAll,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 6),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primary,
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                          fontSize: 11, color: AppTheme.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              if (onSeeAll != null)
+                TextButton(
+                  onPressed: onSeeAll,
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    minimumSize: const Size(50, 28),
+                  ),
+                  child: const Text(
+                    'Tümü →',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.accentOrange,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        child,
+      ],
+    );
+  }
+}
+
+/// Yatay mekan kartı (foto arka plan + gradient)
+class _PlaceCard extends StatelessWidget {
+  final _PlaceWithDistance pwd;
+  final VoidCallback onTap;
+
+  const _PlaceCard({required this.pwd, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = pwd.place;
+    final hasImage = p.images.isNotEmpty;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 150,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.cardBorder),
+          color: Colors.white,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Fotoğraf veya emoji arka plan
+            hasImage
+                ? Image.network(
+                    p.images[0],
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _emojiBg(p.emoji),
+                  )
+                : _emojiBg(p.emoji),
+            // Alt gradient
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.8),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      p.name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        if (pwd.km != null) ...[
+                          const Icon(Icons.near_me,
+                              color: Colors.white70, size: 10),
+                          const SizedBox(width: 3),
+                          Text(
+                            '${pwd.km!.toStringAsFixed(1)} km',
+                            style: const TextStyle(
+                                color: Colors.white70, fontSize: 10),
+                          ),
+                        ] else ...[
+                          const Icon(Icons.star,
+                              color: Colors.amber, size: 11),
+                          const SizedBox(width: 2),
+                          Text(
+                            p.rating.toStringAsFixed(1),
+                            style: const TextStyle(
+                                color: Colors.white70, fontSize: 10),
+                          ),
+                        ],
+                        if (p.isFree) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withValues(alpha: 0.8),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'Ücretsiz',
+                              style: TextStyle(
+                                  color: Colors.white, fontSize: 9),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _emojiBg(String emoji) {
+    return Container(
+      color: AppTheme.primary.withValues(alpha: 0.07),
+      child: Center(child: Text(emoji, style: const TextStyle(fontSize: 40))),
     );
   }
 }
