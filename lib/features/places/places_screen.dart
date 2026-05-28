@@ -8,10 +8,14 @@ import 'place_model.dart';
 class PlacesScreen extends StatefulWidget {
   final String cityId;
   final String cityName;
+  /// embedded: true olduğunda Scaffold ve SliverAppBar kaldırılır.
+  /// CityGuideScreen içinde tab olarak kullanım için.
+  final bool embedded;
   const PlacesScreen({
     super.key,
     required this.cityId,
     required this.cityName,
+    this.embedded = false,
   });
 
   @override
@@ -108,26 +112,32 @@ class _PlacesScreenState extends State<PlacesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final scrollView = CustomScrollView(
+      slivers: [
+        // AppBar'ı sadece bağımsız kullanımda göster (embedded=false)
+        if (!widget.embedded) _buildAppBar(),
+        if (_searchVisible)
+          SliverToBoxAdapter(child: _buildSearchBar()),
+        SliverToBoxAdapter(child: _buildCategoryChips()),
+        SliverToBoxAdapter(child: _buildToolbar()),
+        if (_loading)
+          SliverToBoxAdapter(child: Skeleton.list(count: 6))
+        else if (_filtered.isEmpty)
+          SliverFillRemaining(child: _buildEmpty())
+        else if (_isGrid)
+          _buildGrid()
+        else
+          _buildList(),
+        const SliverToBoxAdapter(child: SizedBox(height: 32)),
+      ],
+    );
+
+    // Embedded modda sadece scroll view döner (dış Scaffold'dan gelir)
+    if (widget.embedded) return scrollView;
+
     return Scaffold(
       backgroundColor: AppTheme.background,
-      body: CustomScrollView(
-        slivers: [
-          _buildAppBar(),
-          if (_searchVisible)
-            SliverToBoxAdapter(child: _buildSearchBar()),
-          SliverToBoxAdapter(child: _buildCategoryChips()),
-          SliverToBoxAdapter(child: _buildToolbar()),
-          if (_loading)
-            SliverToBoxAdapter(child: Skeleton.list(count: 6))
-          else if (_filtered.isEmpty)
-            SliverFillRemaining(child: _buildEmpty())
-          else if (_isGrid)
-            _buildGrid()
-          else
-            _buildList(),
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
-        ],
-      ),
+      body: scrollView,
     );
   }
 

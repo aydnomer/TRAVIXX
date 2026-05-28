@@ -5,7 +5,7 @@ import "package:supabase_flutter/supabase_flutter.dart";
 import "../../features/auth/landing_screen.dart";
 import "../../features/cities/home_screen.dart";
 import "../../features/cities/cities_screen.dart";
-import "../../features/places/places_screen.dart";
+import "../../features/cities/city_guide_screen.dart";
 import "../../features/places/place_detail_screen.dart";
 import "../../features/ai_planner/ai_chat_screen.dart";
 import "../../features/favorites/favorites_screen.dart";
@@ -83,8 +83,8 @@ final GoRouter appRouter = GoRouter(
       path: "/city/:id",
       builder: (context, state) {
         final cityId = state.pathParameters["id"]!;
-        final cityName = state.extra as String? ?? "Sehir";
-        return PlacesScreen(cityId: cityId, cityName: cityName);
+        final cityName = state.extra as String? ?? "Şehir";
+        return CityGuideScreen(cityId: cityId, cityName: cityName);
       },
     ),
     GoRoute(

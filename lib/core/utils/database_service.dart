@@ -47,6 +47,20 @@ class DatabaseService {
         .toList();
   }
 
+  static Future<City?> getCityById(String cityId) async {
+    try {
+      final response = await _supabase
+          .from('cities')
+          .select()
+          .eq('id', cityId)
+          .maybeSingle();
+      if (response == null) return null;
+      return City.fromJson(response);
+    } catch (_) {
+      return null;
+    }
+  }
+
   static Future<Place?> getPlaceById(String placeId) async {
     final response = await _supabase
         .from('places')
