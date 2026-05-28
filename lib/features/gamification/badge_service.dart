@@ -152,6 +152,66 @@ class BadgeService {
       ];
 }
 
+// ══════════════════════════════════════════════════════════════
+// Gezgin Seviyesi
+// ══════════════════════════════════════════════════════════════
+
+class TravelerLevel {
+  final int level;       // 1–5
+  final String title;    // "Yeni Gezgin", "Kaşif" …
+  final String emoji;
+  final int currentXP;   // uniquePlaces
+  final int requiredXP;  // bir sonraki seviye için gereken
+  final int colorValue;  // 0xFFRRGGBB
+
+  const TravelerLevel({
+    required this.level,
+    required this.title,
+    required this.emoji,
+    required this.currentXP,
+    required this.requiredXP,
+    required this.colorValue,
+  });
+
+  /// 0.0 – 1.0 arası ilerleme
+  double get progress =>
+      requiredXP > 0 ? (currentXP / requiredXP).clamp(0.0, 1.0) : 1.0;
+
+  bool get isMax => level == 5;
+
+  static TravelerLevel from(UserStats stats) {
+    final p = stats.uniquePlaces;
+    if (p >= 50) {
+      return TravelerLevel(
+        level: 5, title: 'Efsane Gezgin', emoji: '🌟',
+        currentXP: p, requiredXP: 50, colorValue: 0xFFEAB308,
+      );
+    }
+    if (p >= 30) {
+      return TravelerLevel(
+        level: 4, title: 'Usta Gezgin', emoji: '🏆',
+        currentXP: p, requiredXP: 50, colorValue: 0xFFE879F9,
+      );
+    }
+    if (p >= 15) {
+      return TravelerLevel(
+        level: 3, title: 'Deneyimli Gezgin', emoji: '🎒',
+        currentXP: p, requiredXP: 30, colorValue: 0xFF34D399,
+      );
+    }
+    if (p >= 5) {
+      return TravelerLevel(
+        level: 2, title: 'Kaşif', emoji: '🗺️',
+        currentXP: p, requiredXP: 15, colorValue: 0xFF60A5FA,
+      );
+    }
+    return TravelerLevel(
+      level: 1, title: 'Yeni Gezgin', emoji: '🌱',
+      currentXP: p, requiredXP: 5, colorValue: 0xFF86EFAC,
+    );
+  }
+}
+
 enum BadgeTier { bronze, silver, gold }
 
 class BadgeInfo {

@@ -66,6 +66,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 16),
                   if (_stats != null) _buildStatsRow(_stats!),
                   const SizedBox(height: 16),
+                  if (_stats != null) _buildLevelCard(_stats!),
+                  const SizedBox(height: 16),
                   _buildBadgesSection(),
                   const SizedBox(height: 16),
                   _buildInfoCard(user),
@@ -76,6 +78,129 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
+    );
+  }
+
+  // ── Gezgin Seviyesi Kartı ─────────────────────────────────────
+
+  Widget _buildLevelCard(UserStats stats) {
+    final lv = TravelerLevel.from(stats);
+    final color = Color(lv.colorValue);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppTheme.primary, Color.lerp(AppTheme.primary, color, 0.35)!],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primary.withValues(alpha: 0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Üst satır: emoji + seviye bilgisi + level badge
+          Row(
+            children: [
+              Text(lv.emoji, style: const TextStyle(fontSize: 36)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      lv.title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      lv.isMax
+                          ? 'Maksimum seviyeye ulaştın! 🎉'
+                          : '${lv.requiredXP - lv.currentXP} mekan daha → sonraki seviye',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: color.withValues(alpha: 0.5)),
+                ),
+                child: Text(
+                  'Lv. ${lv.level}',
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          // Progress bar
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '${lv.currentXP} / ${lv.requiredXP} mekan',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.85),
+                            fontSize: 11,
+                          ),
+                        ),
+                        Text(
+                          '${(lv.progress * 100).toStringAsFixed(0)}%',
+                          style: TextStyle(
+                            color: color,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: LinearProgressIndicator(
+                        value: lv.progress,
+                        minHeight: 10,
+                        backgroundColor:
+                            Colors.white.withValues(alpha: 0.15),
+                        valueColor: AlwaysStoppedAnimation<Color>(color),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -192,12 +317,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
       BadgeTier.gold => const Color(0xFFEAB308),
     };
 
+    // İlerleme hesabı (kazanılmamış için)
+    double progress = 0.0;
+    String progressLabel = '';
+    if (!earned && _stats != null) {
+      if (b.requiredUniquePlaces != null) {
+        final req = b.requiredUniquePlaces!;
+        progress = (_stats!.uniquePlaces / req).clamp(0.0, 1.0);
+        progressLabel = '${_stats!.uniquePlaces}/$req';
+      } else if (b.requiredCategoryCount != null &&
+          b.requiredCategory != null) {
+        final req = b.requiredCategoryCount!;
+        final cur = _stats!.byCategory[b.requiredCategory!] ?? 0;
+        progress = (cur / req).clamp(0.0, 1.0);
+        progressLabel = '$cur/$req';
+      }
+    }
+
     return GestureDetector(
       onTap: () => _showBadgeDetail(b, earned),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        width: 76,
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        width: 80,
+        padding: const EdgeInsets.fromLTRB(6, 10, 6, 8),
         decoration: BoxDecoration(
           color: earned
               ? tierColor.withValues(alpha: 0.12)
@@ -210,9 +352,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         child: Column(
           children: [
-            Opacity(
-              opacity: earned ? 1.0 : 0.3,
-              child: Text(b.emoji, style: const TextStyle(fontSize: 28)),
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                Opacity(
+                  opacity: earned ? 1.0 : 0.3,
+                  child:
+                      Text(b.emoji, style: const TextStyle(fontSize: 26)),
+                ),
+                if (earned)
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Container(
+                      width: 14,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: tierColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.check,
+                          size: 9, color: Colors.white),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 4),
             Text(
@@ -226,6 +389,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: earned ? tierColor : Colors.grey,
               ),
             ),
+            // Kazanılmamışsa ilerleme çubuğu
+            if (!earned && progressLabel.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                progressLabel,
+                style: const TextStyle(
+                    fontSize: 8, color: AppTheme.textSecondary),
+              ),
+              const SizedBox(height: 3),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 4,
+                  backgroundColor: Colors.grey.shade200,
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(tierColor),
+                ),
+              ),
+            ],
           ],
         ),
       ),
