@@ -22,17 +22,17 @@ jobs:
       - name: Repo checkout
         uses: actions/checkout@v4
 
-      - name: Flutter SDK kurulumu (sabitlenmiş versiyon)
+      - name: Flutter SDK kurulumu (stable)
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.41.9'
           channel: 'stable'
           cache: true
 
-      - name: Flutter sürümü kontrol
+      - name: Flutter ortam kontrolü
         run: |
           flutter --version
           dart --version
+          flutter doctor -v
 
       - name: Bağımlılıkları indir
         run: flutter pub get
