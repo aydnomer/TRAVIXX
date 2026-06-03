@@ -232,6 +232,7 @@ class WikipediaService {
             if (first is Map && first['src'] is String) {
               var src = first['src'] as String;
               if (src.startsWith('//')) src = 'https:$src';
+              if (!_isRealPhoto(src)) continue; // ikon/harita/bayrak ele
               if (!images.contains(src)) images.add(src);
             }
           }
@@ -242,6 +243,26 @@ class WikipediaService {
     final result = WikiPlaceMedia(extract: extract, images: images);
     _mediaCache[key] = result;
     return result;
+  }
+
+  /// Fotoğraf olmayan görselleri (ikon, harita, bayrak, logo, ses) eler.
+  static bool _isRealPhoto(String url) {
+    final u = url.toLowerCase();
+    // Vektör/ses/sembol uzantıları fotoğraf değil
+    if (u.endsWith('.svg') ||
+        u.contains('.svg/') ||
+        u.endsWith('.ogg') ||
+        u.endsWith('.oga') ||
+        u.endsWith('.wav')) {
+      return false;
+    }
+    // İsim kalıplarına göre alakasız görselleri ele
+    const bad = [
+      'icon', 'logo', 'map', 'harita', 'flag', 'bayrak', 'locator',
+      'coat_of_arms', 'arms', 'symbol', 'wiki', 'commons-logo',
+      'edit-', 'ambox', 'question', 'disambig',
+    ];
+    return !bad.any((b) => u.contains(b));
   }
 
   /// Metni en yakın paragraf/cümle sınırında kısaltır, sonuna "…" ekler.
