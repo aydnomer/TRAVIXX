@@ -116,7 +116,7 @@ class WikipediaService {
       final res = await http
           .get(Uri.parse(
               'https://$lang.wikipedia.org/w/api.php?format=json&action=query'
-              '&list=search&srlimit=6&srsearch=$q'))
+              '&list=search&srlimit=6&srsearch=$q&origin=*'))
           .timeout(const Duration(seconds: 6));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body) as Map<String, dynamic>;
@@ -198,7 +198,7 @@ class WikipediaService {
           .get(Uri.parse(
               'https://$lang.wikipedia.org/w/api.php?format=json&action=query'
               '&prop=extracts&explaintext=1&redirects=1&exsectionformat=plain'
-              '&titles=$encoded'))
+              '&titles=$encoded&origin=*'))
           .timeout(const Duration(seconds: 8));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body) as Map<String, dynamic>;
