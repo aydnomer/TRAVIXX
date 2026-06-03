@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/widgets/language_selector.dart';
+import '../reviews/review_service.dart';
 
 class LandingScreen extends StatefulWidget {
   const LandingScreen({super.key});
@@ -27,6 +28,9 @@ class _LandingScreenState extends State<LandingScreen> {
   final _regEmailCtrl = TextEditingController();
   final _regPassCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
+
+  // ─── Landing testimonial yorumları ────────────────────────────
+  List<Review> _testimonials = const [];
 
   // ─── Otomatik dönen şehir foto galerisi ────────────────────────
   int _photoIdx = 0;
@@ -80,6 +84,27 @@ class _LandingScreenState extends State<LandingScreen> {
           });
         }
       });
+    }
+    _loadTestimonials();
+  }
+
+  Future<void> _loadTestimonials() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final response = await supabase
+          .from('reviews')
+          .select()
+          .gte('rating', 4)
+          .order('created_at', ascending: false)
+          .limit(6);
+      final reviews = (response as List)
+          .map((r) => Review.fromJson(r as Map<String, dynamic>))
+          .toList();
+      if (mounted && reviews.isNotEmpty) {
+        setState(() => _testimonials = reviews);
+      }
+    } catch (_) {
+      // Hata durumunda hardcoded fallback gösterilir
     }
   }
 
@@ -1419,36 +1444,42 @@ class _LandingScreenState extends State<LandingScreen> {
   }
 
   // ─── TESTIMONIALS ────────────────────────────────────────────
+  static const _fallbackReviews = [
+    {
+      'stars': 5,
+      'text': '"İstanbul\'u gezerken QR sistemi inanılmaz işe yaradı. Her mekanın hikayesini anında öğrendim."',
+      'initials': 'AY',
+      'name': 'Ayşe Y.',
+      'color': Color(0xFFF97316),
+    },
+    {
+      'stars': 5,
+      'text': '"Almanca dil desteği mükemmel. Türkiye\'yi gezerken hiç dil sorunu yaşamadım!"',
+      'initials': 'HM',
+      'name': 'Hans M.',
+      'color': AppTheme.primary,
+    },
+    {
+      'stars': 5,
+      'text': '"GPS sıralaması sayesinde Kapadokya\'da en yakın mekanları önce gezdim. Harika!"',
+      'initials': 'MK',
+      'name': 'Mehmet K.',
+      'color': Color(0xFF15803D),
+    },
+  ];
+
+  static const List<Color> _avatarColors = [
+    Color(0xFFF97316),
+    AppTheme.primary,
+    Color(0xFF15803D),
+    Color(0xFF7C3AED),
+    Color(0xFFDB2777),
+    Color(0xFF0284C7),
+  ];
+
   Widget _buildTestimonials() {
-    final reviews = [
-      {
-        'stars': '★★★★★',
-        'text':
-            '"İstanbul\'u gezerken QR sistemi inanılmaz işe yaradı. Her mekanın hikayesini anında öğrendim."',
-        'initials': 'AY',
-        'name': 'Ayşe Y.',
-        'loc': 'İstanbul',
-        'color': const Color(0xFFF97316),
-      },
-      {
-        'stars': '★★★★★',
-        'text':
-            '"Almanca dil desteği mükemmel. Türkiye\'yi gezerken hiç dil sorunu yaşamadım!"',
-        'initials': 'HM',
-        'name': 'Hans M.',
-        'loc': 'Berlin, Almanya',
-        'color': AppTheme.primary,
-      },
-      {
-        'stars': '★★★★★',
-        'text':
-            '"GPS sıralaması sayesinde Kapadokya\'da en yakın mekanları önce gezdim. Harika!"',
-        'initials': 'MK',
-        'name': 'Mehmet K.',
-        'loc': 'Ankara',
-        'color': const Color(0xFF15803D),
-      },
-    ];
+    final bool hasReal = _testimonials.isNotEmpty;
+    final int count = hasReal ? _testimonials.length : _fallbackReviews.length;
 
     return Container(
       color: AppTheme.background,
@@ -1471,7 +1502,29 @@ class _LandingScreenState extends State<LandingScreen> {
               return Wrap(
                 spacing: 16,
                 runSpacing: 16,
-                children: reviews.map((r) {
+                children: List.generate(count, (i) {
+                  final color = _avatarColors[i % _avatarColors.length];
+                  final int stars;
+                  final String text;
+                  final String initials;
+                  final String name;
+
+                  if (hasReal) {
+                    final r = _testimonials[i];
+                    stars = r.rating;
+                    text = '"${r.comment}"';
+                    initials = r.displayName.isNotEmpty
+                        ? r.displayName[0].toUpperCase()
+                        : 'G';
+                    name = r.displayName;
+                  } else {
+                    final r = _fallbackReviews[i];
+                    stars = r['stars'] as int;
+                    text = r['text'] as String;
+                    initials = r['initials'] as String;
+                    name = r['name'] as String;
+                  }
+
                   return SizedBox(
                     width: constraints.maxWidth > 700
                         ? (constraints.maxWidth - 32) / 3
@@ -1489,16 +1542,19 @@ class _LandingScreenState extends State<LandingScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            r['stars'] as String,
-                            style: const TextStyle(
-                              color: Color(0xFFEAB308),
-                              fontSize: 16,
+                          Row(
+                            children: List.generate(
+                              5,
+                              (si) => Icon(
+                                si < stars ? Icons.star : Icons.star_border,
+                                color: const Color(0xFFEAB308),
+                                size: 16,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 10),
                           Text(
-                            r['text'] as String,
+                            text,
                             style: const TextStyle(
                               fontSize: 12,
                               color: AppTheme.textSecondary,
@@ -1511,9 +1567,9 @@ class _LandingScreenState extends State<LandingScreen> {
                             children: [
                               CircleAvatar(
                                 radius: 16,
-                                backgroundColor: r['color'] as Color,
+                                backgroundColor: color,
                                 child: Text(
-                                  r['initials'] as String,
+                                  initials,
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 11,
@@ -1522,25 +1578,13 @@ class _LandingScreenState extends State<LandingScreen> {
                                 ),
                               ),
                               const SizedBox(width: 10),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    r['name'] as String,
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppTheme.textPrimary,
-                                    ),
-                                  ),
-                                  Text(
-                                    r['loc'] as String,
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      color: AppTheme.textSecondary,
-                                    ),
-                                  ),
-                                ],
+                              Text(
+                                name,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.textPrimary,
+                                ),
                               ),
                             ],
                           ),
@@ -1548,7 +1592,7 @@ class _LandingScreenState extends State<LandingScreen> {
                       ),
                     ),
                   );
-                }).toList(),
+                }),
               );
             },
           ),
