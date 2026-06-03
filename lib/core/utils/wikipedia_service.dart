@@ -52,7 +52,7 @@ class WikipediaService {
     String? extract;
     final images = <String>[];
 
-    // 1) Summary → extract + ana görsel
+    // 1) Summary → kısa özet + ana görsel (disambiguation kontrolü)
     try {
       final res = await http
           .get(Uri.parse(
@@ -60,17 +60,40 @@ class WikipediaService {
           .timeout(const Duration(seconds: 6));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body) as Map<String, dynamic>;
-        if (data['type'] != 'disambiguation') {
-          extract = data['extract'] as String?;
-          final orig = data['originalimage'];
-          if (orig is Map && orig['source'] is String) {
-            images.add(orig['source'] as String);
+        if (data['type'] == 'disambiguation') {
+          _mediaCache[key] = const WikiPlaceMedia();
+          return const WikiPlaceMedia();
+        }
+        extract = data['extract'] as String?;
+        final orig = data['originalimage'];
+        if (orig is Map && orig['source'] is String) {
+          images.add(orig['source'] as String);
+        }
+      }
+    } catch (_) {}
+
+    // 2) Tam makale metni → detaylı tarihçe (çok paragraflı)
+    try {
+      final res = await http
+          .get(Uri.parse(
+              'https://$lang.wikipedia.org/w/api.php?format=json&action=query'
+              '&prop=extracts&explaintext=1&redirects=1&exsectionformat=plain'
+              '&titles=$encoded'))
+          .timeout(const Duration(seconds: 8));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        final pages = (data['query']?['pages']) as Map<String, dynamic>?;
+        if (pages != null && pages.isNotEmpty) {
+          final page = pages.values.first as Map<String, dynamic>;
+          final full = page['extract'] as String?;
+          if (full != null && full.trim().length > (extract?.length ?? 0)) {
+            extract = _truncate(full.trim(), 2400);
           }
         }
       }
     } catch (_) {}
 
-    // 2) Media-list → ek görseller
+    // 3) Media-list → ek görseller
     try {
       final res = await http
           .get(Uri.parse(
@@ -99,6 +122,18 @@ class WikipediaService {
     final result = WikiPlaceMedia(extract: extract, images: images);
     _mediaCache[key] = result;
     return result;
+  }
+
+  /// Metni en yakın paragraf/cümle sınırında kısaltır, sonuna "…" ekler.
+  static String _truncate(String text, int maxLen) {
+    if (text.length <= maxLen) return text;
+    var cut = text.substring(0, maxLen);
+    // Önce paragraf sonu, yoksa cümle sonu ara
+    final nl = cut.lastIndexOf('\n');
+    final dot = cut.lastIndexOf('. ');
+    final boundary = nl > maxLen * 0.6 ? nl : (dot > maxLen * 0.5 ? dot + 1 : -1);
+    if (boundary > 0) cut = cut.substring(0, boundary);
+    return '${cut.trim()}…';
   }
 
   /// Bir mekan ismi için Wikipedia thumbnail URL'i.

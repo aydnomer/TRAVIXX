@@ -404,6 +404,13 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                   _sectionTitle(I18n.t('place.description')),
                   const SizedBox(height: 10),
                   _buildDescriptionCard(p),
+                  // Detaylı tarihçe (Wikipedia tam makale metni)
+                  if (_hasDetailedHistory(p)) ...[
+                    const SizedBox(height: 20),
+                    _sectionTitle('📖 Tarihçe'),
+                    const SizedBox(height: 10),
+                    _buildHistoryCard(),
+                  ],
                   // Açılış saatleri
                   if ((p.openingHours?.isNotEmpty ?? false)) ...[
                     const SizedBox(height: 20),
@@ -1387,6 +1394,54 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
           ),
         ],
       ],
+    );
+  }
+
+  /// DB açıklaması doluyken ek detaylı tarihçe gösterilmeli mi?
+  /// (DB boşsa zaten açıklama kartında detaylı metin görünür — tekrar etme.)
+  bool _hasDetailedHistory(Place p) {
+    return p.description.isNotEmpty &&
+        _wikiExtract != null &&
+        _wikiExtract!.trim().length > 200;
+  }
+
+  Widget _buildHistoryCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _wikiExtract!.trim(),
+            style: const TextStyle(
+              fontSize: 14,
+              height: 1.7,
+              color: AppTheme.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              const Icon(Icons.public, size: 13, color: AppTheme.textSecondary),
+              const SizedBox(width: 4),
+              Text(
+                'Kaynak: Wikipedia',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppTheme.textSecondary,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
