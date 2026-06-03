@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -58,6 +60,13 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   // Wikipedia fallback foto (DB'de yoksa)
   String? _wikiPhoto;
 
+  // Wikipedia'dan çekilen ek fotoğraflar + tarihçe metni
+  List<String> _wikiImages = const [];
+  String? _wikiExtract;
+
+  // Galeri otomatik döndürme zamanlayıcısı (3 sn)
+  Timer? _galleryTimer;
+
   // TTS speaking state
   bool _isSpeaking = false;
 
@@ -66,6 +75,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
 
   @override
   void dispose() {
+    _galleryTimer?.cancel();
     _galleryCtrl.dispose();
     super.dispose();
   }
@@ -127,23 +137,45 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     }
   }
 
-  // DB'de foto yoksa Wikipedia'dan çekmeyi dene
+  // Wikipedia'dan tarihçe + birden fazla fotoğraf çek (DB'yi zenginleştir)
   Future<void> _loadWikiPhotoIfNeeded(Place p) async {
-    if (p.images.isNotEmpty) return; // zaten foto var
-    final url = await WikipediaService.fetchThumbnail(
+    final media = await WikipediaService.fetchPlaceMedia(
       name: p.name,
       nameEn: p.nameEn.isNotEmpty ? p.nameEn : null,
     );
     if (!mounted) return;
-    if (url != null) {
-      setState(() => _wikiPhoto = url);
-      // Best-effort: Supabase'e geri yaz (sessizce, hata olursa atla)
+
+    setState(() {
+      _wikiImages = media.images;
+      _wikiExtract = media.extract;
+      if (p.images.isEmpty && media.images.isNotEmpty) {
+        _wikiPhoto = media.images.first;
+      }
+    });
+
+    // Otomatik döndürmeyi başlat (birden fazla görsel varsa)
+    _startGalleryAutoplay(_effectiveImages(p).length);
+
+    // Best-effort: DB'de foto yoksa Wikipedia görsellerini geri yaz
+    if (p.images.isEmpty && media.images.isNotEmpty) {
       Supabase.instance.client
           .from('places')
-          .update({'images': [url]})
+          .update({'images': media.images})
           .eq('id', p.id)
           .then((_) {}, onError: (_) {});
     }
+  }
+
+  // Galeriyi 3 saniyede bir otomatik ilerlet
+  void _startGalleryAutoplay(int count) {
+    _galleryTimer?.cancel();
+    if (count < 2) return;
+    _galleryTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (!mounted || !_galleryCtrl.hasClients) return;
+      final next = (_galleryIdx + 1) % count;
+      _galleryCtrl.animateToPage(next,
+          duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
+    });
   }
 
   Future<void> _loadNearbyFood(Place p) async {
@@ -629,11 +661,14 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     }
   }
 
-  /// Place'in görsellerini + Wikipedia fallback'i birlikte döner
+  /// Place'in DB görselleri + Wikipedia görsellerini birleştirir (tekrarsız)
   List<String> _effectiveImages(Place p) {
-    if (p.images.isNotEmpty) return p.images;
-    if (_wikiPhoto != null) return [_wikiPhoto!];
-    return const [];
+    final merged = <String>[...p.images];
+    for (final url in _wikiImages) {
+      if (!merged.contains(url)) merged.add(url);
+    }
+    if (merged.isEmpty && _wikiPhoto != null) merged.add(_wikiPhoto!);
+    return merged;
   }
 
   Widget _buildHeroAppBar(Place p) {
@@ -1358,7 +1393,9 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   Widget _buildDescriptionCard(Place p) {
     final desc = p.description.isNotEmpty
         ? p.description
-        : I18n.t('place.descPlaceholder');
+        : (_wikiExtract != null && _wikiExtract!.isNotEmpty
+            ? _wikiExtract!
+            : I18n.t('place.descPlaceholder'));
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),

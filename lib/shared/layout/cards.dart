@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/design_tokens.dart';
 import '../../features/places/place_model.dart';
+import 'photo_carousel.dart';
 
 /// Web grid kartı (140px): üst 80px kategori-renkli ikon, alt 60px bilgi.
 /// Hover'da border yeşile döner.
@@ -41,12 +42,19 @@ class _PlaceCardState extends State<PlaceCard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Üst 80px — kategori ikonu
-              Container(
+              // Üst 80px — foto carousel (varsa) veya kategori ikonu
+              SizedBox(
                 height: 80,
-                color: color.withValues(alpha: 0.12),
-                alignment: Alignment.center,
-                child: Icon(icon, size: 32, color: color),
+                width: double.infinity,
+                child: PhotoCarousel(
+                  images: widget.place.images,
+                  showDots: false,
+                  fallback: Container(
+                    color: color.withValues(alpha: 0.12),
+                    alignment: Alignment.center,
+                    child: Icon(icon, size: 32, color: color),
+                  ),
+                ),
               ),
               // Alt 60px — bilgi
               Expanded(
@@ -103,15 +111,20 @@ class PlaceListRow extends StatelessWidget {
         decoration: const BoxDecoration(border: Border(bottom: DT.side)),
         child: Row(
           children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                borderRadius: const BorderRadius.all(Radius.circular(10)),
+            ClipRRect(
+              borderRadius: const BorderRadius.all(Radius.circular(10)),
+              child: SizedBox(
+                width: 52,
+                height: 52,
+                child: place.images.isNotEmpty
+                    ? Image.network(
+                        place.images.first,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) =>
+                            _iconBox(color, icon),
+                      )
+                    : _iconBox(color, icon),
               ),
-              alignment: Alignment.center,
-              child: Icon(icon, size: 24, color: color),
             ),
             const SizedBox(width: DT.s12),
             Expanded(
@@ -147,6 +160,12 @@ class PlaceListRow extends StatelessWidget {
     );
   }
 }
+
+Widget _iconBox(Color color, IconData icon) => Container(
+      color: color.withValues(alpha: 0.12),
+      alignment: Alignment.center,
+      child: Icon(icon, size: 24, color: color),
+    );
 
 class _FreeBadge extends StatelessWidget {
   const _FreeBadge();

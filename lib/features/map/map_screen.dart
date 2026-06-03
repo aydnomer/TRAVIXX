@@ -67,7 +67,38 @@ class _MapScreenState extends State<MapScreen> {
 
   List<Place> get _filteredPlaces {
     if (_selectedCategory == 'Tümü') return _places;
-    return _places.where((p) => p.category == _selectedCategory).toList();
+    return _places.where((p) => _matchesCategory(p.category)).toList();
+  }
+
+  /// Esnek kategori eşleştirme: DB'deki kategori metni seçili filtrenin
+  /// anahtar kelimelerinden herhangi birini içeriyorsa eşleşir.
+  /// (Tam eşleşme yerine — DB değerleri etiketlerle birebir aynı olmayabilir.)
+  static const Map<String, List<String>> _categoryKeywords = {
+    'Tarihi': [
+      'tarih', 'kale', 'saray', 'antik', 'arkeoloji', 'ören', 'oren',
+      'han', 'köprü', 'kopru', 'kule', 'sur', 'historic',
+    ],
+    'Müze': ['müze', 'muze', 'museum', 'galeri'],
+    'Doğa': [
+      'doğa', 'doga', 'park', 'şelale', 'selale', 'mağara', 'magara',
+      'göl', 'gol', 'dağ', 'dag', 'plaj', 'kanyon', 'yayla', 'orman',
+      'vadi', 'nature',
+    ],
+    'Kültür': [
+      'kültür', 'kultur', 'sanat', 'tiyatro', 'konak', 'çarşı', 'carsi',
+      'meydan', 'culture',
+    ],
+    'Dini': [
+      'dini', 'cami', 'mescit', 'kilise', 'manastır', 'manastir',
+      'türbe', 'turbe', 'sinagog', 'mosque', 'church', 'religious',
+    ],
+  };
+
+  bool _matchesCategory(String category) {
+    final c = category.toLowerCase();
+    final keywords = _categoryKeywords[_selectedCategory];
+    if (keywords == null) return c == _selectedCategory.toLowerCase();
+    return keywords.any((k) => c.contains(k));
   }
 
   /// Kategoriye göre marker rengi
