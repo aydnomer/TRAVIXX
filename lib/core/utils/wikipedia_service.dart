@@ -31,16 +31,136 @@ class WikipediaService {
     String? nameEn,
     int maxImages = 6,
   }) async {
+    bool ok(WikiPlaceMedia m) =>
+        m.images.isNotEmpty || ((m.extract?.trim().length ?? 0) > 60);
+
+    // 1) Türkçe Wikipedia'da ARAMA ile gerçek başlığı bul (en güvenilir).
+    //    Mekan adları Türkçe karaktersiz olabilir ("Elazig Muzesi").
+    //    Önce deasciify ile "Elazığ Müzesi"ne çevirip aramak isabeti artırır.
+    final deascii = _deAsciify(name);
+    for (final q in {deascii, name}) {
+      final trTitle = await _searchTitle(q, lang: 'tr');
+      if (trTitle != null) {
+        final m = await _tryMedia(trTitle, lang: 'tr', maxImages: maxImages);
+        if (ok(m)) return m;
+      }
+    }
+
+    // 2) İngilizce Wikipedia'da arama (nameEn ile)
     if (nameEn != null && nameEn.isNotEmpty) {
-      final m = await _tryMedia(nameEn, lang: 'en', maxImages: maxImages);
-      if (m.images.isNotEmpty || (m.extract?.isNotEmpty ?? false)) return m;
+      final enTitle = await _searchTitle(nameEn, lang: 'en');
+      if (enTitle != null) {
+        final m = await _tryMedia(enTitle, lang: 'en', maxImages: maxImages);
+        if (ok(m)) return m;
+      }
     }
-    final tr = await _tryMedia(name, lang: 'tr', maxImages: maxImages);
-    if (tr.images.isNotEmpty || (tr.extract?.isNotEmpty ?? false)) return tr;
-    if (!name.toLowerCase().contains('türkiye')) {
-      return _tryMedia('$name Türkiye', lang: 'tr', maxImages: maxImages);
-    }
+
+    // 3) Doğrudan başlık denemeleri (arama başarısızsa)
+    final direct = await _tryMedia(name, lang: 'tr', maxImages: maxImages);
+    if (ok(direct)) return direct;
     return const WikiPlaceMedia();
+  }
+
+  /// Yaygın Türkçe yer-kelimeleri ve il adlarını doğru yazıma çevirir.
+  /// (DB'de Türkçe karaktersiz yazılmış adlar için: "Elazig Muzesi" →
+  /// "Elazığ Müzesi"). Kelime bazlı, büyük/küçük harf korunur.
+  static const Map<String, String> _deAsciiMap = {
+    // Yer türleri
+    'muze': 'müze', 'muzesi': 'müzesi',
+    'sarayi': 'sarayı', 'kopru': 'köprü', 'koprusu': 'köprüsü',
+    'selale': 'şelale', 'selalesi': 'şelalesi',
+    'magara': 'mağara', 'magarasi': 'mağarası',
+    'golu': 'gölü', 'gol': 'göl',
+    'dagi': 'dağı', 'dag': 'dağ',
+    'oren': 'ören', 'oreni': 'öreni', 'orenyeri': 'örenyeri',
+    'cesme': 'çeşme', 'carsi': 'çarşı', 'carsisi': 'çarşısı',
+    'koy': 'köy', 'koyu': 'köyü', 'kosk': 'köşk', 'kosku': 'köşkü',
+    'turbe': 'türbe', 'turbesi': 'türbesi',
+    'hani': 'hanı', 'hamami': 'hamamı', 'bahcesi': 'bahçesi',
+    // İl adları (Türkçe karakterli olanlar)
+    'elazig': 'Elazığ', 'istanbul': 'İstanbul', 'mugla': 'Muğla',
+    'mus': 'Muş', 'usak': 'Uşak', 'sirnak': 'Şırnak', 'igdir': 'Iğdır',
+    'aydin': 'Aydın', 'balikesir': 'Balıkesir', 'diyarbakir': 'Diyarbakır',
+    'kirklareli': 'Kırklareli', 'kirsehir': 'Kırşehir',
+    'kirikkale': 'Kırıkkale', 'tekirdag': 'Tekirdağ',
+    'canakkale': 'Çanakkale', 'cankiri': 'Çankırı', 'corum': 'Çorum',
+    'nigde': 'Niğde', 'agri': 'Ağrı', 'gumushane': 'Gümüşhane',
+    'sanliurfa': 'Şanlıurfa', 'kahramanmaras': 'Kahramanmaraş',
+    'bingol': 'Bingöl', 'bartin': 'Bartın',
+  };
+
+  static String _deAsciify(String input) {
+    final words = input.split(RegExp(r'\s+'));
+    return words.map((w) {
+      final lower = w.toLowerCase();
+      final fixed = _deAsciiMap[lower];
+      if (fixed == null) return w;
+      // Sözlük değeri zaten büyük harfle başlıyorsa onu kullan,
+      // değilse orijinalin baş harfini koru.
+      if (fixed[0] == fixed[0].toUpperCase()) return fixed;
+      final capped = w.isNotEmpty && w[0] == w[0].toUpperCase();
+      return capped ? '${fixed[0].toUpperCase()}${fixed.substring(1)}' : fixed;
+    }).join(' ');
+  }
+
+  /// Wikipedia arama API'si ile sorguya en uygun sayfa başlığını bulur.
+  /// Birden çok sonuç çekip kelime örtüşmesine göre en iyisini seçer
+  /// (şehir maddesi "X (il)" gibi alakasız sonuçları eler).
+  static final Map<String, String?> _titleCache = {};
+  static Future<String?> _searchTitle(String query,
+      {required String lang}) async {
+    final key = '$lang|$query';
+    if (_titleCache.containsKey(key)) return _titleCache[key];
+    try {
+      final q = Uri.encodeQueryComponent(query);
+      final res = await http
+          .get(Uri.parse(
+              'https://$lang.wikipedia.org/w/api.php?format=json&action=query'
+              '&list=search&srlimit=6&srsearch=$q'))
+          .timeout(const Duration(seconds: 6));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        final hits = (data['query']?['search']) as List?;
+        if (hits != null && hits.isNotEmpty) {
+          final best = _bestMatch(query, hits);
+          _titleCache[key] = best;
+          return best;
+        }
+      }
+    } catch (_) {}
+    _titleCache[key] = null;
+    return null;
+  }
+
+  /// Sorgu kelimeleriyle en çok örtüşen başlığı seçer.
+  static String? _bestMatch(String query, List hits) {
+    final qWords = query
+        .toLowerCase()
+        .split(RegExp(r'\s+'))
+        .where((w) => w.length > 2)
+        .toSet();
+    String? best;
+    double bestScore = -1;
+    for (final h in hits) {
+      if (h is! Map) continue;
+      final title = h['title'] as String?;
+      if (title == null) continue;
+      final tLower = title.toLowerCase();
+      final tWords = tLower.split(RegExp(r'\s+')).toSet();
+      var score = qWords.where((w) => tWords.contains(w)).length.toDouble();
+      // Şehir/il maddesi gibi tek-kavram sonuçları cezalandır
+      if (tLower.contains('(il)') ||
+          tLower.contains('(şehir)') ||
+          tLower.contains('(ilçe)')) {
+        score -= 2;
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        best = title;
+      }
+    }
+    // Hiç örtüşme yoksa ilk sonucu döndürme (alakasız olabilir)
+    return bestScore > 0 ? best : (hits.first as Map)['title'] as String?;
   }
 
   static Future<WikiPlaceMedia> _tryMedia(String title,
