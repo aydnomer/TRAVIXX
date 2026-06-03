@@ -18,6 +18,14 @@ class WikiPlaceMedia {
 }
 
 class WikipediaService {
+  /// Wikimedia API politikası gereği açıklayıcı User-Agent zorunlu.
+  /// Olmadan istekler bloklanır (403/429/boş yanıt).
+  static const Map<String, String> _ua = {
+    'User-Agent':
+        'TravixxApp/1.0 (https://github.com/aydnomer/TRAVIXX; travixx@example.com)',
+    'Accept': 'application/json',
+  };
+
   /// Bellek cache: pageTitle → URL (veya null = bulunamadı)
   static final Map<String, String?> _cache = {};
 
@@ -31,34 +39,107 @@ class WikipediaService {
     String? nameEn,
     int maxImages = 6,
   }) async {
-    bool ok(WikiPlaceMedia m) =>
-        m.images.isNotEmpty || ((m.extract?.trim().length ?? 0) > 60);
+    String? bestExtract;
+    final candidates = <String>[]; // tüm aday görseller (henüz filtrelenmedi)
 
-    // 1) Türkçe Wikipedia'da ARAMA ile gerçek başlığı bul (en güvenilir).
-    //    Mekan adları Türkçe karaktersiz olabilir ("Elazig Muzesi").
-    //    Önce deasciify ile "Elazığ Müzesi"ne çevirip aramak isabeti artırır.
+    void absorb(WikiPlaceMedia m) {
+      if ((m.extract?.trim().length ?? 0) > (bestExtract?.length ?? 0)) {
+        bestExtract = m.extract?.trim();
+      }
+      for (final url in m.images) {
+        if (!candidates.contains(url)) candidates.add(url);
+      }
+    }
+
+    // 1) Türkçe Wikipedia: deasciify ile gerçek başlığı bul (tarihçe için en iyi)
     final deascii = _deAsciify(name);
     for (final q in {deascii, name}) {
       final trTitle = await _searchTitle(q, lang: 'tr');
       if (trTitle != null) {
-        final m = await _tryMedia(trTitle, lang: 'tr', maxImages: maxImages);
-        if (ok(m)) return m;
+        absorb(await _tryMedia(trTitle, lang: 'tr', maxImages: maxImages));
+        break;
       }
     }
 
-    // 2) İngilizce Wikipedia'da arama (nameEn ile)
-    if (nameEn != null && nameEn.isNotEmpty) {
-      final enTitle = await _searchTitle(nameEn, lang: 'en');
-      if (enTitle != null) {
-        final m = await _tryMedia(enTitle, lang: 'en', maxImages: maxImages);
-        if (ok(m)) return m;
+    // 2) İngilizce Wikipedia (genelde daha çok foto içerir)
+    final enQuery = (nameEn != null && nameEn.isNotEmpty) ? nameEn : deascii;
+    final enTitle = await _searchTitle(enQuery, lang: 'en');
+    if (enTitle != null) {
+      absorb(await _tryMedia(enTitle, lang: 'en', maxImages: maxImages));
+    }
+
+    // 3) Wikimedia Commons'tan mekan adıyla ek foto
+    for (final q in {deascii, if (nameEn != null) nameEn}) {
+      final commons = await _commonsImages(q, limit: maxImages);
+      for (final url in commons) {
+        if (!candidates.contains(url)) candidates.add(url);
       }
     }
 
-    // 3) Doğrudan başlık denemeleri (arama başarısızsa)
-    final direct = await _tryMedia(name, lang: 'tr', maxImages: maxImages);
-    if (ok(direct)) return direct;
-    return const WikiPlaceMedia();
+    // 4) DOĞRULUK FİLTRESİ: yalnızca dosya adı mekan adının anlamlı bir
+    //    kelimesini içeren görselleri tut (yanlış foto gelmesin).
+    final relWords = _fold('$name ${nameEn ?? ''}')
+        .split(RegExp(r'\s+'))
+        .where((w) => w.length > 3)
+        .toSet();
+    final images = <String>[];
+    for (final url in candidates) {
+      if (images.length >= maxImages) break;
+      final fname = _fold(Uri.decodeFull(url));
+      if (relWords.any((w) => fname.contains(w))) images.add(url);
+    }
+
+    return WikiPlaceMedia(extract: bestExtract, images: images);
+  }
+
+  /// Türkçe karakterleri ASCII'ye indirger + küçük harf (karşılaştırma için).
+  static String _fold(String s) {
+    const map = {
+      'ı': 'i', 'İ': 'i', 'ş': 's', 'ğ': 'g', 'ü': 'u', 'ö': 'o', 'ç': 'c',
+      'â': 'a', 'î': 'i', 'û': 'u',
+    };
+    final lower = s.toLowerCase();
+    final sb = StringBuffer();
+    for (final ch in lower.split('')) {
+      sb.write(map[ch] ?? ch);
+    }
+    return sb.toString();
+  }
+
+  /// Wikimedia Commons'ta mekan adıyla foto arar (gerçek fotoğraflar).
+  static final Map<String, List<String>> _commonsCache = {};
+  static Future<List<String>> _commonsImages(String query,
+      {int limit = 6}) async {
+    if (_commonsCache.containsKey(query)) return _commonsCache[query]!;
+    final out = <String>[];
+    try {
+      final q = Uri.encodeComponent(query);
+      final res = await http
+          .get(Uri.parse(
+              'https://commons.wikimedia.org/w/api.php?format=json&action=query'
+              '&generator=search&gsrnamespace=6&gsrlimit=$limit'
+              '&gsrsearch=$q%20filetype:bitmap'
+              '&prop=imageinfo&iiprop=url&iiurlwidth=1024&origin=*'),
+              headers: _ua)
+          .timeout(const Duration(seconds: 8));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        final pages = (data['query']?['pages']) as Map<String, dynamic>?;
+        if (pages != null) {
+          for (final page in pages.values) {
+            if (page is! Map) continue;
+            final info = page['imageinfo'];
+            if (info is List && info.isNotEmpty) {
+              final ii = info.first as Map;
+              final url = (ii['thumburl'] ?? ii['url']) as String?;
+              if (url != null && _isRealPhoto(url)) out.add(url);
+            }
+          }
+        }
+      }
+    } catch (_) {}
+    _commonsCache[query] = out;
+    return out;
   }
 
   /// Yaygın Türkçe yer-kelimeleri ve il adlarını doğru yazıma çevirir.
@@ -112,11 +193,12 @@ class WikipediaService {
     final key = '$lang|$query';
     if (_titleCache.containsKey(key)) return _titleCache[key];
     try {
-      final q = Uri.encodeQueryComponent(query);
+      final q = Uri.encodeComponent(query);
       final res = await http
           .get(Uri.parse(
               'https://$lang.wikipedia.org/w/api.php?format=json&action=query'
-              '&list=search&srlimit=6&srsearch=$q&origin=*'))
+              '&list=search&srlimit=6&srsearch=$q&origin=*'),
+              headers: _ua)
           .timeout(const Duration(seconds: 6));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body) as Map<String, dynamic>;
@@ -176,7 +258,8 @@ class WikipediaService {
     try {
       final res = await http
           .get(Uri.parse(
-              'https://$lang.wikipedia.org/api/rest_v1/page/summary/$encoded'))
+              'https://$lang.wikipedia.org/api/rest_v1/page/summary/$encoded'),
+              headers: _ua)
           .timeout(const Duration(seconds: 6));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body) as Map<String, dynamic>;
@@ -187,7 +270,8 @@ class WikipediaService {
         extract = data['extract'] as String?;
         final orig = data['originalimage'];
         if (orig is Map && orig['source'] is String) {
-          images.add(orig['source'] as String);
+          final src = orig['source'] as String;
+          if (_isRealPhoto(src)) images.add(src);
         }
       }
     } catch (_) {}
@@ -198,7 +282,8 @@ class WikipediaService {
           .get(Uri.parse(
               'https://$lang.wikipedia.org/w/api.php?format=json&action=query'
               '&prop=extracts&explaintext=1&redirects=1&exsectionformat=plain'
-              '&titles=$encoded&origin=*'))
+              '&titles=$encoded&origin=*'),
+              headers: _ua)
           .timeout(const Duration(seconds: 8));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body) as Map<String, dynamic>;
@@ -217,7 +302,8 @@ class WikipediaService {
     try {
       final res = await http
           .get(Uri.parse(
-              'https://$lang.wikipedia.org/api/rest_v1/page/media-list/$encoded'))
+              'https://$lang.wikipedia.org/api/rest_v1/page/media-list/$encoded'),
+              headers: _ua)
           .timeout(const Duration(seconds: 6));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body) as Map<String, dynamic>;
@@ -246,23 +332,29 @@ class WikipediaService {
   }
 
   /// Fotoğraf olmayan görselleri (ikon, harita, bayrak, logo, ses) eler.
+  /// NOT: kontrol sadece DOSYA ADINA uygulanır — aksi halde URL'deki
+  /// "wikimedia/wikipedia" gibi yol parçaları yanlışlıkla elenir.
   static bool _isRealPhoto(String url) {
     final u = url.toLowerCase();
-    // Vektör/ses/sembol uzantıları fotoğraf değil
+    // Vektör/ses/doküman uzantıları fotoğraf değil (tüm URL'de güvenli)
     if (u.endsWith('.svg') ||
         u.contains('.svg/') ||
+        u.contains('.pdf') ||
+        u.contains('.djvu') ||
+        u.contains('.tif') ||
         u.endsWith('.ogg') ||
         u.endsWith('.oga') ||
         u.endsWith('.wav')) {
       return false;
     }
-    // İsim kalıplarına göre alakasız görselleri ele
+    // Dosya adını ayıkla (son '/' sonrası), kalıpları sadece orada ara
+    final fname = u.contains('/') ? u.substring(u.lastIndexOf('/') + 1) : u;
     const bad = [
-      'icon', 'logo', 'map', 'harita', 'flag', 'bayrak', 'locator',
-      'coat_of_arms', 'arms', 'symbol', 'wiki', 'commons-logo',
-      'edit-', 'ambox', 'question', 'disambig',
+      'icon', 'logo', 'flag', 'bayrak', 'locator', 'coat_of_arms',
+      '_map', 'map_', 'harita', 'symbol', 'edit-', 'ambox',
+      'question', 'disambig', 'commons-logo',
     ];
-    return !bad.any((b) => u.contains(b));
+    return !bad.any((b) => fname.contains(b));
   }
 
   /// Metni en yakın paragraf/cümle sınırında kısaltır, sonuna "…" ekler.
@@ -313,7 +405,7 @@ class WikipediaService {
         'https://$lang.wikipedia.org/api/rest_v1/page/summary/$encoded',
       );
       final response =
-          await http.get(url).timeout(const Duration(seconds: 6));
+          await http.get(url, headers: _ua).timeout(const Duration(seconds: 6));
 
       if (response.statusCode != 200) {
         _cache[cacheKey] = null;

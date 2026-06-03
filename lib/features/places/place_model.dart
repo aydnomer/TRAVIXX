@@ -36,6 +36,9 @@ class Place {
   /// Boşsa veya null'sa emoji + gradient fallback gösterilir.
   final List<String> images;
 
+  /// Detaylı tarihçe metni (Wikipedia'dan toplu doldurma ile yazılır).
+  final String? history;
+
   Place({
     required this.id,
     required this.cityId,
@@ -56,6 +59,7 @@ class Place {
     this.website,
     this.phone,
     this.images = const [],
+    this.history,
   });
 
   factory Place.fromJson(Map<String, dynamic> json) {
@@ -79,6 +83,7 @@ class Place {
       website: json['website'] as String?,
       phone: json['phone'] as String?,
       images: _parseImages(json['images']),
+      history: json['history'] as String?,
     );
   }
 

@@ -1397,12 +1397,22 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     );
   }
 
+  /// Gösterilecek detaylı tarihçe metni: önce DB'deki history kolonu,
+  /// yoksa runtime'da Wikipedia'dan çekilen metin.
+  String? _historyText(Place p) {
+    if (p.history != null && p.history!.trim().length > 100) {
+      return p.history!.trim();
+    }
+    if (_wikiExtract != null && _wikiExtract!.trim().length > 200) {
+      return _wikiExtract!.trim();
+    }
+    return null;
+  }
+
   /// DB açıklaması doluyken ek detaylı tarihçe gösterilmeli mi?
   /// (DB boşsa zaten açıklama kartında detaylı metin görünür — tekrar etme.)
   bool _hasDetailedHistory(Place p) {
-    return p.description.isNotEmpty &&
-        _wikiExtract != null &&
-        _wikiExtract!.trim().length > 200;
+    return p.description.isNotEmpty && _historyText(p) != null;
   }
 
   Widget _buildHistoryCard() {
@@ -1418,7 +1428,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _wikiExtract!.trim(),
+            _historyText(_place!) ?? '',
             style: const TextStyle(
               fontSize: 14,
               height: 1.7,
@@ -1448,9 +1458,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   Widget _buildDescriptionCard(Place p) {
     final desc = p.description.isNotEmpty
         ? p.description
-        : (_wikiExtract != null && _wikiExtract!.isNotEmpty
-            ? _wikiExtract!
-            : I18n.t('place.descPlaceholder'));
+        : (_historyText(p) ?? I18n.t('place.descPlaceholder'));
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
