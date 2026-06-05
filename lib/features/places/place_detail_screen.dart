@@ -1409,9 +1409,10 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     return null;
   }
 
-  /// DB açıklaması doluyken ek detaylı tarihçe gösterilmeli mi?
-  /// (DB boşsa zaten açıklama kartında detaylı metin görünür — tekrar etme.)
+  /// Ayrı "Tarihçe" bölümü gösterilmeli mi?
+  /// Açıklama zaten uzunsa (detaylı metin oraya yazılmış) tekrar gösterme.
   bool _hasDetailedHistory(Place p) {
+    if (p.description.trim().length > 200) return false; // zaten detaylı
     return p.description.isNotEmpty && _historyText(p) != null;
   }
 
