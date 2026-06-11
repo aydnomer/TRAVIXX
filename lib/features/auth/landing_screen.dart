@@ -1447,23 +1447,23 @@ class _LandingScreenState extends State<LandingScreen> {
   static const _fallbackReviews = [
     {
       'stars': 5,
-      'text': '"İstanbul\'u gezerken QR sistemi inanılmaz işe yaradı. Her mekanın hikayesini anında öğrendim."',
-      'initials': 'AY',
-      'name': 'Ayşe Y.',
+      'text': '"Efes\'teki antik tiyatroyu ziyaret ederken QR kodu okuttum, anında Türkçe ve İngilizce tarihçe geldi. Rehber tutmaya gerek kalmadı."',
+      'initials': 'ZK',
+      'name': 'Zeynep K.',
       'color': Color(0xFFF97316),
     },
     {
       'stars': 5,
-      'text': '"Almanca dil desteği mükemmel. Türkiye\'yi gezerken hiç dil sorunu yaşamadım!"',
-      'initials': 'HM',
-      'name': 'Hans M.',
+      'text': '"Travelled across 6 cities in Turkey. The GPS sorting saved so much time — always showed the closest spots first. Absolutely brilliant app!"',
+      'initials': 'JB',
+      'name': 'James B.',
       'color': AppTheme.primary,
     },
     {
-      'stars': 5,
-      'text': '"GPS sıralaması sayesinde Kapadokya\'da en yakın mekanları önce gezdim. Harika!"',
-      'initials': 'MK',
-      'name': 'Mehmet K.',
+      'stars': 4,
+      'text': '"Kapadokya gezisinde favori listemi önceden oluşturdum, internet olmadan bile listeye bakabiliyordum. Çok işe yaradı."',
+      'initials': 'MT',
+      'name': 'Murat T.',
       'color': Color(0xFF15803D),
     },
   ];
