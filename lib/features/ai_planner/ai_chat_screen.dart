@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/ai_planner_service.dart';
+import '../../core/utils/gemini_service.dart';
 import '../places/place_model.dart';
 
 /// AI Gezi Planlayıcı — chat tarzı arayüz.
@@ -51,16 +52,42 @@ class _AiChatScreenState extends State<AiChatScreen> {
     final plan = await AiPlannerService.plan(query);
 
     if (!mounted) return;
-    setState(() {
-      _processing = false;
-      if (plan == null) {
-        _messages.add(_ChatMessage.assistant(I18n.t('ai.cantUnderstand')));
-      } else if (plan.itinerary.isEmpty) {
+
+    if (plan == null) {
+      // Şehir tanınmadı — Gemini'ye genel soru olarak gönder
+      final geminiReply = await GeminiService.chat(query);
+      if (!mounted) return;
+      setState(() {
+        _processing = false;
+        _messages.add(_ChatMessage.assistant(
+          geminiReply ?? I18n.t('ai.cantUnderstand'),
+        ));
+      });
+    } else if (plan.itinerary.isEmpty) {
+      setState(() {
+        _processing = false;
         _messages.add(_ChatMessage.assistant(I18n.t('ai.noPlaces')));
-      } else {
+      });
+    } else {
+      // Rota planı var — Gemini'den giriş metni al
+      final placeNames = plan.itinerary
+          .expand((d) => d.places)
+          .map((p) => p.name)
+          .toList();
+      final intro = await GeminiService.generateTripIntro(
+        cityName: plan.city.name,
+        days: plan.days,
+        placeNames: placeNames,
+      );
+      if (!mounted) return;
+      setState(() {
+        _processing = false;
+        if (intro != null) {
+          _messages.add(_ChatMessage.assistant(intro));
+        }
         _messages.add(_ChatMessage.plan(plan));
-      }
-    });
+      });
+    }
     _scrollToBottom();
   }
 

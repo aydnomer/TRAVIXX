@@ -42,7 +42,7 @@ jobs:
         continue-on-error: true
 
       - name: Web release build
-        run: flutter build web --release --base-href "/TRAVIXX/" --no-tree-shake-icons --no-wasm-dry-run
+        run: flutter build web --release --base-href "/TRAVIXX/" --no-tree-shake-icons --no-wasm-dry-run --dart-define=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
 
       - name: Pages artifact yükle
         uses: actions/upload-pages-artifact@v3
