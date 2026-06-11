@@ -75,6 +75,10 @@ class _CitiesScreenState extends State<CitiesScreen> {
         title: Text(I18n.t('cities.title')),
         backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.canPop() ? context.pop() : context.go('/home'),
+        ),
       ),
       body: Column(
         children: [
