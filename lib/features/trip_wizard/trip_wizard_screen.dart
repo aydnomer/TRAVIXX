@@ -130,7 +130,7 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
             } else if (_step > 0) {
               setState(() => _step--);
             } else {
-              context.pop();
+              context.canPop() ? context.pop() : context.go('/home');
             }
           },
         ),
