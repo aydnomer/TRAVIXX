@@ -1,3 +1,5 @@
+import '../../core/constants/categories.dart';
+
 /// Mekan modeli — Supabase places tablosundan gelir.
 /// Eski kayıtlarda olmayan kolonlar için tüm yeni alanlar opsiyoneldir.
 class Place {
@@ -70,7 +72,7 @@ class Place {
       nameEn: json['name_en'] as String? ?? '',
       description: json['description'] as String? ?? '',
       descriptionEn: json['description_en'] as String? ?? '',
-      category: json['category'] as String? ?? '',
+      category: Categories.normalize(json['category'] as String?),
       emoji: json['emoji'] as String? ?? '📍',
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),

@@ -77,6 +77,17 @@ class MobileHeader extends StatelessWidget {
             ),
           ),
           const Spacer(),
+          // QR tara (ana özellik — her zaman bir dokunuş uzakta)
+          InkWell(
+            onTap: () => context.push('/qr-scan'),
+            borderRadius: DT.brSmall,
+            child: const Padding(
+              padding: EdgeInsets.all(DT.s4),
+              child: Icon(Icons.qr_code_scanner,
+                  size: 22, color: DT.textSecondary),
+            ),
+          ),
+          const SizedBox(width: DT.s8),
           // Bildirim
           InkWell(
             onTap: () => context.push('/notifications'),

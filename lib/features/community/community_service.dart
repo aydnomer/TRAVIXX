@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../reviews/review_service.dart';
 import 'community_model.dart';
 
 class CommunityService {
@@ -28,7 +29,7 @@ class CommunityService {
     try {
       await _db.from('community_posts').insert({
         'user_id': user.id,
-        'user_email': user.email,
+        'user_name': ReviewService.displayNameFor(user),
         'title': title,
         'description': description,
         if (cityName != null && cityName.isNotEmpty) 'city_name': cityName,

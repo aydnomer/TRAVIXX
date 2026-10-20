@@ -1,3 +1,4 @@
+import '../constants/categories.dart';
 import 'database_service.dart';
 import '../../features/cities/city_model.dart';
 import '../../features/places/place_model.dart';
@@ -168,41 +169,32 @@ class AiPlannerService {
       return TripPlan(city: city, days: days, itinerary: const [], summary: '');
     }
 
-    List<Place> sorted = List.from(places);
+    // İlgi alanı anahtar kelimeleri (kategori + ad üzerinde, karaktersiz)
+    final keywords = <String>[
+      for (final interest in interests) ...?_interestCategories[interest],
+    ];
+    bool matches(Place p) =>
+        keywords.isNotEmpty &&
+        Categories.containsAny('${p.category} ${p.name}', keywords);
 
-    // Bütçe sıralaması
-    if (budget == 'ekonomik') {
-      sorted.sort((a, b) {
-        if (a.isFree && !b.isFree) return -1;
-        if (!a.isFree && b.isFree) return 1;
-        return b.rating.compareTo(a.rating);
-      });
-    } else if (budget == 'lüks') {
-      sorted.sort((a, b) {
-        if (!a.isFree && b.isFree) return -1;
-        if (a.isFree && !b.isFree) return 1;
-        return b.rating.compareTo(a.rating);
-      });
-    } else {
-      sorted.sort((a, b) => b.rating.compareTo(a.rating));
+    // Bütçe tercihi: ekonomik → ücretsizler önce, lüks → ücretliler önce
+    int budgetRank(Place p) {
+      if (budget == 'ekonomik') return p.isFree ? 0 : 1;
+      if (budget == 'lüks') return p.isFree ? 1 : 0;
+      return 0;
     }
 
-    // İlgi alanı önceliklendirmesi
-    if (interests.isNotEmpty) {
-      final keywords = <String>[];
-      for (final interest in interests) {
-        keywords.addAll(_interestCategories[interest] ?? []);
-      }
-      sorted.sort((a, b) {
-        final cat = a.category.toLowerCase();
-        final bCat = b.category.toLowerCase();
-        final aMatch = keywords.any((k) => cat.contains(k));
-        final bMatch = keywords.any((k) => bCat.contains(k));
-        if (aMatch && !bMatch) return -1;
-        if (!aMatch && bMatch) return 1;
-        return 0;
+    // Tek karşılaştırıcı: ilgi alanı > bütçe > puan.
+    // (Ardışık sort() çağrıları kararlı olmadığı için önceki sırayı bozuyordu.)
+    final sorted = List<Place>.from(places)
+      ..sort((a, b) {
+        final ma = matches(a) ? 0 : 1;
+        final mb = matches(b) ? 0 : 1;
+        if (ma != mb) return ma - mb;
+        final ba = budgetRank(a), bb = budgetRank(b);
+        if (ba != bb) return ba - bb;
+        return b.rating.compareTo(a.rating);
       });
-    }
 
     const perDay = 4;
     final itinerary = <TripDay>[];

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/constants/categories.dart';
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/database_service.dart';
@@ -94,8 +95,8 @@ class _MoodScreenState extends State<MoodScreen> {
 
   List<Place> _placesForMood(_Mood m) {
     final results = _allPlaces.where((p) {
-      final n = '${p.name} ${p.description}'.toLowerCase();
-      final kwMatch = m.keywords.any((k) => n.contains(k));
+      final kwMatch =
+          Categories.containsAny('${p.name} ${p.description}', m.keywords);
       final catMatch = m.categories.contains(p.category);
       return kwMatch || catMatch;
     }).toList()

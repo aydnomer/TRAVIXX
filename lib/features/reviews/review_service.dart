@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Mekan yorumları servisi.
 ///
 /// Supabase tablosu (README'de SQL'i var):
-///   reviews(id, place_id, user_id, rating, comment, created_at, user_email)
+///   reviews(id, place_id, user_id, rating, comment, user_name, created_at, updated_at)
 ///   UNIQUE(place_id, user_id) — bir kullanıcı bir mekana bir yorum
 ///
 /// RLS:
@@ -61,13 +61,17 @@ class ReviewService {
     try {
       final response = await _supabase
           .from('reviews')
-          .upsert({
-            'place_id': placeId,
-            'user_id': user.id,
-            'rating': rating,
-            'comment': comment.trim(),
-            'user_email': user.email,
-          })
+          .upsert(
+            {
+              'place_id': placeId,
+              'user_id': user.id,
+              'rating': rating,
+              'comment': comment.trim(),
+              // E-posta saklanmaz (herkese açık tablo); sadece görünen ad.
+              'user_name': displayNameFor(user),
+            },
+            onConflict: 'place_id,user_id',
+          )
           .select()
           .single();
 
@@ -75,6 +79,16 @@ class ReviewService {
     } catch (_) {
       return null;
     }
+  }
+
+  /// Herkese açık tablolarda gösterilecek ad: profildeki ad, yoksa
+  /// e-postanın @ öncesi. Tam e-posta adresi asla yazılmaz.
+  static String displayNameFor(User user) {
+    final meta = user.userMetadata ?? const {};
+    final name = (meta['full_name'] ?? meta['name'] ?? '').toString().trim();
+    if (name.isNotEmpty) return name;
+    final email = user.email ?? '';
+    return email.contains('@') ? email.split('@').first : 'Gezgin';
   }
 
   /// Kullanıcının kendi yorumunu siler
@@ -118,7 +132,7 @@ class Review {
   final int rating;
   final String comment;
   final DateTime createdAt;
-  final String? userEmail;
+  final String? userName;
 
   Review({
     required this.id,
@@ -127,13 +141,12 @@ class Review {
     required this.rating,
     required this.comment,
     required this.createdAt,
-    this.userEmail,
+    this.userName,
   });
 
-  /// Kullanıcı adı için e-posta'nın @ öncesi (gizlilik için)
   String get displayName {
-    if (userEmail == null || userEmail!.isEmpty) return 'Gezgin';
-    return userEmail!.split('@').first;
+    if (userName == null || userName!.trim().isEmpty) return 'Gezgin';
+    return userName!.trim();
   }
 
   factory Review.fromJson(Map<String, dynamic> json) {
@@ -145,7 +158,7 @@ class Review {
       comment: json['comment'] as String? ?? '',
       createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ??
           DateTime.now(),
-      userEmail: json['user_email'] as String?,
+      userName: json['user_name'] as String?,
     );
   }
 }

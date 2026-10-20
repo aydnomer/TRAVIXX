@@ -241,8 +241,8 @@ class WikipediaService {
         best = title;
       }
     }
-    // Hiç örtüşme yoksa ilk sonucu döndürme (alakasız olabilir)
-    return bestScore > 0 ? best : (hits.first as Map)['title'] as String?;
+    // Hiç örtüşme yoksa sonuç döndürme (alakasız makale gösterilmesin)
+    return bestScore > 0 ? best : null;
   }
 
   static Future<WikiPlaceMedia> _tryMedia(String title,

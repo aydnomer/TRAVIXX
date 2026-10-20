@@ -49,6 +49,12 @@ class Topbar extends StatelessWidget {
             _WeatherChip(temperature: temperature!),
             const SizedBox(width: DT.s12),
           ],
+          // QR tara
+          _IconBtn(
+            icon: Icons.qr_code_scanner,
+            onTap: () => context.push('/qr-scan'),
+          ),
+          const SizedBox(width: DT.s4),
           // Bildirim
           _IconBtn(
             icon: Icons.notifications_outlined,

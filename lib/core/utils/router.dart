@@ -27,6 +27,8 @@ import "../../features/trip_tools/budget_screen.dart";
 import "../../features/trip_tools/packing_screen.dart";
 import "../../features/wrapped/wrapped_screen.dart";
 import "../../features/suggest/suggest_place_screen.dart";
+import "../../features/qr_scanner/qr_open_screen.dart";
+import "../../features/qr_scanner/qr_print_screen.dart";
 import "../../features/qr_scanner/qr_scanner_screen.dart";
 import "../../features/search/search_screen.dart";
 import "../../features/trip_wizard/trip_wizard_screen.dart";
@@ -105,6 +107,15 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: "/qr-scan",
       builder: (context, state) => const QrScannerScreen(),
+    ),
+    GoRoute(
+      path: "/qr/:code",
+      builder: (context, state) =>
+          QrOpenScreen(code: state.pathParameters["code"]!),
+    ),
+    GoRoute(
+      path: "/qr-print",
+      builder: (context, state) => const QrPrintScreen(),
     ),
     GoRoute(
       path: "/search",
