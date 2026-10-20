@@ -14,6 +14,7 @@ import '../../shared/widgets/photo_viewer.dart';
 import '../../shared/widgets/logistics_card.dart';
 import '../../core/utils/database_service.dart';
 import '../../core/utils/storage_service.dart';
+import '../../core/utils/translation_service.dart';
 import '../../core/utils/overpass_service.dart';
 import '../../core/utils/currency_service.dart';
 import '../../core/utils/recent_places.dart';
@@ -65,6 +66,9 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   List<String> _wikiImages = const [];
   String? _wikiExtract;
 
+  // Seçili dildeki mekan metni (place_translations); yoksa null.
+  PlaceText? _text;
+
   // Galeri otomatik döndürme zamanlayıcısı (3 sn)
   Timer? _galleryTimer;
 
@@ -101,6 +105,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
         _loadReviews(p.id);
         _loadNearbyFood(p);
         _loadWikiPhotoIfNeeded(p);
+        _loadTranslation(p);
         _convertCurrency(p);
         // Ziyaret kaydı (gamification için, 24 saat deduplikasyon var)
         BadgeService.recordVisit(p.id);
@@ -111,6 +116,14 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
       if (mounted) setState(() => _loading = false);
     }
   }
+
+  Future<void> _loadTranslation(Place p) async {
+    final text = await TranslationService.forPlace(p.id, I18n.language.value);
+    if (mounted && text != null) setState(() => _text = text);
+  }
+
+  /// Seçili dilde gösterilecek ad.
+  String _displayName(Place p) => _text?.name ?? p.name;
 
   Future<void> _convertCurrency(Place p) async {
     if (p.admissionFee == null || p.admissionFee!.isEmpty) return;
@@ -129,11 +142,17 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
       // Metnin dili ile ses dili aynı olmalı: Türkçe dışındaki dillerde
       // İngilizce açıklama varsa onu İngilizce sesle oku.
       final lang = I18n.language.value;
-      final useEn = lang != 'tr' && p.descriptionEn.isNotEmpty;
-      final text = useEn
-          ? '${p.nameEn.isNotEmpty ? p.nameEn : p.name}. ${p.descriptionEn}'
-          : '${p.name}. ${p.description}';
-      TtsService.speak(text, langCode: useEn ? 'en' : 'tr');
+      final localized = _text?.description;
+      if (localized != null) {
+        // Seçili dildeki metin varsa onu o dilin sesiyle oku.
+        TtsService.speak('${_displayName(p)}. $localized', langCode: lang);
+      } else {
+        final useEn = lang != 'tr' && p.descriptionEn.isNotEmpty;
+        final text = useEn
+            ? '${p.nameEn.isNotEmpty ? p.nameEn : p.name}. ${p.descriptionEn}'
+            : '${p.name}. ${p.description}';
+        TtsService.speak(text, langCode: useEn ? 'en' : 'tr');
+      }
       setState(() => _isSpeaking = true);
       // 30 saniye sonra otomatik state reset (uzun metin biterse)
       Future.delayed(const Duration(seconds: 60), () {
@@ -550,7 +569,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              p.name,
+              _displayName(p),
               style: const TextStyle(
                 fontSize: 13,
                 color: AppTheme.textSecondary,
@@ -1361,7 +1380,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
           children: [
             Expanded(
               child: Text(
-                p.name,
+                _displayName(p),
                 style: const TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
@@ -1392,10 +1411,10 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
             ),
           ],
         ),
-        if (p.nameEn.isNotEmpty && p.nameEn != p.name) ...[
+        if (_subtitleName(p) != null) ...[
           const SizedBox(height: 4),
           Text(
-            p.nameEn,
+            _subtitleName(p)!,
             style: const TextStyle(
               fontSize: 14,
               color: AppTheme.textSecondary,
@@ -1407,9 +1426,20 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     );
   }
 
-  /// Gösterilecek detaylı tarihçe metni: önce DB'deki history kolonu,
-  /// yoksa runtime'da Wikipedia'dan çekilen metin.
+  /// Başlığın altındaki ikinci ad: başlık çevrilmişse yerel (Türkçe) ad,
+  /// değilse İngilizce ad.
+  String? _subtitleName(Place p) {
+    final title = _displayName(p);
+    if (title != p.name) return p.name;
+    if (p.nameEn.isNotEmpty && p.nameEn != p.name) return p.nameEn;
+    return null;
+  }
+
+  /// Gösterilecek detaylı tarihçe metni: önce seçili dildeki Wikipedia
+  /// metni, sonra DB'deki history kolonu, yoksa runtime'da çekilen metin.
   String? _historyText(Place p) {
+    final localized = _text?.history;
+    if (localized != null && localized.length > 100) return localized;
     if (p.history != null && p.history!.trim().length > 100) {
       return p.history!.trim();
     }
@@ -1422,6 +1452,13 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   /// Ayrı "Tarihçe" bölümü gösterilmeli mi?
   /// Açıklama zaten uzunsa (detaylı metin oraya yazılmış) tekrar gösterme.
   bool _hasDetailedHistory(Place p) {
+    final localized = _text?.description;
+    if (localized != null) {
+      // Kısa açıklama tarihçenin ilk paragrafıdır; tarihçe ancak belirgin
+      // biçimde daha uzunsa ayrı gösterilir.
+      final history = _historyText(p);
+      return history != null && history.length > localized.length + 100;
+    }
     if (p.description.trim().length > 200) return false; // zaten detaylı
     return p.description.isNotEmpty && _historyText(p) != null;
   }
@@ -1452,7 +1489,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
               const Icon(Icons.public, size: 13, color: AppTheme.textSecondary),
               const SizedBox(width: 4),
               Text(
-                'Kaynak: Wikipedia',
+                I18n.t('place.sourceWikipedia'),
                 style: TextStyle(
                   fontSize: 11,
                   color: AppTheme.textSecondary,
@@ -1467,9 +1504,11 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   }
 
   Widget _buildDescriptionCard(Place p) {
-    final desc = p.description.isNotEmpty
-        ? p.description
-        : (_historyText(p) ?? I18n.t('place.descPlaceholder'));
+    final localized = _text?.description;
+    final desc = localized ??
+        (p.description.isNotEmpty
+            ? p.description
+            : (_historyText(p) ?? I18n.t('place.descPlaceholder')));
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -1489,7 +1528,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
               color: AppTheme.textPrimary,
             ),
           ),
-          if (p.descriptionEn.isNotEmpty &&
+          if (localized == null &&
+              p.descriptionEn.isNotEmpty &&
               p.descriptionEn != p.description) ...[
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 12),
@@ -1500,6 +1540,17 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
               style: const TextStyle(
                 fontSize: 13,
                 height: 1.6,
+                color: AppTheme.textSecondary,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+          if (localized != null && !_hasDetailedHistory(p)) ...[
+            const SizedBox(height: 10),
+            Text(
+              I18n.t('place.sourceWikipedia'),
+              style: const TextStyle(
+                fontSize: 11,
                 color: AppTheme.textSecondary,
                 fontStyle: FontStyle.italic,
               ),
