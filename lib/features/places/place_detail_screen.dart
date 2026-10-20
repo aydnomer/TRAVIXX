@@ -13,6 +13,7 @@ import '../../core/theme/app_theme.dart';
 import '../../shared/widgets/photo_viewer.dart';
 import '../../shared/widgets/logistics_card.dart';
 import '../../core/utils/database_service.dart';
+import '../../core/utils/storage_service.dart';
 import '../../core/utils/overpass_service.dart';
 import '../../core/utils/currency_service.dart';
 import '../../core/utils/recent_places.dart';
@@ -208,6 +209,13 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     });
   }
 
+  Future<void> _refreshRating(String placeId) async {
+    try {
+      final fresh = await DatabaseService.getPlaceById(placeId);
+      if (mounted && fresh != null) setState(() => _place = fresh);
+    } catch (_) {}
+  }
+
   Future<void> _openReviewSheet(Place p) async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) {
@@ -229,8 +237,9 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
 
     if (updated != null && mounted) {
       _showSnack(I18n.t('review.saved'), isError: false);
-      // Yorumları yenile
+      // Yorumları ve yorumlardan hesaplanan puanı yenile
       _loadReviews(p.id);
+      _refreshRating(p.id);
     }
   }
 
@@ -265,6 +274,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     if (ok) {
       _showSnack(I18n.t('review.deleted'), isError: false);
       _loadReviews(p.id);
+      _refreshRating(p.id);
     }
   }
 
@@ -1331,7 +1341,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
           _badge(p.category, AppTheme.accentOrange, isLight: true),
         if (p.subcategory != null && p.subcategory!.isNotEmpty)
           _badge(p.subcategory!, AppTheme.accentOrange, isLight: true),
-        _ratingBadge(p.rating),
+        _ratingBadge(p),
         _badge(
           p.isFree ? I18n.t('place.free') : I18n.t('place.paid'),
           p.isFree ? Colors.green : Colors.deepOrange,
@@ -1666,7 +1676,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     );
   }
 
-  Widget _ratingBadge(double rating) {
+  Widget _ratingBadge(Place p) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -1679,7 +1689,9 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
           const Icon(Icons.star, size: 14, color: Color(0xFFEAB308)),
           const SizedBox(width: 4),
           Text(
-            rating > 0 ? rating.toStringAsFixed(1) : "—",
+            p.reviewCount > 0
+                ? '${p.ratingLabel} (${p.reviewCount})'
+                : p.ratingLabel,
             style: const TextStyle(
               fontSize: 12,
               color: Color(0xFFB45309),
@@ -1856,8 +1868,105 @@ class _ReviewCard extends StatelessWidget {
               ),
             ),
           ],
+          if (review.photos.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            _ReviewPhotoStrip(
+              photos: review.photos,
+              onTap: (url) => _openPhoto(context, url),
+            ),
+          ],
         ],
       ),
+    );
+  }
+
+  static void _openPhoto(BuildContext context, String url) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: const EdgeInsets.all(12),
+        child: Stack(
+          children: [
+            InteractiveViewer(
+              child: Center(
+                child: Image.network(
+                  url,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const Icon(
+                      Icons.broken_image_outlined,
+                      color: Colors.white54,
+                      size: 48),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 4,
+              right: 4,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white),
+                onPressed: () => Navigator.pop(ctx),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Yorum fotoğraflarının küçük önizlemeleri. [onRemove] verilirse her
+/// fotoğrafın köşesinde kaldırma düğmesi çıkar (yorum yazma sayfası).
+class _ReviewPhotoStrip extends StatelessWidget {
+  final List<String> photos;
+  final void Function(String url)? onTap;
+  final void Function(String url)? onRemove;
+  const _ReviewPhotoStrip({required this.photos, this.onTap, this.onRemove});
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: photos.map((url) {
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            GestureDetector(
+              onTap: onTap == null ? null : () => onTap!(url),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  url,
+                  width: 72,
+                  height: 72,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    width: 72,
+                    height: 72,
+                    color: const Color(0xFFF5F5F5),
+                    child: const Icon(Icons.broken_image_outlined,
+                        color: AppTheme.textSecondary),
+                  ),
+                ),
+              ),
+            ),
+            if (onRemove != null)
+              Positioned(
+                top: -6,
+                right: -6,
+                child: GestureDetector(
+                  onTap: () => onRemove!(url),
+                  child: const CircleAvatar(
+                    radius: 11,
+                    backgroundColor: Colors.black87,
+                    child: Icon(Icons.close, size: 14, color: Colors.white),
+                  ),
+                ),
+              ),
+          ],
+        );
+      }).toList(),
     );
   }
 }
@@ -1875,12 +1984,15 @@ class _ReviewSheet extends StatefulWidget {
 class _ReviewSheetState extends State<_ReviewSheet> {
   late int _rating;
   late TextEditingController _commentCtrl;
+  late List<String> _photos;
   bool _submitting = false;
+  bool _uploading = false;
 
   @override
   void initState() {
     super.initState();
     _rating = widget.existing?.rating ?? 5;
+    _photos = [...?widget.existing?.photos];
     _commentCtrl =
         TextEditingController(text: widget.existing?.comment ?? '');
   }
@@ -1903,9 +2015,21 @@ class _ReviewSheetState extends State<_ReviewSheet> {
       placeId: widget.placeId,
       rating: _rating,
       comment: _commentCtrl.text,
+      photos: _photos,
     );
     if (!mounted) return;
     Navigator.pop(context, review);
+  }
+
+  Future<void> _addPhoto() async {
+    if (_photos.length >= ReviewService.maxPhotos) return;
+    setState(() => _uploading = true);
+    final url = await StorageService.pickAndUploadImage(folder: 'reviews');
+    if (!mounted) return;
+    setState(() {
+      _uploading = false;
+      if (url != null) _photos.add(url);
+    });
   }
 
   @override
@@ -1992,11 +2116,31 @@ class _ReviewSheetState extends State<_ReviewSheet> {
                 ),
               ),
             ),
+            if (_photos.isNotEmpty) ...[
+              _ReviewPhotoStrip(
+                photos: _photos,
+                onRemove: (url) => setState(() => _photos.remove(url)),
+              ),
+              const SizedBox(height: 8),
+            ],
+            if (_photos.length < ReviewService.maxPhotos)
+              TextButton.icon(
+                onPressed: _uploading || _submitting ? null : _addPhoto,
+                icon: _uploading
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.add_a_photo_outlined, size: 18),
+                label: Text(
+                    '${I18n.t('review.addPhoto')} (${_photos.length}/${ReviewService.maxPhotos})'),
+              ),
             const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: _submitting ? null : _submit,
+                onPressed: _submitting || _uploading ? null : _submit,
                 icon: _submitting
                     ? const SizedBox(
                         width: 16,

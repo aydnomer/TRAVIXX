@@ -3,7 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Mekan yorumları servisi.
 ///
 /// Supabase tablosu (README'de SQL'i var):
-///   reviews(id, place_id, user_id, rating, comment, user_name, created_at, updated_at)
+///   reviews(id, place_id, user_id, rating, comment, user_name, photos,
+///           created_at, updated_at)
 ///   UNIQUE(place_id, user_id) — bir kullanıcı bir mekana bir yorum
 ///
 /// RLS:
@@ -11,6 +12,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 ///   - Sadece sahibi insert/update/delete edebilir
 class ReviewService {
   static final _supabase = Supabase.instance.client;
+
+  /// Yorum başına en çok foto (veritabanı kısıtıyla aynı).
+  static const maxPhotos = 4;
 
   /// Bir mekanın yorumları (yeniden eskiye)
   static Future<List<Review>> getReviews(String placeId) async {
@@ -53,6 +57,7 @@ class ReviewService {
     required String placeId,
     required int rating,
     required String comment,
+    List<String> photos = const [],
   }) async {
     final user = _supabase.auth.currentUser;
     if (user == null) return null;
@@ -67,6 +72,7 @@ class ReviewService {
               'user_id': user.id,
               'rating': rating,
               'comment': comment.trim(),
+              'photos': photos.take(maxPhotos).toList(),
               // E-posta saklanmaz (herkese açık tablo); sadece görünen ad.
               'user_name': displayNameFor(user),
             },
@@ -133,6 +139,7 @@ class Review {
   final String comment;
   final DateTime createdAt;
   final String? userName;
+  final List<String> photos;
 
   Review({
     required this.id,
@@ -142,6 +149,7 @@ class Review {
     required this.comment,
     required this.createdAt,
     this.userName,
+    this.photos = const [],
   });
 
   String get displayName {
@@ -159,6 +167,8 @@ class Review {
       createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ??
           DateTime.now(),
       userName: json['user_name'] as String?,
+      photos: (json['photos'] as List?)?.map((e) => e.toString()).toList() ??
+          const [],
     );
   }
 }
