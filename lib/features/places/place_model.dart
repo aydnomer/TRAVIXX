@@ -56,11 +56,20 @@ class Place {
   /// Wikipedia başlığı, OSM etiketi biçiminde ("tr:Efes").
   final String? wikipedia;
 
+  /// Kullanıcı yorumu sayısı ve ortalaması (veritabanı tetikleyicisi tutar).
+  final int reviewCount;
+  final double? reviewAvg;
+
   bool get isFromOsm => source == 'osm';
 
+  /// Gösterilecek puan: yorum varsa kullanıcıların ortalaması, yoksa
+  /// elle girilmiş tahmini puan.
+  double get displayRating =>
+      reviewCount > 0 && reviewAvg != null ? reviewAvg! : rating;
+
   /// Henüz puan yoksa "—" gösterilir; 0 puanı "0.0" diye yazmak yanıltıcı.
-  bool get hasRating => rating > 0;
-  String get ratingLabel => hasRating ? rating.toStringAsFixed(1) : '—';
+  bool get hasRating => displayRating > 0;
+  String get ratingLabel => hasRating ? displayRating.toStringAsFixed(1) : '—';
 
   Place({
     required this.id,
@@ -88,6 +97,8 @@ class Place {
     this.subcategory,
     this.wikidata,
     this.wikipedia,
+    this.reviewCount = 0,
+    this.reviewAvg,
   });
 
   factory Place.fromJson(Map<String, dynamic> json) {
@@ -117,6 +128,8 @@ class Place {
       subcategory: json['subcategory'] as String?,
       wikidata: json['wikidata'] as String?,
       wikipedia: json['wikipedia'] as String?,
+      reviewCount: (json['review_count'] as num?)?.toInt() ?? 0,
+      reviewAvg: (json['review_avg'] as num?)?.toDouble(),
     );
   }
 
