@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/i18n/i18n.dart';
 import '../../core/theme/design_tokens.dart';
 
 /// Web üst bar (56px sticky): sol başlık, orta arama, sağ hava+bildirim+avatar.
@@ -101,8 +102,8 @@ class _SearchBar extends StatelessWidget {
           children: [
             const Icon(Icons.search, size: 18, color: DT.textMuted),
             const SizedBox(width: DT.s8),
-            const Expanded(
-              child: Text('Şehir veya mekan ara...', style: DT.muted12),
+            Expanded(
+              child: Text(I18n.t('ah.common.searchHint'), style: DT.muted12),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: DT.s8, vertical: 2),
@@ -110,8 +111,8 @@ class _SearchBar extends StatelessWidget {
                 color: DT.primaryLight,
                 borderRadius: DT.brPill,
               ),
-              child: const Text('81 il',
-                  style: TextStyle(
+              child: Text(I18n.t('ah.topbar.provinces'),
+                  style: const TextStyle(
                       fontSize: 12, color: DT.primaryDark, fontWeight: DT.wMedium)),
             ),
           ],

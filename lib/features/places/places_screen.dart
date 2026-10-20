@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/constants/categories.dart';
+import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/database_service.dart';
 import '../../shared/widgets/skeleton.dart';
@@ -159,7 +161,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
           ),
           if (!_loading)
             Text(
-              '${_all.length} mekan',
+              I18n.tp('cities.placesCount', {'count': '${_all.length}'}),
               style: const TextStyle(
                 fontSize: 11,
                 color: Colors.white70,
@@ -205,7 +207,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
         autofocus: true,
         onChanged: (_) => _applyFilter(),
         decoration: InputDecoration(
-          hintText: '${widget.cityName}\'de mekan ara...',
+          hintText: I18n.tp('dc.places.searchHint', {'city': widget.cityName}),
           prefixIcon: const Icon(Icons.search, size: 20),
           suffixIcon: _searchCtrl.text.isNotEmpty
               ? IconButton(
@@ -266,7 +268,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
                     : [],
               ),
               child: Text(
-                cat,
+                cat == 'Tümü' ? I18n.t('common.all') : Categories.label(cat),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight:
@@ -290,8 +292,8 @@ class _PlacesScreenState extends State<PlacesScreen> {
         children: [
           Text(
             _loading
-                ? 'Yükleniyor...'
-                : '${_filtered.length} sonuç',
+                ? I18n.t('common.loading')
+                : I18n.tp('dc.resultsCount', {'count': '${_filtered.length}'}),
             style: const TextStyle(
               fontSize: 12,
               color: AppTheme.textSecondary,
@@ -309,28 +311,28 @@ class _PlacesScreenState extends State<PlacesScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             itemBuilder: (_) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: _SortMode.rating,
                 child: Row(children: [
-                  Icon(Icons.star, size: 16, color: Colors.amber),
-                  SizedBox(width: 8),
-                  Text('Puana göre'),
+                  const Icon(Icons.star, size: 16, color: Colors.amber),
+                  const SizedBox(width: 8),
+                  Text(I18n.t('dc.sort.byRating')),
                 ]),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: _SortMode.name,
                 child: Row(children: [
-                  Icon(Icons.sort_by_alpha, size: 16),
-                  SizedBox(width: 8),
-                  Text('İsme göre'),
+                  const Icon(Icons.sort_by_alpha, size: 16),
+                  const SizedBox(width: 8),
+                  Text(I18n.t('dc.sort.byName')),
                 ]),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: _SortMode.free,
                 child: Row(children: [
-                  Icon(Icons.money_off, size: 16, color: Colors.green),
-                  SizedBox(width: 8),
-                  Text('Ücretsiz önce'),
+                  const Icon(Icons.money_off, size: 16, color: Colors.green),
+                  const SizedBox(width: 8),
+                  Text(I18n.t('dc.sort.freeFirst')),
                 ]),
               ),
             ],
@@ -366,11 +368,11 @@ class _PlacesScreenState extends State<PlacesScreen> {
   String get _sortLabel {
     switch (_sort) {
       case _SortMode.rating:
-        return 'Puan';
+        return I18n.t('dc.sort.rating');
       case _SortMode.name:
-        return 'İsim';
+        return I18n.t('dc.sort.name');
       case _SortMode.free:
-        return 'Ücretsiz';
+        return I18n.t('place.free');
     }
   }
 
@@ -422,8 +424,9 @@ class _PlacesScreenState extends State<PlacesScreen> {
           const SizedBox(height: 16),
           Text(
             _searchCtrl.text.isNotEmpty
-                ? '"${_searchCtrl.text}" için sonuç bulunamadı'
-                : '$_selectedCat kategorisinde mekan yok',
+                ? I18n.tp('dc.noResultsFor', {'query': _searchCtrl.text})
+                : I18n.tp('dc.noPlacesInCategory',
+                    {'category': Categories.label(_selectedCat)}),
             textAlign: TextAlign.center,
             style: const TextStyle(color: AppTheme.textSecondary),
           ),
@@ -434,7 +437,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
               setState(() => _selectedCat = 'Tümü');
               _applyFilter();
             },
-            child: const Text('Filtreleri Temizle'),
+            child: Text(I18n.t('dc.clearFilters')),
           ),
         ],
       ),
@@ -523,7 +526,7 @@ class _PlaceListCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              place.category,
+                              Categories.label(place.category),
                               style: const TextStyle(
                                 fontSize: 10,
                                 color: AppTheme.accentOrange,
@@ -553,9 +556,9 @@ class _PlaceListCard extends StatelessWidget {
                                 color: Colors.green.shade50,
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: const Text(
-                                'Ücretsiz',
-                                style: TextStyle(
+                              child: Text(
+                                I18n.t('place.free'),
+                                style: const TextStyle(
                                   fontSize: 10,
                                   color: Colors.green,
                                   fontWeight: FontWeight.w600,
@@ -661,9 +664,9 @@ class _PlaceGridCard extends StatelessWidget {
                                 color: Colors.green.withValues(alpha: 0.85),
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: const Text(
-                                'Ücretsiz',
-                                style: TextStyle(
+                              child: Text(
+                                I18n.t('place.free'),
+                                style: const TextStyle(
                                     color: Colors.white, fontSize: 9),
                               ),
                             ),
@@ -693,7 +696,7 @@ class _PlaceGridCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    place.category,
+                    Categories.label(place.category),
                     style: const TextStyle(
                       fontSize: 10,
                       color: AppTheme.textSecondary,

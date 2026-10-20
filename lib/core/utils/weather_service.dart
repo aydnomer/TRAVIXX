@@ -133,8 +133,7 @@ class DailyForecast {
     try {
       return DateFormat.E(I18n.language.value).format(date);
     } catch (_) {
-      const days = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
-      return days[date.weekday - 1];
+      return I18n.t('cs.weather.day${date.weekday}');
     }
   }
 }

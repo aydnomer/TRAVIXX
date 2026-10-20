@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/i18n/i18n.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../shared/layout/bottom_nav.dart';
 import '../../shared/layout/nav_destinations.dart';
@@ -46,24 +47,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: DT.s24),
               _statsRow(),
               const SizedBox(height: DT.s24),
-              _sectionHeader('Keşif'),
-              _row(Icons.favorite_border, 'Favorilerim', () => context.push('/favorites'),
+              _sectionHeader(I18n.t('ah.profile.discovery')),
+              _row(Icons.favorite_border, I18n.t('ah.drawer.favorites'), () => context.push('/favorites'),
                   color: DT.catFood),
-              _row(Icons.route_outlined, 'Rotalarım', () => context.push('/trip-wizard'),
+              _row(Icons.route_outlined, I18n.t('ah.profile.myRoutes'), () => context.push('/trip-wizard'),
                   color: DT.primary),
-              _row(Icons.history, 'Ziyaret Geçmişim', () => context.push('/activity'),
+              _row(Icons.history, I18n.t('ah.profile.visitHistory'), () => context.push('/activity'),
                   color: DT.catNature),
-              _row(Icons.bar_chart_outlined, 'İstatistikler', () => context.push('/stats'),
+              _row(Icons.bar_chart_outlined, I18n.t('ah.profile.stats'), () => context.push('/stats'),
                   color: DT.catCastle),
-              _sectionHeader('Tercihler'),
-              _row(Icons.book_outlined, 'Günlüklerim', () => context.push('/diaries'),
+              _sectionHeader(I18n.t('ah.profile.preferences')),
+              _row(Icons.book_outlined, I18n.t('ah.profile.diaries'), () => context.push('/diaries'),
                   color: DT.catMosque),
-              _row(Icons.notifications_outlined, 'Bildirimler',
+              _row(Icons.notifications_outlined, I18n.t('ah.nav.notifications'),
                   () => context.push('/notifications'), color: DT.primary),
-              _sectionHeader('Destek'),
-              _row(Icons.add_location_alt_outlined, 'Mekan Öner',
+              _sectionHeader(I18n.t('ah.drawer.support')),
+              _row(Icons.add_location_alt_outlined, I18n.t('ah.profile.suggestPlace'),
                   () => context.push('/suggest'), color: DT.catNature),
-              _row(Icons.info_outline, 'Uygulama Hakkında', _showAbout,
+              _row(Icons.info_outline, I18n.t('ah.profile.about'), _showAbout,
                   color: DT.textSecondary),
               const SizedBox(height: DT.s24),
               _logoutLink(),
@@ -74,7 +75,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: DT.bg,
       appBar: AppBar(
-        title: const Text('Profil', style: DT.t16),
+        title: Text(I18n.t('ah.nav.profile'), style: DT.t16),
         backgroundColor: DT.surface,
         foregroundColor: DT.textMain,
         elevation: 0,
@@ -92,7 +93,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _summaryCard(String email) {
-    final name = email.isNotEmpty ? email.split('@').first : 'Gezgin';
+    final name = email.isNotEmpty ? email.split('@').first : I18n.t('ah.drawer.traveler');
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: DT.s16),
       child: Container(
@@ -119,7 +120,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             OutlinedButton.icon(
               onPressed: _editProfile,
               icon: const Icon(Icons.edit_outlined, size: 16),
-              label: const Text('Profili Düzenle'),
+              label: Text(I18n.t('ah.profile.edit')),
               style: OutlinedButton.styleFrom(
                 foregroundColor: DT.primary,
                 side: const BorderSide(color: DT.primary),
@@ -142,9 +143,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       padding: const EdgeInsets.symmetric(horizontal: DT.s16),
       child: Row(
         children: [
-          _metric(visits.toString(), 'Mekan'),
-          _metric(total.toString(), 'Ziyaret'),
-          _metric(cats.toString(), 'Kategori'),
+          _metric(visits.toString(), I18n.t('ah.profile.metricPlaces')),
+          _metric(total.toString(), I18n.t('ah.profile.metricVisits')),
+          _metric(cats.toString(), I18n.t('ah.profile.metricCategories')),
         ],
       ),
     );
@@ -194,8 +195,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             await Supabase.instance.client.auth.signOut();
             if (mounted) context.go('/');
           },
-          child: const Text('Çıkış Yap',
-              style: TextStyle(
+          child: Text(I18n.t('ah.common.logout'),
+              style: const TextStyle(
                   color: DT.danger, fontSize: 14, fontWeight: DT.wMedium)),
         ),
       );
@@ -210,19 +211,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: DT.surface,
-        title: const Text('Profili Düzenle', style: DT.t16),
+        title: Text(I18n.t('ah.profile.edit'), style: DT.t16),
         content: TextField(
           controller: ctrl,
-          decoration: const InputDecoration(
-            labelText: 'Görünen ad',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: I18n.t('ah.profile.displayName'),
+            border: const OutlineInputBorder(),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('İptal',
-                style: TextStyle(color: DT.textSecondary)),
+            child: Text(I18n.t('common.cancel'),
+                style: const TextStyle(color: DT.textSecondary)),
           ),
           TextButton(
             onPressed: () async {
@@ -236,12 +237,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               if (mounted) {
                 setState(() {});
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Profil güncellendi')),
+                  SnackBar(content: Text(I18n.t('ah.profile.updated'))),
                 );
               }
             },
-            child: const Text('Kaydet',
-                style: TextStyle(color: DT.primary, fontWeight: DT.wMedium)),
+            child: Text(I18n.t('common.save'),
+                style: const TextStyle(color: DT.primary, fontWeight: DT.wMedium)),
           ),
         ],
       ),
@@ -253,7 +254,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       applicationName: 'Travixx',
       applicationVersion: '1.0.0',
-      applicationLegalese: 'Türkiye\'yi keşfet — © 2026 Travixx',
+      applicationLegalese: I18n.t('ah.profile.legalese'),
     );
   }
 
@@ -263,12 +264,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             const Icon(Icons.person_outline, size: 48, color: DT.textMuted),
             const SizedBox(height: DT.s16),
-            const Text('Profilini görmek için giriş yap', style: DT.t14),
+            Text(I18n.t('ah.profile.loginRequired'), style: DT.t14),
             const SizedBox(height: DT.s16),
             ElevatedButton(
               onPressed: () => context.go('/'),
               style: ElevatedButton.styleFrom(backgroundColor: DT.primary),
-              child: const Text('Giriş Yap'),
+              child: Text(I18n.t('nav.login')),
             ),
           ],
         ),

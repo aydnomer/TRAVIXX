@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/constants/categories.dart';
+import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/ai_planner_service.dart';
 import '../../core/utils/database_service.dart';
@@ -27,35 +29,51 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
   TripPlan? _plan;
   bool _planning = false;
 
+  // 'key' değerleri planlayıcıya gider (iç kimlik) — çevrilmez.
   static const _budgets = [
     {
       'key': 'ekonomik',
-      'label': 'Ekonomik',
+      'label': 'tt.wizard.budget.economy',
       'emoji': '💰',
-      'desc': 'Ücretsiz ve düşük bütçeli mekanlar öncelikli',
+      'desc': 'tt.wizard.budget.economyDesc',
     },
     {
       'key': 'orta',
-      'label': 'Orta Bütçe',
+      'label': 'tt.wizard.budget.mid',
       'emoji': '💳',
-      'desc': 'Her türden mekan, dengeli seçim',
+      'desc': 'tt.wizard.budget.midDesc',
     },
     {
       'key': 'lüks',
-      'label': 'Lüks',
+      'label': 'tt.wizard.budget.luxury',
       'emoji': '✨',
-      'desc': 'Özel ve ücretli mekanlar öne çıkar',
+      'desc': 'tt.wizard.budget.luxuryDesc',
     },
   ];
 
+  // 'key' planlayıcının eşleştirme anahtarı; 'label' ekranda gösterilen metin.
   static const _interestOptions = [
-    {'key': 'Tarih & Kültür', 'emoji': '🏛️'},
-    {'key': 'Doğa & Açık Hava', 'emoji': '🌿'},
-    {'key': 'Gastronomi', 'emoji': '🍽️'},
-    {'key': 'Sanat & Müzeler', 'emoji': '🎨'},
-    {'key': 'Aktif & Macera', 'emoji': '🧗'},
-    {'key': 'Romantik', 'emoji': '💕'},
+    {'key': 'Tarih & Kültür', 'label': 'tt.wizard.interest.history', 'emoji': '🏛️'},
+    {'key': 'Doğa & Açık Hava', 'label': 'tt.wizard.interest.nature', 'emoji': '🌿'},
+    {'key': 'Gastronomi', 'label': 'tt.wizard.interest.food', 'emoji': '🍽️'},
+    {'key': 'Sanat & Müzeler', 'label': 'tt.wizard.interest.art', 'emoji': '🎨'},
+    {'key': 'Aktif & Macera', 'label': 'tt.wizard.interest.active', 'emoji': '🧗'},
+    {'key': 'Romantik', 'label': 'tt.wizard.interest.romantic', 'emoji': '💕'},
   ];
+
+  static String _interestLabel(String key) {
+    for (final o in _interestOptions) {
+      if (o['key'] == key) return I18n.t(o['label']!);
+    }
+    return key;
+  }
+
+  static String _budgetChip(String key) {
+    for (final b in _budgets) {
+      if (b['key'] == key) return '${b['emoji']} ${I18n.t(b['label']!)}';
+    }
+    return '';
+  }
 
   @override
   void initState() {
@@ -118,7 +136,7 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
       appBar: AppBar(
         backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
-        title: const Text('Akıllı Rota Planlayıcı'),
+        title: Text(I18n.t('tt.wizard.title')),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -146,7 +164,12 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
   }
 
   Widget _buildStepIndicator() {
-    const labels = ['Şehir', 'Süre', 'Bütçe', 'İlgiler'];
+    final labels = [
+      I18n.t('tt.wizard.step.city'),
+      I18n.t('tt.wizard.step.days'),
+      I18n.t('tt.wizard.step.budget'),
+      I18n.t('tt.wizard.step.interests'),
+    ];
     return Container(
       color: AppTheme.primary,
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
@@ -232,14 +255,14 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _stepHeader('Nereyi gezmek istiyorsun?', '🗺️ 81 il arasından şehir seç'),
+        _stepHeader(I18n.t('tt.wizard.city.title'), I18n.t('tt.wizard.city.subtitle')),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
           child: TextField(
             controller: _searchCtrl,
             onChanged: _filterCities,
             decoration: InputDecoration(
-              hintText: 'Şehir ara...',
+              hintText: I18n.t('tt.wizard.city.search'),
               prefixIcon: const Icon(Icons.search),
               filled: true,
               fillColor: Colors.white,
@@ -298,7 +321,7 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _stepHeader(
-            'Kaç gün sürecek?',
+            I18n.t('tt.wizard.days.title'),
             '${_selectedCity?.emoji ?? ""} ${_selectedCity?.name ?? ""}',
           ),
           const SizedBox(height: 32),
@@ -314,9 +337,9 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
                     height: 1,
                   ),
                 ),
-                const Text(
-                  'Gün',
-                  style: TextStyle(fontSize: 22, color: AppTheme.textSecondary),
+                Text(
+                  I18n.t('tt.wizard.days.unit'),
+                  style: const TextStyle(fontSize: 22, color: AppTheme.textSecondary),
                 ),
               ],
             ),
@@ -334,7 +357,7 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
               min: 1,
               max: 7,
               divisions: 6,
-              label: '$_days gün',
+              label: I18n.tp('tt.wizard.days.label', {'days': '$_days'}),
               onChanged: (v) => setState(() => _days = v.round()),
             ),
           ),
@@ -383,7 +406,7 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _stepHeader('Bütçen nasıl?', 'Rotanı bütçene göre optimize edelim'),
+          _stepHeader(I18n.t('tt.wizard.budget.title'), I18n.t('tt.wizard.budget.subtitle')),
           const SizedBox(height: 20),
           ..._budgets.map((b) {
             final key = b['key'] as String;
@@ -420,7 +443,7 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            b['label'] as String,
+                            I18n.t(b['label'] as String),
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
@@ -429,7 +452,7 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            b['desc'] as String,
+                            I18n.t(b['desc'] as String),
                             style: TextStyle(
                               fontSize: 13,
                               color: active ? Colors.white70 : AppTheme.textSecondary,
@@ -458,7 +481,7 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _stepHeader('İlgi alanların?', 'İstediğin kadar seç (opsiyonel)'),
+          _stepHeader(I18n.t('tt.wizard.interests.title'), I18n.t('tt.wizard.interests.subtitle')),
           const SizedBox(height: 20),
           Wrap(
             spacing: 10,
@@ -500,7 +523,7 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
                       Text(opt['emoji'] as String, style: const TextStyle(fontSize: 18)),
                       const SizedBox(width: 8),
                       Text(
-                        key,
+                        I18n.t(opt['label'] as String),
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           color: active ? Colors.white : AppTheme.primary,
@@ -521,14 +544,14 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppTheme.accentOrange.withValues(alpha: 0.2)),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                Icon(Icons.lightbulb_outline, color: AppTheme.accentOrange, size: 20),
-                SizedBox(width: 10),
+                const Icon(Icons.lightbulb_outline, color: AppTheme.accentOrange, size: 20),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Hiç seçmezsen rota en yüksek puanlı mekanlardan oluşur.',
-                    style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                    I18n.t('tt.wizard.interests.tip'),
+                    style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
                   ),
                 ),
               ],
@@ -543,15 +566,15 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
 
   Widget _buildResultStep() {
     if (_planning) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(color: AppTheme.accentOrange),
-            SizedBox(height: 20),
+            const CircularProgressIndicator(color: AppTheme.accentOrange),
+            const SizedBox(height: 20),
             Text(
-              'Rota oluşturuluyor...',
-              style: TextStyle(fontSize: 16, color: AppTheme.textSecondary),
+              I18n.t('tt.wizard.result.loading'),
+              style: const TextStyle(fontSize: 16, color: AppTheme.textSecondary),
             ),
           ],
         ),
@@ -565,14 +588,14 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
             const Text('😔', style: TextStyle(fontSize: 60)),
             const SizedBox(height: 16),
             Text(
-              '${_selectedCity?.name} için yeterli mekan bulunamadı.',
+              I18n.tp('tt.wizard.result.empty', {'city': _selectedCity?.name ?? ''}),
               textAlign: TextAlign.center,
               style: const TextStyle(color: AppTheme.textSecondary),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => setState(() => _step = 0),
-              child: const Text('Baştan Başla'),
+              child: Text(I18n.t('tt.wizard.result.restart')),
             ),
           ],
         ),
@@ -612,14 +635,9 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
                   spacing: 8,
                   runSpacing: 6,
                   children: [
-                    _chip('📅 ${plan.days} Gün'),
-                    _chip({
-                          'ekonomik': '💰 Ekonomik',
-                          'orta': '💳 Orta Bütçe',
-                          'lüks': '✨ Lüks',
-                        }[_budget] ??
-                        ''),
-                    ..._interests.map(_chip),
+                    _chip(I18n.tp('tt.wizard.result.daysChip', {'days': '${plan.days}'})),
+                    _chip(_budgetChip(_budget)),
+                    ..._interests.map((i) => _chip(_interestLabel(i))),
                   ],
                 ),
               ],
@@ -638,7 +656,7 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      '${day.dayNumber}. Gün',
+                      I18n.tp('tt.wizard.result.dayN', {'n': '${day.dayNumber}'}),
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -682,7 +700,7 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
                                   fontSize: 12, color: AppTheme.accentOrange),
                             ),
                             Text(
-                              place.category,
+                              Categories.label(place.category),
                               style: const TextStyle(
                                   fontSize: 12, color: AppTheme.textSecondary),
                             ),
@@ -696,9 +714,9 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
                                   color: Colors.green.shade50,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: const Text(
-                                  'Ücretsiz',
-                                  style: TextStyle(
+                                child: Text(
+                                  I18n.t('place.free'),
+                                  style: const TextStyle(
                                     color: Colors.green,
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
@@ -722,7 +740,7 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
                 _plan = null;
               }),
               icon: const Icon(Icons.refresh),
-              label: const Text('Yeni Rota Oluştur'),
+              label: Text(I18n.t('tt.wizard.result.newRoute')),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
@@ -757,7 +775,7 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('Geri'),
+                child: Text(I18n.t('common.back')),
               ),
             ),
             const SizedBox(width: 12),
@@ -774,9 +792,9 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text(
-                      '🗺️  Rota Oluştur',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                    child: Text(
+                      I18n.t('tt.wizard.generate'),
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                     ),
                   )
                 : ElevatedButton(
@@ -788,9 +806,9 @@ class _TripWizardScreenState extends State<TripWizardScreen> {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text(
-                      'Devam  →',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                    child: Text(
+                      I18n.t('tt.wizard.next'),
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                     ),
                   ),
           ),

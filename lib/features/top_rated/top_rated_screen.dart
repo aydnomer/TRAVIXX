@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/constants/categories.dart';
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/database_service.dart';
@@ -126,7 +127,7 @@ class _TopRatedTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
-                    place.category,
+                    Categories.label(place.category),
                     style: const TextStyle(
                       fontSize: 11,
                       color: AppTheme.textSecondary,

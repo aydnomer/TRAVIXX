@@ -281,7 +281,7 @@ class _PlaceCard extends StatelessWidget {
                   ),
                   if (place.category.isNotEmpty)
                     Text(
-                      place.category,
+                      Categories.label(place.category),
                       style: const TextStyle(
                         fontSize: 11,
                         color: AppTheme.textSecondary,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/constants/categories.dart';
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import '../places/place_model.dart';
@@ -251,7 +252,7 @@ class _PlaceListItem extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            place.category,
+                            Categories.label(place.category),
                             style: const TextStyle(
                               fontSize: 10,
                               color: AppTheme.accentOrange,

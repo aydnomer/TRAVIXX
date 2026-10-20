@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import 'community_model.dart';
 import 'community_service.dart';
@@ -36,8 +37,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Paylaşmak için önce giriş yapmalısın'),
+        SnackBar(
+          content: Text(I18n.t('tt.community.loginRequired')),
           backgroundColor: Colors.red,
         ),
       );
@@ -66,7 +67,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
       appBar: AppBar(
         backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
-        title: const Text('Gizli Mekanlar'),
+        title: Text(I18n.t('tt.community.title')),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_outlined),
@@ -79,7 +80,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         backgroundColor: AppTheme.accentOrange,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add_location_alt),
-        label: const Text('Mekan Paylaş'),
+        label: Text(I18n.t('tt.community.sharePlace')),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -90,23 +91,23 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     children: [
                       const Text('🗺️', style: TextStyle(fontSize: 64)),
                       const SizedBox(height: 16),
-                      const Text(
-                        'Henüz paylaşım yok.',
-                        style: TextStyle(
+                      Text(
+                        I18n.t('tt.community.empty'),
+                        style: const TextStyle(
                           fontSize: 16,
                           color: AppTheme.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 6),
-                      const Text(
-                        'İlk gizli mekanı sen paylaş!',
-                        style: TextStyle(color: AppTheme.textSecondary),
+                      Text(
+                        I18n.t('tt.community.emptyHint'),
+                        style: const TextStyle(color: AppTheme.textSecondary),
                       ),
                       const SizedBox(height: 28),
                       ElevatedButton.icon(
                         onPressed: _openAddSheet,
                         icon: const Icon(Icons.add_location_alt),
-                        label: const Text('Mekan Ekle'),
+                        label: Text(I18n.t('tt.community.addPlace')),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.accentOrange,
                           foregroundColor: Colors.white,
@@ -137,9 +138,13 @@ class _PostCard extends StatelessWidget {
 
   String _timeAgo(DateTime dt) {
     final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 60) return '${diff.inMinutes} dakika önce';
-    if (diff.inHours < 24) return '${diff.inHours} saat önce';
-    return '${diff.inDays} gün önce';
+    if (diff.inMinutes < 60) {
+      return I18n.tp('tt.community.minutesAgo', {'n': '${diff.inMinutes}'});
+    }
+    if (diff.inHours < 24) {
+      return I18n.tp('tt.community.hoursAgo', {'n': '${diff.inHours}'});
+    }
+    return I18n.tp('tt.community.daysAgo', {'n': '${diff.inDays}'});
   }
 
   @override
@@ -214,7 +219,7 @@ class _PostCard extends StatelessWidget {
                           await CommunityService.deletePost(post.id);
                           onDeleted();
                         },
-                        tooltip: 'Sil',
+                        tooltip: I18n.t('tt.community.delete'),
                       ),
                   ],
                 ),
@@ -279,7 +284,7 @@ class _AddPostSheetState extends State<_AddPostSheet> {
   Future<void> _save() async {
     if (_titleCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Mekan adı boş bırakılamaz')),
+        SnackBar(content: Text(I18n.t('tt.community.nameRequired'))),
       );
       return;
     }
@@ -296,12 +301,10 @@ class _AddPostSheetState extends State<_AddPostSheet> {
         widget.onAdded();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Kaydedilemedi. Supabase\'de community_posts tablosu oluşturulmuş mu?',
-            ),
+          SnackBar(
+            content: Text(I18n.t('tt.community.saveFailed')),
             backgroundColor: Colors.orange,
-            duration: Duration(seconds: 5),
+            duration: const Duration(seconds: 5),
           ),
         );
       }
@@ -321,9 +324,9 @@ class _AddPostSheetState extends State<_AddPostSheet> {
               children: [
                 const Icon(Icons.add_location_alt, color: AppTheme.accentOrange),
                 const SizedBox(width: 10),
-                const Text(
-                  'Gizli Mekan Paylaş',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                Text(
+                  I18n.t('tt.community.sheetTitle'),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
                 IconButton(
@@ -335,36 +338,36 @@ class _AddPostSheetState extends State<_AddPostSheet> {
             const SizedBox(height: 16),
             TextField(
               controller: _titleCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Mekan Adı *',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: I18n.t('tt.community.nameLabel'),
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _descCtrl,
               maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Açıklama',
-                hintText: 'Bu mekanda ne keşfettin?',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: I18n.t('tt.community.descLabel'),
+                hintText: I18n.t('tt.community.descHint'),
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _cityCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Şehir (opsiyonel)',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: I18n.t('tt.community.cityLabel'),
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _imageCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Fotoğraf URL\'si (opsiyonel)',
+              decoration: InputDecoration(
+                labelText: I18n.t('tt.community.photoLabel'),
                 hintText: 'https://...',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 20),
@@ -389,9 +392,9 @@ class _AddPostSheetState extends State<_AddPostSheet> {
                           strokeWidth: 2,
                         ),
                       )
-                    : const Text(
-                        'Paylaş',
-                        style: TextStyle(
+                    : Text(
+                        I18n.t('tt.community.submit'),
+                        style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
                         ),

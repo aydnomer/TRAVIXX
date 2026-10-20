@@ -18,7 +18,7 @@ class LanguageSelector extends StatelessWidget {
           orElse: () => I18n.languages.first,
         );
         return PopupMenuButton<String>(
-          tooltip: 'Dil / Language',
+          tooltip: I18n.t('ah.language.tooltip'),
           onSelected: (code) => I18n.setLanguage(code),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),

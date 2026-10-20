@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/constants/categories.dart';
+import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/database_service.dart';
 import '../../core/utils/overpass_service.dart';
@@ -119,9 +121,9 @@ class _SearchScreenState extends State<SearchScreen> {
           onSubmitted: _runSearch,
           textInputAction: TextInputAction.search,
           style: const TextStyle(color: Colors.white, fontSize: 16),
-          decoration: const InputDecoration(
-            hintText: 'Mekan ara...',
-            hintStyle: TextStyle(color: Colors.white70, fontSize: 15),
+          decoration: InputDecoration(
+            hintText: I18n.t('dc.search.hint'),
+            hintStyle: const TextStyle(color: Colors.white70, fontSize: 15),
             border: InputBorder.none,
           ),
           cursorColor: Colors.white,
@@ -156,8 +158,8 @@ class _SearchScreenState extends State<SearchScreen> {
       padding: const EdgeInsets.all(12),
       children: [
         if (_results.isNotEmpty) ...[
-          const _SectionHeader(
-            label: 'Travixx mekanları',
+          _SectionHeader(
+            label: I18n.t('search.travixxResults'),
             icon: Icons.verified,
           ),
           const SizedBox(height: 8),
@@ -166,8 +168,8 @@ class _SearchScreenState extends State<SearchScreen> {
         const SizedBox(height: 16),
         // OSM bölümü
         if (_osmResults.isNotEmpty) ...[
-          const _SectionHeader(
-            label: 'OpenStreetMap (geniş arama)',
+          _SectionHeader(
+            label: I18n.t('search.osmResults'),
             icon: Icons.public,
           ),
           const SizedBox(height: 8),
@@ -193,7 +195,7 @@ class _SearchScreenState extends State<SearchScreen> {
             const Icon(Icons.search_off, size: 64, color: Colors.grey),
             const SizedBox(height: 12),
             Text(
-              '"$_lastQuery" için Travixx\'te sonuç yok',
+              I18n.tp('search.noResults', {'q': _lastQuery}),
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 15,
@@ -202,10 +204,10 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'OpenStreetMap üzerinden Türkiye genelinde aramak ister misin?',
+            Text(
+              I18n.t('dc.search.osmPrompt'),
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+              style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
@@ -218,7 +220,9 @@ class _SearchScreenState extends State<SearchScreen> {
                           strokeWidth: 2, color: Colors.white),
                     )
                   : const Icon(Icons.public, size: 18),
-              label: Text(_osmLoading ? 'Aranıyor...' : 'Geniş Ara'),
+              label: Text(_osmLoading
+                  ? I18n.t('dc.search.searching')
+                  : I18n.t('search.broadSearch')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.accentOrange,
                 foregroundColor: Colors.white,
@@ -249,10 +253,10 @@ class _SearchScreenState extends State<SearchScreen> {
         children: [
           const Icon(Icons.public, color: AppTheme.accentOrange, size: 20),
           const SizedBox(width: 10),
-          const Expanded(
+          Expanded(
             child: Text(
-              'OpenStreetMap üzerinden\nTürkiye genelinde de arayalım mı?',
-              style: TextStyle(fontSize: 12),
+              I18n.t('dc.search.osmPromptShort'),
+              style: const TextStyle(fontSize: 12),
             ),
           ),
           TextButton(
@@ -260,8 +264,8 @@ class _SearchScreenState extends State<SearchScreen> {
             style: TextButton.styleFrom(
               foregroundColor: AppTheme.accentOrange,
             ),
-            child: const Text('Geniş Ara',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            child: Text(I18n.t('search.broadSearch'),
+                style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -272,17 +276,17 @@ class _SearchScreenState extends State<SearchScreen> {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Icon(Icons.search, size: 72, color: Colors.grey),
-          SizedBox(height: 16),
+        children: [
+          const Icon(Icons.search, size: 72, color: Colors.grey),
+          const SizedBox(height: 16),
           Text(
-            'Mekan veya şehir adı yazmaya başla',
-            style: TextStyle(fontSize: 14, color: AppTheme.textSecondary),
+            I18n.t('search.startTyping'),
+            style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
-            'Türkçe ve İngilizce arama yapılır',
-            style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+            I18n.t('dc.search.languagesHint'),
+            style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
           ),
         ],
       ),
@@ -496,7 +500,7 @@ class _ResultCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            place.category,
+                            Categories.label(place.category),
                             style: const TextStyle(
                               fontSize: 10,
                               color: AppTheme.accentOrange,

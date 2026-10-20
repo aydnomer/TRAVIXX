@@ -8,6 +8,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/constants/categories.dart';
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/widgets/photo_viewer.dart';
@@ -434,7 +435,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                   // Detaylı tarihçe (Wikipedia tam makale metni)
                   if (_hasDetailedHistory(p)) ...[
                     const SizedBox(height: 20),
-                    _sectionTitle('📖 Tarihçe'),
+                    _sectionTitle('📖 ${I18n.t('dc.place.history')}'),
                     const SizedBox(height: 10),
                     _buildHistoryCard(),
                   ],
@@ -535,7 +536,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   // Paylaşım alt sayfası
   void _openShareSheet(Place p) {
     final url = 'https://aydnomer.github.io/TRAVIXX/#/place/${p.id}';
-    final text = '${p.emoji} ${p.name} — Travixx ile keşfet!';
+    final text = I18n.tp('dc.place.shareText', {'emoji': p.emoji, 'name': p.name});
 
     showModalBottomSheet(
       context: context,
@@ -1123,7 +1124,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          e.key == 0 ? 'Bugün' : d.dayLabel(e.key),
+                          e.key == 0 ? I18n.t('dc.today') : d.dayLabel(e.key),
                           style: const TextStyle(
                             fontSize: 10,
                             color: AppTheme.textSecondary,
@@ -1357,9 +1358,13 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
       runSpacing: 8,
       children: [
         if (p.category.isNotEmpty)
-          _badge(p.category, AppTheme.accentOrange, isLight: true),
-        if (p.subcategory != null && p.subcategory!.isNotEmpty)
-          _badge(p.subcategory!, AppTheme.accentOrange, isLight: true),
+          _badge(Categories.label(p.category), AppTheme.accentOrange,
+              isLight: true),
+        if (p.subcategory != null &&
+            p.subcategory!.isNotEmpty &&
+            p.subcategory != p.category)
+          _badge(Categories.subLabel(p.subcategory!), AppTheme.accentOrange,
+              isLight: true),
         _ratingBadge(p),
         _badge(
           p.isFree ? I18n.t('place.free') : I18n.t('place.paid'),
@@ -1842,10 +1847,10 @@ class _ReviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final daysAgo = DateTime.now().difference(review.createdAt).inDays;
     final timeText = daysAgo == 0
-        ? 'Bugün'
+        ? I18n.t('dc.today')
         : daysAgo == 1
-            ? 'Dün'
-            : '$daysAgo gün önce';
+            ? I18n.t('dc.yesterday')
+            : I18n.tp('dc.daysAgo', {'count': '$daysAgo'});
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),

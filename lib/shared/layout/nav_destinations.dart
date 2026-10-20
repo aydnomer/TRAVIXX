@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 
+import '../../core/i18n/i18n.dart';
+
 /// Giriş sonrası ana navigasyon hedefleri (web nav rail + mobil bottom nav ortak).
 class NavDest {
   final String route;
   final IconData icon;
-  final String label;
-  const NavDest(this.route, this.icon, this.label);
+  /// I18n anahtarı — görünen ad [label] ile aktif dilde döner.
+  final String labelKey;
+  const NavDest(this.route, this.icon, this.labelKey);
+
+  String get label => I18n.t(labelKey);
 }
 
 class NavDestinations {
@@ -13,20 +18,20 @@ class NavDestinations {
 
   /// Ana hedefler — sırayla: Ana Sayfa, Keşfet, Harita, Rotalar, Şehirler.
   static const List<NavDest> main = [
-    NavDest('/home', Icons.home_outlined, 'Ana Sayfa'),
-    NavDest('/search', Icons.explore_outlined, 'Keşfet'),
-    NavDest('/map', Icons.map_outlined, 'Harita'),
-    NavDest('/trip-wizard', Icons.route_outlined, 'Rotalar'),
-    NavDest('/cities', Icons.location_city_outlined, 'Şehirler'),
+    NavDest('/home', Icons.home_outlined, 'ah.nav.home'),
+    NavDest('/search', Icons.explore_outlined, 'ah.nav.explore'),
+    NavDest('/map', Icons.map_outlined, 'ah.nav.map'),
+    NavDest('/trip-wizard', Icons.route_outlined, 'ah.nav.routes'),
+    NavDest('/cities', Icons.location_city_outlined, 'ah.nav.cities'),
   ];
 
   /// Mobil bottom nav: Harita ortada (büyük), Şehirler yerine Profil.
   static const List<NavDest> mobile = [
-    NavDest('/home', Icons.home_outlined, 'Ana Sayfa'),
-    NavDest('/search', Icons.explore_outlined, 'Keşfet'),
-    NavDest('/map', Icons.map_outlined, 'Harita'),
-    NavDest('/trip-wizard', Icons.route_outlined, 'Rotalar'),
-    NavDest('/profile', Icons.person_outline, 'Profil'),
+    NavDest('/home', Icons.home_outlined, 'ah.nav.home'),
+    NavDest('/search', Icons.explore_outlined, 'ah.nav.explore'),
+    NavDest('/map', Icons.map_outlined, 'ah.nav.map'),
+    NavDest('/trip-wizard', Icons.route_outlined, 'ah.nav.routes'),
+    NavDest('/profile', Icons.person_outline, 'ah.nav.profile'),
   ];
 
   /// Verilen yol bu hedefle eşleşiyor mu (aktif sekme tespiti).

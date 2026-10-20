@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/design_tokens.dart';
+import '../../core/i18n/i18n.dart';
 import 'nav_destinations.dart';
 
 /// Web sol kenar dikey nav rail (64px, icon-only).
@@ -56,7 +57,7 @@ class NavRail extends StatelessWidget {
           // Bildirimler
           _RailItem(
             icon: Icons.notifications_outlined,
-            label: 'Bildirimler',
+            label: I18n.t('ah.nav.notifications'),
             active: NavDestinations.isActive(currentRoute, '/notifications'),
             badge: hasNotification,
             onTap: () => context.push('/notifications'),
@@ -64,7 +65,7 @@ class NavRail extends StatelessWidget {
           const SizedBox(height: DT.s8),
           // Profil avatarı → drawer
           _Tooltip(
-            label: 'Profil',
+            label: I18n.t('ah.nav.profile'),
             child: InkWell(
               onTap: onProfileTap,
               borderRadius: const BorderRadius.all(Radius.circular(20)),

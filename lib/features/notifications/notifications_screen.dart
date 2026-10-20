@@ -217,10 +217,16 @@ class _NotificationTile extends StatelessWidget {
 
   String _formatRelative(DateTime t) {
     final diff = DateTime.now().difference(t);
-    if (diff.inMinutes < 1) return 'şimdi';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}dk';
-    if (diff.inHours < 24) return '${diff.inHours}sa';
-    if (diff.inDays < 7) return '${diff.inDays}g';
-    return DateFormat('d MMM', 'tr_TR').format(t);
+    if (diff.inMinutes < 1) return I18n.t('tt.time.now');
+    if (diff.inMinutes < 60) {
+      return I18n.tp('tt.time.minutesShort', {'n': '${diff.inMinutes}'});
+    }
+    if (diff.inHours < 24) {
+      return I18n.tp('tt.time.hoursShort', {'n': '${diff.inHours}'});
+    }
+    if (diff.inDays < 7) {
+      return I18n.tp('tt.time.daysShort', {'n': '${diff.inDays}'});
+    }
+    return DateFormat('d MMM', I18n.language.value).format(t);
   }
 }

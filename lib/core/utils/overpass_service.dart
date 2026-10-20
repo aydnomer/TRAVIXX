@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+import '../i18n/i18n.dart';
 import 'gps_service.dart';
 
 /// OpenStreetMap Overpass API — Travixx veritabanında olmayan
@@ -40,15 +41,15 @@ class OverpassPlace {
   }
 
   String get displayCategory {
-    if (tourismType == 'museum') return 'Müze';
-    if (tourismType == 'viewpoint') return 'Manzara';
-    if (historic == 'castle') return 'Kale';
-    if (historic == 'monument') return 'Anıt';
-    if (historic == 'ruins') return 'Kalıntı';
-    if (historic == 'archaeological_site') return 'Arkeolojik';
-    if (historic != null) return 'Tarihi';
-    if (tourismType != null) return 'Turistik';
-    return 'Mekan';
+    if (tourismType == 'museum') return I18n.t('cs.osm.museum');
+    if (tourismType == 'viewpoint') return I18n.t('cs.osm.viewpoint');
+    if (historic == 'castle') return I18n.t('cs.osm.castle');
+    if (historic == 'monument') return I18n.t('cs.osm.monument');
+    if (historic == 'ruins') return I18n.t('cs.osm.ruins');
+    if (historic == 'archaeological_site') return I18n.t('cs.osm.archaeological');
+    if (historic != null) return I18n.t('cs.osm.historic');
+    if (tourismType != null) return I18n.t('cs.osm.tourist');
+    return I18n.t('cs.osm.place');
   }
 }
 
@@ -243,19 +244,19 @@ class NearbyVenue {
   String get typeLabel {
     switch (amenity) {
       case 'cafe':
-        return 'Kafe';
+        return I18n.t('cs.venue.cafe');
       case 'fast_food':
-        return 'Fast Food';
+        return I18n.t('cs.venue.fastFood');
       case 'bar':
-        return 'Bar';
+        return I18n.t('cs.venue.bar');
       case 'pub':
-        return 'Pub';
+        return I18n.t('cs.venue.pub');
       case 'ice_cream':
-        return 'Dondurma';
+        return I18n.t('cs.venue.iceCream');
       case 'bakery':
-        return 'Fırın';
+        return I18n.t('cs.venue.bakery');
       default:
-        return 'Restoran';
+        return I18n.t('cs.venue.restaurant');
     }
   }
 

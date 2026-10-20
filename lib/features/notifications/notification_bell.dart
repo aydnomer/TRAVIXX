@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import 'notification_service.dart';
 
@@ -23,7 +24,7 @@ class NotificationBell extends StatelessWidget {
             IconButton(
               icon: const Icon(Icons.notifications_outlined),
               color: Colors.white,
-              tooltip: 'Bildirimler',
+              tooltip: I18n.t('notifications.title'),
               onPressed: () => context.push('/notifications'),
             ),
             if (unread > 0)

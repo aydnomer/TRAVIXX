@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/constants/categories.dart';
+import '../../core/i18n/i18n.dart';
 
 /// Rozet ve ziyaret takip sistemi.
 ///
@@ -160,7 +161,7 @@ class BadgeService {
 
 class TravelerLevel {
   final int level;       // 1–5
-  final String title;    // "Yeni Gezgin", "Kaşif" …
+  final String titleKey; // i18n anahtarı (cs.level.*)
   final String emoji;
   final int currentXP;   // uniquePlaces
   final int requiredXP;  // bir sonraki seviye için gereken
@@ -168,12 +169,15 @@ class TravelerLevel {
 
   const TravelerLevel({
     required this.level,
-    required this.title,
+    required this.titleKey,
     required this.emoji,
     required this.currentXP,
     required this.requiredXP,
     required this.colorValue,
   });
+
+  /// Seçili dilde seviye adı ("Yeni Gezgin", "Kaşif" …)
+  String get title => I18n.t(titleKey);
 
   /// 0.0 – 1.0 arası ilerleme
   double get progress =>
@@ -185,30 +189,30 @@ class TravelerLevel {
     final p = stats.uniquePlaces;
     if (p >= 50) {
       return TravelerLevel(
-        level: 5, title: 'Efsane Gezgin', emoji: '🌟',
+        level: 5, titleKey: 'cs.level.legend', emoji: '🌟',
         currentXP: p, requiredXP: 50, colorValue: 0xFFEAB308,
       );
     }
     if (p >= 30) {
       return TravelerLevel(
-        level: 4, title: 'Usta Gezgin', emoji: '🏆',
+        level: 4, titleKey: 'cs.level.master', emoji: '🏆',
         currentXP: p, requiredXP: 50, colorValue: 0xFFE879F9,
       );
     }
     if (p >= 15) {
       return TravelerLevel(
-        level: 3, title: 'Deneyimli Gezgin', emoji: '🎒',
+        level: 3, titleKey: 'cs.level.experienced', emoji: '🎒',
         currentXP: p, requiredXP: 30, colorValue: 0xFF34D399,
       );
     }
     if (p >= 5) {
       return TravelerLevel(
-        level: 2, title: 'Kaşif', emoji: '🗺️',
+        level: 2, titleKey: 'cs.level.explorer', emoji: '🗺️',
         currentXP: p, requiredXP: 15, colorValue: 0xFF60A5FA,
       );
     }
     return TravelerLevel(
-      level: 1, title: 'Yeni Gezgin', emoji: '🌱',
+      level: 1, titleKey: 'cs.level.newbie', emoji: '🌱',
       currentXP: p, requiredXP: 5, colorValue: 0xFF86EFAC,
     );
   }

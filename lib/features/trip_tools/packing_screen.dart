@@ -29,54 +29,54 @@ class _PackingScreenState extends State<PackingScreen> {
   List<_PackingCategory> _defaultList() => [
         _PackingCategory(
           emoji: '👕',
-          name: 'Giyim',
+          labelKey: 'tt.packing.cat.clothing',
           items: [
-            _PackingItem('T-shirt / gömlek'),
-            _PackingItem('Pantolon / şort'),
-            _PackingItem('İç çamaşırı'),
-            _PackingItem('Mont / hırka'),
-            _PackingItem('Pijama'),
-            _PackingItem('Ayakkabı'),
+            _PackingItem('T-shirt / gömlek', 'tt.packing.item.tshirt'),
+            _PackingItem('Pantolon / şort', 'tt.packing.item.trousers'),
+            _PackingItem('İç çamaşırı', 'tt.packing.item.underwear'),
+            _PackingItem('Mont / hırka', 'tt.packing.item.jacket'),
+            _PackingItem('Pijama', 'tt.packing.item.pyjamas'),
+            _PackingItem('Ayakkabı', 'tt.packing.item.shoes'),
           ],
         ),
         _PackingCategory(
           emoji: '🧴',
-          name: 'Kişisel Bakım',
+          labelKey: 'tt.packing.cat.care',
           items: [
-            _PackingItem('Diş fırçası + macun'),
-            _PackingItem('Şampuan / sabun'),
-            _PackingItem('Havlu'),
-            _PackingItem('Deodorant'),
-            _PackingItem('Güneş kremi'),
+            _PackingItem('Diş fırçası + macun', 'tt.packing.item.toothbrush'),
+            _PackingItem('Şampuan / sabun', 'tt.packing.item.shampoo'),
+            _PackingItem('Havlu', 'tt.packing.item.towel'),
+            _PackingItem('Deodorant', 'tt.packing.item.deodorant'),
+            _PackingItem('Güneş kremi', 'tt.packing.item.sunscreen'),
           ],
         ),
         _PackingCategory(
           emoji: '💊',
-          name: 'Sağlık',
+          labelKey: 'tt.packing.cat.health',
           items: [
-            _PackingItem('İlaçlar'),
-            _PackingItem('Yara bandı'),
-            _PackingItem('Ağrı kesici'),
+            _PackingItem('İlaçlar', 'tt.packing.item.medicine'),
+            _PackingItem('Yara bandı', 'tt.packing.item.plasters'),
+            _PackingItem('Ağrı kesici', 'tt.packing.item.painkiller'),
           ],
         ),
         _PackingCategory(
           emoji: '📱',
-          name: 'Elektronik',
+          labelKey: 'tt.packing.cat.electronics',
           items: [
-            _PackingItem('Telefon + şarj'),
-            _PackingItem('Powerbank'),
-            _PackingItem('Kulaklık'),
-            _PackingItem('Kamera'),
+            _PackingItem('Telefon + şarj', 'tt.packing.item.phone'),
+            _PackingItem('Powerbank', 'tt.packing.item.powerbank'),
+            _PackingItem('Kulaklık', 'tt.packing.item.headphones'),
+            _PackingItem('Kamera', 'tt.packing.item.camera'),
           ],
         ),
         _PackingCategory(
           emoji: '📄',
-          name: 'Belgeler & Para',
+          labelKey: 'tt.packing.cat.documents',
           items: [
-            _PackingItem('Kimlik / pasaport'),
-            _PackingItem('Otel rezervasyonu'),
-            _PackingItem('Nakit + kart'),
-            _PackingItem('Bilet (uçak/otobüs)'),
+            _PackingItem('Kimlik / pasaport', 'tt.packing.item.id'),
+            _PackingItem('Otel rezervasyonu', 'tt.packing.item.hotel'),
+            _PackingItem('Nakit + kart', 'tt.packing.item.cash'),
+            _PackingItem('Bilet (uçak/otobüs)', 'tt.packing.item.ticket'),
           ],
         ),
       ];
@@ -89,7 +89,8 @@ class _PackingScreenState extends State<PackingScreen> {
       final json = jsonDecode(raw) as Map<String, dynamic>;
       for (final c in _categories) {
         for (final i in c.items) {
-          if (json[i.name] == true) i.checked = true;
+          // Kayıt anahtarı sabit Türkçe id'dir — eski kayıtlar da yüklenir.
+          if (json[i.id] == true) i.checked = true;
         }
       }
       if (mounted) setState(() {});
@@ -102,7 +103,7 @@ class _PackingScreenState extends State<PackingScreen> {
       final map = <String, bool>{};
       for (final c in _categories) {
         for (final i in c.items) {
-          map[i.name] = i.checked;
+          map[i.id] = i.checked;
         }
       }
       await prefs.setString(_prefsKey, jsonEncode(map));
@@ -194,7 +195,7 @@ class _PackingScreenState extends State<PackingScreen> {
                                 style: const TextStyle(fontSize: 24)),
                             const SizedBox(width: 8),
                             Text(
-                              cat.name,
+                              I18n.t(cat.labelKey),
                               style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
@@ -216,7 +217,7 @@ class _PackingScreenState extends State<PackingScreen> {
                             _save();
                           },
                           title: Text(
-                            item.name,
+                            I18n.t(item.labelKey),
                             style: TextStyle(
                               fontSize: 13,
                               decoration: item.checked
@@ -243,13 +244,18 @@ class _PackingScreenState extends State<PackingScreen> {
 
 class _PackingCategory {
   final String emoji;
-  final String name;
+  final String labelKey;
   final List<_PackingItem> items;
-  _PackingCategory({required this.emoji, required this.name, required this.items});
+  _PackingCategory(
+      {required this.emoji, required this.labelKey, required this.items});
 }
 
 class _PackingItem {
-  final String name;
+  /// Kalıcı kayıt anahtarı (SharedPreferences) — değiştirilmemeli.
+  final String id;
+
+  /// Ekranda gösterilen metnin i18n anahtarı.
+  final String labelKey;
   bool checked;
-  _PackingItem(this.name) : checked = false;
+  _PackingItem(this.id, this.labelKey) : checked = false;
 }

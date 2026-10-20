@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/constants/categories.dart';
 import '../../core/i18n/i18n.dart';
 import '../gamification/badge_service.dart';
 
@@ -158,7 +159,7 @@ class _WrappedScreenState extends State<WrappedScreen> {
       if (topCat != null)
         _storyPage(
           emoji: _categoryEmoji(topCat.key),
-          big: topCat.key,
+          big: Categories.label(topCat.key),
           title: I18n.t('wrapped.topCategory.title'),
           subtitle: '${topCat.value} ${I18n.t('badge.stats.visits').toLowerCase()}',
           gradient: const [Color(0xFF14532D), Color(0xFF4ADE80)],

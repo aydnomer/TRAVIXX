@@ -1,3 +1,5 @@
+import '../i18n/i18n.dart';
+
 /// Mekan kategorileri — tek kaynak.
 ///
 /// Veritabanındaki eski kayıtlar Türkçe karaktersiz yazılmış olabilir
@@ -58,6 +60,19 @@ class Categories {
       sb.write(map[ch] ?? ch.toLowerCase());
     }
     return sb.toString();
+  }
+
+  /// Kategorinin seçili dildeki görünen adı (bilinmiyorsa olduğu gibi).
+  static String label(String category) =>
+      _translated('cat.${fold(normalize(category))}', category);
+
+  /// OSM alt türünün (örn. "Şelale") seçili dildeki adı.
+  static String subLabel(String subcategory) =>
+      _translated('sub.${fold(subcategory)}', subcategory);
+
+  static String _translated(String key, String fallback) {
+    final v = I18n.t(key);
+    return v == key ? fallback : v;
   }
 
   /// [text] içinde [keywords]'den biri geçiyor mu (karaktersiz karşılaştırma).

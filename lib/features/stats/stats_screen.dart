@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/constants/categories.dart';
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import '../gamification/badge_service.dart';
@@ -223,7 +224,7 @@ class _StatsScreenState extends State<StatsScreen> {
             children: [
               Expanded(
                 child: Text(
-                  name,
+                  Categories.label(name),
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -276,7 +277,8 @@ class _StatsScreenState extends State<StatsScreen> {
           ),
           const SizedBox(height: 12),
           if (_topCategory != null)
-            _highlightRow('🏆', I18n.t('stats.topCategory'), _topCategory!),
+            _highlightRow('🏆', I18n.t('stats.topCategory'),
+                Categories.label(_topCategory!)),
           if (_topCity != null)
             _highlightRow('🌆', I18n.t('stats.topCity'), _topCity!),
         ],

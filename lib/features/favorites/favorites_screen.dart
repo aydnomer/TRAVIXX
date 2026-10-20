@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/constants/categories.dart';
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/widgets/skeleton.dart';
@@ -230,7 +231,7 @@ class _FavoriteCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            place.category,
+                            Categories.label(place.category),
                             style: const TextStyle(
                               fontSize: 10,
                               color: AppTheme.accentOrange,

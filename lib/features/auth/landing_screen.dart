@@ -41,7 +41,7 @@ class _LandingScreenState extends State<LandingScreen> {
   final List<Map<String, dynamic>> _destinations = [
     {
       'name': 'Kapadokya',
-      'sub': 'Nevşehir · Sıcak hava balonları',
+      'subKey': 'ah.landing.dest.cappadocia',
       'emoji': '🎈',
       'url':
           'https://images.unsplash.com/photo-1641128324972-af3212f0f6bd?w=1600&q=80&auto=format&fit=crop',
@@ -49,7 +49,7 @@ class _LandingScreenState extends State<LandingScreen> {
     },
     {
       'name': 'İstanbul',
-      'sub': 'Galata Kulesi · Boğaz manzarası',
+      'subKey': 'ah.landing.dest.istanbul',
       'emoji': '🌉',
       'url':
           'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=1600&q=80&auto=format&fit=crop',
@@ -219,8 +219,8 @@ class _LandingScreenState extends State<LandingScreen> {
               const SizedBox(width: 10),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
+                children: [
+                  const Text(
                     'Travixx',
                     style: TextStyle(
                       color: Colors.white,
@@ -229,8 +229,8 @@ class _LandingScreenState extends State<LandingScreen> {
                     ),
                   ),
                   Text(
-                    "Türkiye'yi Keşfet",
-                    style: TextStyle(color: AppTheme.accent, fontSize: 11),
+                    I18n.t('app.tagline'),
+                    style: const TextStyle(color: AppTheme.accent, fontSize: 11),
                   ),
                 ],
               ),
@@ -640,9 +640,9 @@ class _LandingScreenState extends State<LandingScreen> {
           padding: const EdgeInsets.all(3),
           child: Row(
             children: [
-              _authTab('Giriş Yap', true),
+              _authTab(I18n.t('nav.login'), true),
               _authTab(
-                'Kayıt Ol',
+                I18n.t('nav.register'),
                 false,
                 onTap: () => setState(() => _isLogin = false),
               ),
@@ -768,11 +768,11 @@ class _LandingScreenState extends State<LandingScreen> {
           child: Row(
             children: [
               _authTab(
-                'Giriş Yap',
+                I18n.t('nav.login'),
                 false,
                 onTap: () => setState(() => _isLogin = true),
               ),
-              _authTab('Kayıt Ol', true),
+              _authTab(I18n.t('nav.register'), true),
             ],
           ),
         ),
@@ -1186,7 +1186,7 @@ class _LandingScreenState extends State<LandingScreen> {
     final url = d['url'] as String?;
     final colors = (d['colors'] as List).cast<Color>();
     final name = d['name'] as String;
-    final sub = d['sub'] as String;
+    final sub = I18n.t(d['subKey'] as String);
     final emoji = d['emoji'] as String;
 
     return AnimatedSwitcher(
@@ -1447,7 +1447,7 @@ class _LandingScreenState extends State<LandingScreen> {
   static const _fallbackReviews = [
     {
       'stars': 5,
-      'text': '"Efes\'teki antik tiyatroyu ziyaret ederken QR kodu okuttum, anında Türkçe ve İngilizce tarihçe geldi. Rehber tutmaya gerek kalmadı."',
+      'textKey': 'ah.landing.review1',
       'initials': 'ZK',
       'name': 'Zeynep K.',
       'color': Color(0xFFF97316),
@@ -1461,7 +1461,7 @@ class _LandingScreenState extends State<LandingScreen> {
     },
     {
       'stars': 4,
-      'text': '"Kapadokya gezisinde favori listemi önceden oluşturdum, internet olmadan bile listeye bakabiliyordum. Çok işe yaradı."',
+      'textKey': 'ah.landing.review3',
       'initials': 'MT',
       'name': 'Murat T.',
       'color': Color(0xFF15803D),
@@ -1486,11 +1486,11 @@ class _LandingScreenState extends State<LandingScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
       child: Column(
         children: [
-          _sectionBadge('Kullanıcı Yorumları'),
+          _sectionBadge(I18n.t('ah.landing.reviewsBadge')),
           const SizedBox(height: 10),
-          const Text(
-            'Onlar Ne Dedi?',
-            style: TextStyle(
+          Text(
+            I18n.t('ah.landing.reviewsTitle'),
+            style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: AppTheme.textPrimary,
@@ -1520,7 +1520,11 @@ class _LandingScreenState extends State<LandingScreen> {
                   } else {
                     final r = _fallbackReviews[i];
                     stars = r['stars'] as int;
-                    text = r['text'] as String;
+                    // Örnek yorumlar: Türkçe olanlar çevrilir, İngilizce
+                    // yorum özgün haliyle kalır.
+                    text = r['textKey'] != null
+                        ? '"${I18n.t(r['textKey'] as String)}"'
+                        : r['text'] as String;
                     initials = r['initials'] as String;
                     name = r['name'] as String;
                   }
@@ -1635,20 +1639,20 @@ class _LandingScreenState extends State<LandingScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Column(
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Travixx AI Asistan',
-                      style: TextStyle(
+                      I18n.t('ah.landing.ai.name'),
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Text(
-                      'Gezi planınızda size yardımcı olmaya hazır',
-                      style: TextStyle(color: AppTheme.accent, fontSize: 11),
+                      I18n.t('ah.landing.ai.tagline'),
+                      style: const TextStyle(color: AppTheme.accent, fontSize: 11),
                     ),
                   ],
                 ),
@@ -1662,9 +1666,9 @@ class _LandingScreenState extends State<LandingScreen> {
                   ),
                 ),
                 const SizedBox(width: 6),
-                const Text(
-                  'Çevrimiçi',
-                  style: TextStyle(color: Color(0xFF22C55E), fontSize: 11),
+                Text(
+                  I18n.t('ah.landing.ai.online'),
+                  style: const TextStyle(color: Color(0xFF22C55E), fontSize: 11),
                 ),
               ],
             ),
@@ -1676,14 +1680,14 @@ class _LandingScreenState extends State<LandingScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _chatMsg(
-                  'Merhaba! Ben Travixx AI asistanınım. Türkiye gezi planınızda size yardımcı olabilirim.',
+                  I18n.t('ah.landing.ai.msg1'),
                   false,
                 ),
                 const SizedBox(height: 8),
-                _chatMsg("İstanbul'da 2 günlük rota önerir misin?", true),
+                _chatMsg(I18n.t('ah.landing.ai.msg2'), true),
                 const SizedBox(height: 8),
                 _chatMsg(
-                  '1. gün: Tarihi Yarımada — Ayasofya, Topkapı Sarayı, Kapalıçarşı.\n2. gün: Boğaz turu, Galata Kulesi, Beşiktaş. Detaylı rota oluşturayım mı?',
+                  I18n.t('ah.landing.ai.msg3'),
                   false,
                 ),
               ],
@@ -1697,11 +1701,11 @@ class _LandingScreenState extends State<LandingScreen> {
               runSpacing: 8,
               children:
                   [
-                        'Evet, rotayı oluştur',
-                        'Müzeler',
-                        'Restoranlar',
-                        'Bütçe dostu',
-                        'Aile gezisi',
+                        I18n.t('ah.landing.ai.chipYes'),
+                        I18n.t('ah.landing.ai.chipMuseums'),
+                        I18n.t('ah.landing.ai.chipRestaurants'),
+                        I18n.t('ah.landing.ai.chipBudget'),
+                        I18n.t('ah.landing.ai.chipFamily'),
                       ]
                       .map(
                         (t) => Container(
@@ -1809,9 +1813,9 @@ class _LandingScreenState extends State<LandingScreen> {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        const Text(
-                          "Türkiye'nin akıllı turizm platformu. 81 şehir, binlerce mekan, yapay zeka destekli rehberlik.",
-                          style: TextStyle(
+                        Text(
+                          I18n.t('ah.landing.footer.about'),
+                          style: const TextStyle(
                             color: Color(0xFF64748B),
                             fontSize: 13,
                             height: 1.7,
@@ -1856,24 +1860,29 @@ class _LandingScreenState extends State<LandingScreen> {
                   ),
                   ...[
                     {
-                      'title': 'Ürün',
+                      'title': I18n.t('ah.landing.footer.product'),
                       'links': [
-                        'Özellikler',
-                        'Nasıl Çalışır?',
-                        'Fiyatlandırma',
-                        'Güncellemeler',
+                        I18n.t('nav.features'),
+                        I18n.t('nav.howItWorks'),
+                        I18n.t('ah.landing.footer.pricing'),
+                        I18n.t('ah.landing.footer.updates'),
                       ],
                     },
                     {
-                      'title': 'Şirket',
-                      'links': ['Hakkımızda', 'Blog', 'Kariyer', 'İletişim'],
+                      'title': I18n.t('ah.landing.footer.company'),
+                      'links': [
+                        I18n.t('nav.about'),
+                        I18n.t('ah.landing.footer.blog'),
+                        I18n.t('ah.landing.footer.careers'),
+                        I18n.t('ah.landing.footer.contact'),
+                      ],
                     },
                     {
-                      'title': 'Destek',
+                      'title': I18n.t('ah.drawer.support'),
                       'links': [
-                        'Yardım Merkezi',
-                        'Gizlilik Politikası',
-                        'Kullanım Şartları',
+                        I18n.t('ah.landing.footer.help'),
+                        I18n.t('ah.landing.footer.privacy'),
+                        I18n.t('ah.landing.footer.terms'),
                         'KVKK',
                       ],
                     },
@@ -1918,12 +1927,16 @@ class _LandingScreenState extends State<LandingScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                '© 2026 Travixx. Tüm hakları saklıdır.',
-                style: TextStyle(color: Color(0xFF475569), fontSize: 12),
+              Text(
+                I18n.t('ah.landing.footer.copyright'),
+                style: const TextStyle(color: Color(0xFF475569), fontSize: 12),
               ),
               Row(
-                children: ['SSL Güvenli', 'KVKK Uyumlu', 'v1.0.0']
+                children: [
+                  I18n.t('ah.landing.footer.ssl'),
+                  I18n.t('ah.landing.footer.kvkk'),
+                  'v1.0.0',
+                ]
                     .map(
                       (t) => Container(
                         margin: const EdgeInsets.only(left: 8),
@@ -1979,7 +1992,7 @@ class _LandingScreenState extends State<LandingScreen> {
   // ─── SUPABASE AUTH ───────────────────────────────────────────
   Future<void> _signIn(String email, String password) async {
     if (email.trim().isEmpty || password.isEmpty) {
-      _showSnack('E-posta ve şifre boş olamaz', isError: true);
+      _showSnack(I18n.t('auth.emptyFields'), isError: true);
       return;
     }
     try {
@@ -1989,19 +2002,19 @@ class _LandingScreenState extends State<LandingScreen> {
       );
       if (!mounted) return;
       if (res.session != null) {
-        _showSnack('Hoş geldin! 👋', isError: false);
+        _showSnack(I18n.t('auth.welcomeBack'), isError: false);
         context.go('/home');
       }
     } on AuthException catch (e) {
       if (mounted) _showSnack(e.message, isError: true);
     } catch (e) {
-      if (mounted) _showSnack('Bir hata oluştu: $e', isError: true);
+      if (mounted) _showSnack('${I18n.t('auth.genericError')}: $e', isError: true);
     }
   }
 
   Future<void> _signUp(String email, String password) async {
     if (email.trim().isEmpty || password.length < 6) {
-      _showSnack('Geçerli bir e-posta ve en az 6 karakter şifre girin',
+      _showSnack(I18n.t('auth.weakPassword'),
           isError: true);
       return;
     }
@@ -2013,18 +2026,18 @@ class _LandingScreenState extends State<LandingScreen> {
       if (!mounted) return;
       // Email confirmation kapalıysa session direkt gelir, açıksa null gelir
       if (res.session != null) {
-        _showSnack('Hesap oluşturuldu, giriş yapılıyor...', isError: false);
+        _showSnack(I18n.t('auth.accountCreated'), isError: false);
         context.go('/home');
       } else {
         _showSnack(
-          'Kayıt başarılı! E-posta kutunu kontrol et ve onaylama linkine tıkla.',
+          I18n.t('auth.checkEmail'),
           isError: false,
         );
       }
     } on AuthException catch (e) {
       if (mounted) _showSnack(e.message, isError: true);
     } catch (e) {
-      if (mounted) _showSnack('Bir hata oluştu: $e', isError: true);
+      if (mounted) _showSnack('${I18n.t('auth.genericError')}: $e', isError: true);
     }
   }
 
