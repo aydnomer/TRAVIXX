@@ -32,13 +32,8 @@ class _CompareScreenState extends State<CompareScreen> {
       return;
     }
     // Sepetteki ID'ler için place verilerini sırayla çek
-    final all = await DatabaseService.getAllPlaces();
+    final places = await DatabaseService.getPlacesByIds(ids);
     if (!mounted) return;
-    final byId = {for (final p in all) p.id: p};
-    final places = ids
-        .map((id) => byId[id])
-        .whereType<Place>()
-        .toList();
     setState(() {
       _places = places;
       _loading = false;
@@ -172,7 +167,7 @@ class _CompareScreenState extends State<CompareScreen> {
           ),
           _buildRow(
             I18n.t('compare.rating'),
-            _places.map((p) => '⭐ ${p.rating.toStringAsFixed(1)}').toList(),
+            _places.map((p) => '⭐ ${p.ratingLabel}').toList(),
           ),
           _buildRow(
             I18n.t('place.admission'),

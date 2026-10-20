@@ -537,7 +537,7 @@ class _PlaceListCard extends StatelessWidget {
                               size: 13, color: Colors.amber),
                           const SizedBox(width: 2),
                           Text(
-                            place.rating.toStringAsFixed(1),
+                            place.ratingLabel,
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -645,7 +645,7 @@ class _PlaceGridCard extends StatelessWidget {
                               size: 11, color: Colors.amber),
                           const SizedBox(width: 2),
                           Text(
-                            place.rating.toStringAsFixed(1),
+                            place.ratingLabel,
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 11,

@@ -33,12 +33,17 @@ class WikipediaService {
   static final Map<String, WikiPlaceMedia> _mediaCache = {};
 
   /// Bir mekan için tarihçe metni + birden fazla fotoğraf çeker.
-  /// Önce İngilizce, sonra Türkçe Wikipedia denenir.
+  /// Önce Türkçe, sonra İngilizce Wikipedia denenir.
+  ///
+  /// [wikipedia] OSM etiketi biçiminde kesin makale başlığıdır ("tr:Efes");
+  /// verilirse o dilde arama yapılmaz, doğrudan bu makale kullanılır.
   static Future<WikiPlaceMedia> fetchPlaceMedia({
     required String name,
     String? nameEn,
+    String? wikipedia,
     int maxImages = 6,
   }) async {
+    final exact = _parseWikiTag(wikipedia);
     String? bestExtract;
     final candidates = <String>[]; // tüm aday görseller (henüz filtrelenmedi)
 
@@ -53,17 +58,23 @@ class WikipediaService {
 
     // 1) Türkçe Wikipedia: deasciify ile gerçek başlığı bul (tarihçe için en iyi)
     final deascii = _deAsciify(name);
-    for (final q in {deascii, name}) {
+    if (exact?.lang == 'tr') {
+      absorb(await _tryMedia(exact!.title, lang: 'tr', maxImages: maxImages));
+    } else {
+      for (final q in {deascii, name}) {
       final trTitle = await _searchTitle(q, lang: 'tr');
       if (trTitle != null) {
-        absorb(await _tryMedia(trTitle, lang: 'tr', maxImages: maxImages));
-        break;
+          absorb(await _tryMedia(trTitle, lang: 'tr', maxImages: maxImages));
+          break;
+        }
       }
     }
 
     // 2) İngilizce Wikipedia (genelde daha çok foto içerir)
     final enQuery = (nameEn != null && nameEn.isNotEmpty) ? nameEn : deascii;
-    final enTitle = await _searchTitle(enQuery, lang: 'en');
+    final enTitle = exact?.lang == 'en'
+        ? exact!.title
+        : await _searchTitle(enQuery, lang: 'en');
     if (enTitle != null) {
       absorb(await _tryMedia(enTitle, lang: 'en', maxImages: maxImages));
     }
@@ -90,6 +101,14 @@ class WikipediaService {
     }
 
     return WikiPlaceMedia(extract: bestExtract, images: images);
+  }
+
+  /// "tr:Efes" → (lang: tr, title: Efes). Biçim uymazsa null.
+  static ({String lang, String title})? _parseWikiTag(String? tag) {
+    if (tag == null) return null;
+    final i = tag.indexOf(':');
+    if (i < 2 || i > 3 || i == tag.length - 1) return null;
+    return (lang: tag.substring(0, i), title: tag.substring(i + 1).trim());
   }
 
   /// Türkçe karakterleri ASCII'ye indirger + küçük harf (karşılaştırma için).

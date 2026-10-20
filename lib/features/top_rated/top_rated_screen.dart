@@ -138,7 +138,7 @@ class _TopRatedTile extends StatelessWidget {
             const Icon(Icons.star, size: 18, color: Color(0xFFEAB308)),
             const SizedBox(width: 3),
             Text(
-              place.rating.toStringAsFixed(1),
+              place.ratingLabel,
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
