@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:go_router/go_router.dart';
@@ -21,10 +23,13 @@ class _MapScreenState extends State<MapScreen> {
   final _mapController = MapController();
   List<Place> _places = const [];
   bool _loading = true;
+  Timer? _reloadTimer;
+  int _requestSeq = 0;
   String _selectedCategory = 'Tümü';
 
   static const _categories = [
     'Tümü',
+    'Plaj',
     'Tarihi',
     'Müze',
     'Doğa',
@@ -44,25 +49,36 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   void dispose() {
+    _reloadTimer?.cancel();
     _mapController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadPlaces() async {
+  /// Görünen alandaki mekanları çeker. Tüm Türkiye'yi bir kerede indirmek
+  /// yerine harita her durduğunda o bölge yeniden yüklenir.
+  Future<void> _loadPlaces([LatLngBounds? bounds]) async {
+    final seq = ++_requestSeq;
     try {
-      final all = await DatabaseService.getAllPlaces();
-      // Sadece lat/lng'si olanları al
-      final withCoords = all
-          .where((p) => p.latitude != null && p.longitude != null)
-          .toList();
-      if (!mounted) return;
+      final list = await DatabaseService.getPlacesInBounds(
+        south: bounds?.south ?? 35.8,
+        west: bounds?.west ?? 25.6,
+        north: bounds?.north ?? 42.2,
+        east: bounds?.east ?? 44.9,
+      );
+      if (!mounted || seq != _requestSeq) return;
       setState(() {
-        _places = withCoords;
+        _places = list;
         _loading = false;
       });
     } catch (_) {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && seq == _requestSeq) setState(() => _loading = false);
     }
+  }
+
+  void _onCameraChanged(MapCamera camera, bool hasGesture) {
+    _reloadTimer?.cancel();
+    _reloadTimer = Timer(const Duration(milliseconds: 500),
+        () => _loadPlaces(camera.visibleBounds));
   }
 
   List<Place> get _filteredPlaces {
@@ -78,6 +94,7 @@ class _MapScreenState extends State<MapScreen> {
       'tarih', 'kale', 'saray', 'antik', 'arkeoloji', 'ören', 'oren',
       'han', 'köprü', 'kopru', 'kule', 'sur', 'historic',
     ],
+    'Plaj': ['plaj', 'beach'],
     'Müze': ['müze', 'muze', 'museum', 'galeri'],
     'Doğa': [
       'doğa', 'doga', 'park', 'şelale', 'selale', 'mağara', 'magara',
@@ -116,6 +133,8 @@ class _MapScreenState extends State<MapScreen> {
         return const Color(0xFF0891B2); // turkuaz
       case 'Manzara':
         return const Color(0xFFCA8A04); // altın
+      case 'Plaj':
+        return const Color(0xFF0284C7); // deniz mavisi
       default:
         return AppTheme.primary;
     }
@@ -190,7 +209,7 @@ class _MapScreenState extends State<MapScreen> {
               spacing: 6,
               children: [
                 _badge(p.category, _markerColor(p.category)),
-                _badge('⭐ ${p.rating.toStringAsFixed(1)}',
+                _badge('⭐ ${p.ratingLabel}',
                     const Color(0xFFEAB308)),
                 if (p.isFree) _badge(I18n.t('place.free'), Colors.green),
               ],
@@ -283,12 +302,13 @@ class _MapScreenState extends State<MapScreen> {
                     children: [
                       FlutterMap(
                         mapController: _mapController,
-                        options: const MapOptions(
+                        options: MapOptions(
                           initialCenter: _turkeyCenter,
                           initialZoom: _initialZoom,
                           minZoom: 5,
                           maxZoom: 18,
-                          interactionOptions: InteractionOptions(
+                          onPositionChanged: _onCameraChanged,
+                          interactionOptions: const InteractionOptions(
                             flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
                           ),
                         ),

@@ -148,6 +148,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     final media = await WikipediaService.fetchPlaceMedia(
       name: p.name,
       nameEn: p.nameEn.isNotEmpty ? p.nameEn : null,
+      wikipedia: p.wikipedia,
     );
     if (!mounted) return;
 
@@ -1328,6 +1329,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
       children: [
         if (p.category.isNotEmpty)
           _badge(p.category, AppTheme.accentOrange, isLight: true),
+        if (p.subcategory != null && p.subcategory!.isNotEmpty)
+          _badge(p.subcategory!, AppTheme.accentOrange, isLight: true),
         _ratingBadge(p.rating),
         _badge(
           p.isFree ? I18n.t('place.free') : I18n.t('place.paid'),
@@ -1487,6 +1490,17 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
               style: const TextStyle(
                 fontSize: 13,
                 height: 1.6,
+                color: AppTheme.textSecondary,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+          if (p.isFromOsm) ...[
+            const SizedBox(height: 10),
+            Text(
+              I18n.t('place.osmAttribution'),
+              style: const TextStyle(
+                fontSize: 11,
                 color: AppTheme.textSecondary,
                 fontStyle: FontStyle.italic,
               ),
@@ -1665,7 +1679,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
           const Icon(Icons.star, size: 14, color: Color(0xFFEAB308)),
           const SizedBox(width: 4),
           Text(
-            rating.toStringAsFixed(1),
+            rating > 0 ? rating.toStringAsFixed(1) : "—",
             style: const TextStyle(
               fontSize: 12,
               color: Color(0xFFB45309),

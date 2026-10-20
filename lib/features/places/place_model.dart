@@ -41,6 +41,27 @@ class Place {
   /// Detaylı tarihçe metni (Wikipedia'dan toplu doldurma ile yazılır).
   final String? history;
 
+  /// Kaynak: 'travixx' (elle girilmiş) veya 'osm' (OpenStreetMap aktarımı).
+  final String source;
+
+  /// OSM kaydı ("node/123"); OSM'den gelmeyenlerde null.
+  final String? osmRef;
+
+  /// Alt tür (örn. "Şelale", "Antik kent", "Mavi bayraklı plaj").
+  final String? subcategory;
+
+  /// Wikidata kimliği (örn. "Q12506").
+  final String? wikidata;
+
+  /// Wikipedia başlığı, OSM etiketi biçiminde ("tr:Efes").
+  final String? wikipedia;
+
+  bool get isFromOsm => source == 'osm';
+
+  /// Henüz puan yoksa "—" gösterilir; 0 puanı "0.0" diye yazmak yanıltıcı.
+  bool get hasRating => rating > 0;
+  String get ratingLabel => hasRating ? rating.toStringAsFixed(1) : '—';
+
   Place({
     required this.id,
     required this.cityId,
@@ -62,6 +83,11 @@ class Place {
     this.phone,
     this.images = const [],
     this.history,
+    this.source = 'travixx',
+    this.osmRef,
+    this.subcategory,
+    this.wikidata,
+    this.wikipedia,
   });
 
   factory Place.fromJson(Map<String, dynamic> json) {
@@ -86,6 +112,11 @@ class Place {
       phone: json['phone'] as String?,
       images: _parseImages(json['images']),
       history: json['history'] as String?,
+      source: json['source'] as String? ?? 'travixx',
+      osmRef: json['osm_ref'] as String?,
+      subcategory: json['subcategory'] as String?,
+      wikidata: json['wikidata'] as String?,
+      wikipedia: json['wikipedia'] as String?,
     );
   }
 

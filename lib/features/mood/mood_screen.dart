@@ -19,8 +19,9 @@ class MoodScreen extends StatefulWidget {
 
 class _MoodScreenState extends State<MoodScreen> {
   String? _selected;
-  List<Place> _allPlaces = const [];
-  bool _loading = true;
+  /// Ruh hâli id → o ruh hâline uyan mekanlar (sunucudan bir kez çekilir).
+  final Map<String, List<Place>> _byMood = {};
+  bool _loading = false;
 
   static const _moods = [
     _Mood(
@@ -61,7 +62,7 @@ class _MoodScreenState extends State<MoodScreen> {
       labelKey: 'mood.relaxing',
       gradient: [Color(0xFF0891B2), Color(0xFF67E8F9)],
       keywords: ['plaj', 'göl', 'kaplıca', 'lagün', 'sahil', 'pamukkale'],
-      categories: ['Doğa'],
+      categories: ['Plaj', 'Doğa'],
     ),
     _Mood(
       id: 'cultural',
@@ -76,25 +77,28 @@ class _MoodScreenState extends State<MoodScreen> {
   @override
   void initState() {
     super.initState();
-    _selected = widget.initialMood;
-    _load();
+    _select(widget.initialMood);
   }
 
-  Future<void> _load() async {
+  Future<void> _select(String? id) async {
+    setState(() => _selected = id);
+    if (id == null || _byMood.containsKey(id)) return;
+    final mood = _moods.firstWhere((m) => m.id == id, orElse: () => _moods.first);
+    setState(() => _loading = true);
     try {
-      final all = await DatabaseService.getAllPlaces();
-      if (!mounted) return;
-      setState(() {
-        _allPlaces = all;
-        _loading = false;
-      });
+      final places = await DatabaseService.getPlacesMatching(
+        categories: mood.categories,
+        keywords: mood.keywords,
+      );
+      _byMood[id] = _rank(mood, places);
     } catch (_) {
-      if (mounted) setState(() => _loading = false);
+      // Hata olursa boş liste; tekrar seçilince yeniden dener.
     }
+    if (mounted && _selected == id) setState(() => _loading = false);
   }
 
-  List<Place> _placesForMood(_Mood m) {
-    final results = _allPlaces.where((p) {
+  List<Place> _rank(_Mood m, List<Place> places) {
+    final results = places.where((p) {
       final kwMatch =
           Categories.containsAny('${p.name} ${p.description}', m.keywords);
       final catMatch = m.categories.contains(p.category);
@@ -112,7 +116,9 @@ class _MoodScreenState extends State<MoodScreen> {
             (m) => m.id == _selected,
             orElse: () => _moods.first,
           );
-    final places = currentMood == null ? <Place>[] : _placesForMood(currentMood);
+    final places = currentMood == null
+        ? <Place>[]
+        : (_byMood[currentMood.id] ?? const <Place>[]);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -169,7 +175,7 @@ class _MoodScreenState extends State<MoodScreen> {
             color: Colors.transparent,
             child: InkWell(
               borderRadius: BorderRadius.circular(14),
-              onTap: () => setState(() => _selected = m.id),
+              onTap: () => _select(m.id),
               child: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -287,7 +293,7 @@ class _PlaceCard extends StatelessWidget {
             const Icon(Icons.star, size: 14, color: AppTheme.gold),
             const SizedBox(width: 2),
             Text(
-              place.rating.toStringAsFixed(1),
+              place.ratingLabel,
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
             ),
           ],

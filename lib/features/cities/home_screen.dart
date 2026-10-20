@@ -39,8 +39,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String _category = 'Tümü';
 
   static const _categories = [
-    'Tümü', 'Tarihi', 'Müzeler', 'Doğa', 'Kültür', 'Kaleler', 'Camiler',
-    'Manzara',
+    'Tümü', 'Plajlar', 'Tarihi', 'Müzeler', 'Doğa', 'Kültür', 'Kaleler',
+    'Camiler', 'Manzara',
   ];
 
   @override
@@ -50,19 +50,24 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadData() async {
-    final posFuture = GpsService.getCurrentPosition();
-    final placesFuture = DatabaseService.getAllPlaces();
-
     DatabaseService.getCities().then((list) {
       if (mounted) setState(() => _cities = list.take(15).toList());
     });
 
-    final pos = await posFuture;
+    final pos = await GpsService.getCurrentPosition();
+    // Kategori çipleri bu listeyi süzer; yeterince geniş tutulur.
     List<Place> raw;
     try {
-      raw = await placesFuture;
+      raw = pos != null
+          ? await DatabaseService.getNearbyPlaces(
+              pos.latitude, pos.longitude, limit: 200)
+          : await DatabaseService.getPopularPlaces(limit: 200);
     } catch (_) {
-      raw = const [];
+      try {
+        raw = await DatabaseService.getPopularPlaces(limit: 200);
+      } catch (_) {
+        raw = const [];
+      }
     }
     if (!mounted) return;
 
@@ -84,7 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     setState(() {
-      _places = list.take(20).toList();
+      _places = list;
       _loading = false;
     });
 
@@ -96,10 +101,14 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  List<_PlaceWithDistance> get _filtered {
+  List<_PlaceWithDistance> get _filtered => _matching.take(20).toList();
+
+  List<_PlaceWithDistance> get _matching {
     if (_category == 'Tümü') return _places;
     bool Function(Place) test;
     switch (_category) {
+      case 'Plajlar':
+        test = (p) => p.category == Categories.beach;
       case 'Tarihi':
         test = (p) => p.category == Categories.historic;
       case 'Müzeler':
@@ -114,7 +123,10 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'Kaleler':
         test = (p) => Categories.containsAny(p.name, const ['kale', 'hisar']);
       case 'Camiler':
-        test = (p) => Categories.containsAny(p.name, const ['cami', 'mescit']);
+        test = (p) =>
+            Categories.containsAny(p.name, const ['cami', 'mescit']) ||
+            (p.category == Categories.religious &&
+                Categories.containsAny(p.subcategory ?? '', const ['cami']));
       default:
         return _places;
     }

@@ -509,7 +509,7 @@ class _ResultCard extends StatelessWidget {
                       const Icon(Icons.star, size: 13, color: AppTheme.gold),
                       const SizedBox(width: 2),
                       Text(
-                        place.rating.toStringAsFixed(1),
+                        place.ratingLabel,
                         style: const TextStyle(
                             fontSize: 12, fontWeight: FontWeight.w600),
                       ),

@@ -243,7 +243,7 @@ class _FavoriteCard extends StatelessWidget {
                           size: 14, color: AppTheme.gold),
                       const SizedBox(width: 2),
                       Text(
-                        place.rating.toStringAsFixed(1),
+                        place.ratingLabel,
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,

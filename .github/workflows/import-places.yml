@@ -1,0 +1,53 @@
+name: Import places (OSM)
+
+# OpenStreetMap'ten plaj, müze, antik kent, doğal oluşum vb. mekanları
+# Supabase `places` tablosuna aktarır. Gerekli repo secret'ları:
+#   SUPABASE_URL               (https://xxxx.supabase.co)
+#   SUPABASE_SERVICE_ROLE_KEY  (Supabase > Project Settings > API > service_role)
+
+on:
+  workflow_dispatch:
+    inputs:
+      provinces:
+        description: "Plaka kodları, virgülle (boş = 81 il). Örn: 07,48,35"
+        required: false
+        default: ""
+      dry_run:
+        description: "Sadece say, veritabanına yazma"
+        type: boolean
+        default: true
+  schedule:
+    - cron: "0 3 1 * *" # her ayın 1'i, 03:00 UTC
+
+permissions:
+  contents: read
+
+concurrency:
+  group: import-places
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - run: flutter pub get
+
+      - name: OSM aktarımı
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PROVINCES: ${{ github.event.inputs.provinces }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' }}
+        run: |
+          args=()
+          if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
+          if [ -n "$PROVINCES" ]; then args+=("--only=$PROVINCES"); fi
+          dart run tool/import_osm.dart "${args[@]}"

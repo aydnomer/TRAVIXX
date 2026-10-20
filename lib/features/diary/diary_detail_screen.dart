@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -362,7 +364,12 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
   Future<void> _pickPlace() async {
     if (_places.isEmpty && !_placesLoading) {
       setState(() => _placesLoading = true);
-      final list = await DatabaseService.getAllPlaces();
+      List<Place> list;
+      try {
+        list = await DatabaseService.getPopularPlaces(limit: 60);
+      } catch (_) {
+        list = const [];
+      }
       if (!mounted) return;
       setState(() {
         _places = list;
@@ -612,17 +619,40 @@ class _PlacePicker extends StatefulWidget {
 
 class _PlacePickerState extends State<_PlacePicker> {
   String _query = '';
+  List<Place>? _results;
+  Timer? _debounce;
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  // Arama sunucuda yapılır; tüm mekanları indirmek gerekmez.
+  void _onQuery(String v) {
+    setState(() => _query = v);
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () async {
+      final q = v.trim();
+      if (q.isEmpty) {
+        if (mounted) setState(() => _results = null);
+        return;
+      }
+      List<Place> found;
+      try {
+        found = await DatabaseService.searchPlaces(q, limit: 60);
+      } catch (_) {
+        found = const [];
+      }
+      if (mounted && _query == v) setState(() => _results = found);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _query.isEmpty
+    final filtered = _query.trim().isEmpty || _results == null
         ? widget.places.take(60).toList()
-        : widget.places
-            .where((p) =>
-                p.name.toLowerCase().contains(_query.toLowerCase()) ||
-                p.nameEn.toLowerCase().contains(_query.toLowerCase()))
-            .take(60)
-            .toList();
+        : _results!;
     return DraggableScrollableSheet(
       initialChildSize: 0.7,
       minChildSize: 0.5,
@@ -649,7 +679,7 @@ class _PlacePickerState extends State<_PlacePicker> {
                 padding: const EdgeInsets.all(16),
                 child: TextField(
                   autofocus: true,
-                  onChanged: (v) => setState(() => _query = v),
+                  onChanged: _onQuery,
                   decoration: InputDecoration(
                     hintText: I18n.t('search.hint'),
                     prefixIcon: const Icon(Icons.search),
