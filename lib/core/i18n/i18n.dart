@@ -487,6 +487,7 @@ class I18n {
       'qrPrint.hint': 'Bir şehir seç; o şehirdeki mekanların QR kodları burada çıkar. Yazdırıp mekanlara asabilirsin.',
       'place.osmAttribution': 'Konum bilgisi © OpenStreetMap katkıcıları (ODbL)',
       'review.addPhoto': 'Fotoğraf ekle',
+      'place.sourceWikipedia': 'Kaynak: Wikipedia',
       'qr.hint': 'QR kodunu çerçeve içine yerleştir\nmekan otomatik açılacak',
       'qr.cameraError': 'Kameraya erişilemiyor',
       'qr.cameraHint':
@@ -901,6 +902,7 @@ class I18n {
       'qrPrint.hint': 'Pick a city to generate QR codes for its places. Print them and place them on site.',
       'place.osmAttribution': 'Location data © OpenStreetMap contributors (ODbL)',
       'review.addPhoto': 'Add photo',
+      'place.sourceWikipedia': 'Source: Wikipedia',
       'qr.hint': 'Place the QR inside the frame\nthe place will open automatically',
       'qr.cameraError': 'Cannot access camera',
       'qr.cameraHint':
@@ -1192,6 +1194,7 @@ class I18n {
       'qrPrint.hint': 'Wähle eine Stadt, um QR-Codes für ihre Orte zu erzeugen. Drucke sie aus und bringe sie vor Ort an.',
       'place.osmAttribution': 'Standortdaten © OpenStreetMap-Mitwirkende (ODbL)',
       'review.addPhoto': 'Foto hinzufügen',
+      'place.sourceWikipedia': 'Quelle: Wikipedia',
       'qr.hint':
           'QR in den Rahmen platzieren\nder Ort öffnet sich automatisch',
       'qr.cameraError': 'Kamera nicht zugänglich',
@@ -1483,6 +1486,7 @@ class I18n {
       'qrPrint.hint': 'اختر مدينة لإنشاء رموز QR لأماكنها، ثم اطبعها وضعها في المواقع.',
       'place.osmAttribution': 'بيانات الموقع © مساهمو OpenStreetMap (ODbL)',
       'review.addPhoto': 'إضافة صورة',
+      'place.sourceWikipedia': 'المصدر: ويكيبيديا',
       'qr.hint': 'ضع رمز QR داخل الإطار\nسيتم فتح المكان تلقائياً',
       'qr.cameraError': 'لا يمكن الوصول إلى الكاميرا',
       'qr.cameraHint': 'تحقق من أذونات المتصفح أو امنح وصولاً للكاميرا.',
@@ -1773,6 +1777,7 @@ class I18n {
       'qrPrint.hint': 'Choisissez une ville pour générer les QR codes de ses lieux, puis imprimez-les.',
       'place.osmAttribution': 'Données de localisation © contributeurs OpenStreetMap (ODbL)',
       'review.addPhoto': 'Ajouter une photo',
+      'place.sourceWikipedia': 'Source : Wikipédia',
       'qr.hint':
           'Place le QR dans le cadre\nle lieu s\'ouvrira automatiquement',
       'qr.cameraError': 'Impossible d\'accéder à la caméra',
@@ -2066,6 +2071,7 @@ class I18n {
       'qrPrint.hint': 'Выберите город, чтобы создать QR-коды для его мест, и распечатайте их.',
       'place.osmAttribution': 'Данные о местоположении © участники OpenStreetMap (ODbL)',
       'review.addPhoto': 'Добавить фото',
+      'place.sourceWikipedia': 'Источник: Википедия',
       'qr.hint':
           'Поместите QR в рамку\nместо откроется автоматически',
       'qr.cameraError': 'Нет доступа к камере',

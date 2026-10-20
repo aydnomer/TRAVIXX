@@ -1,0 +1,58 @@
+name: Translate places (Wikipedia)
+
+# Mekan içeriğini Wikipedia'nın tr/en/de/ar/fr/ru sürümlerinden
+# `place_translations` tablosuna aktarır, Türkçe karaktersiz adları düzeltir.
+# Gerekli repo secret'ları: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "En çok kaç mekan (boş = hepsi)"
+        required: false
+        default: ""
+      dry_run:
+        description: "Sadece göster, veritabanına yazma"
+        type: boolean
+        default: true
+      force:
+        description: "Çevirisi olanları da yeniden işle"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "0 5 2 * *" # her ayın 2'si (OSM aktarımından bir gün sonra)
+
+permissions:
+  contents: read
+
+concurrency:
+  group: translate-places
+  cancel-in-progress: false
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Wikipedia çevirileri
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          LIMIT: ${{ github.event.inputs.limit }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' }}
+          FORCE: ${{ github.event.inputs.force == 'true' }}
+        run: |
+          args=()
+          if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
+          if [ "$FORCE" = "true" ]; then args+=(--force); fi
+          if [ -n "$LIMIT" ]; then args+=("--limit=$LIMIT"); fi
+          dart run tool/translate_places.dart "${args[@]}"
