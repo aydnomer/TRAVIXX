@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/i18n/i18n.dart';
 import '../../core/theme/design_tokens.dart';
 import 'nav_destinations.dart';
 
@@ -11,7 +12,7 @@ Future<void> showProfileDrawer(BuildContext context) {
   return showGeneralDialog(
     context: context,
     barrierDismissible: true,
-    barrierLabel: 'Profil',
+    barrierLabel: I18n.t('ah.nav.profile'),
     barrierColor: Colors.black.withValues(alpha: 0.3),
     transitionDuration: DT.anim,
     pageBuilder: (_, __, ___) => const SizedBox.shrink(),
@@ -70,7 +71,7 @@ class _DrawerBody extends StatelessWidget {
                         children: [
                           Text(avatarInitials(email).length > 1
                               ? email.split('@').first
-                              : 'Gezgin', style: DT.t16),
+                              : I18n.t('ah.drawer.traveler'), style: DT.t16),
                           const SizedBox(height: 2),
                           Text(email,
                               maxLines: 1,
@@ -83,39 +84,39 @@ class _DrawerBody extends StatelessWidget {
                 ),
               ),
               const Divider(height: 1, color: DT.border),
-              _section('Hesap'),
-              _row(context, Icons.edit_outlined, 'Profili Düzenle', '/profile'),
-              _section('Keşif'),
-              _row(context, Icons.favorite_border, 'Favorilerim', '/favorites'),
-              _row(context, Icons.route_outlined, 'Rotalarım', '/trip-wizard'),
-              _row(context, Icons.history, 'Ziyaret Geçmişi', '/activity'),
-              _row(context, Icons.bar_chart_outlined, 'İstatistikler', '/stats'),
-              _section('Keşfet'),
-              _row(context, Icons.qr_code_scanner, 'QR Tara', '/qr-scan'),
-              _row(context, Icons.collections_bookmark_outlined, 'Koleksiyonlar',
+              _section(I18n.t('ah.drawer.account')),
+              _row(context, Icons.edit_outlined, I18n.t('ah.profile.edit'), '/profile'),
+              _section(I18n.t('ah.profile.discovery')),
+              _row(context, Icons.favorite_border, I18n.t('ah.drawer.favorites'), '/favorites'),
+              _row(context, Icons.route_outlined, I18n.t('ah.profile.myRoutes'), '/trip-wizard'),
+              _row(context, Icons.history, I18n.t('ah.drawer.visitHistory'), '/activity'),
+              _row(context, Icons.bar_chart_outlined, I18n.t('ah.profile.stats'), '/stats'),
+              _section(I18n.t('ah.nav.explore')),
+              _row(context, Icons.qr_code_scanner, I18n.t('ah.drawer.qrScan'), '/qr-scan'),
+              _row(context, Icons.collections_bookmark_outlined, I18n.t('ah.drawer.collections'),
                   '/collections'),
-              _row(context, Icons.mood_outlined, 'Ruh Hâline Göre', '/mood'),
-              _row(context, Icons.star_outline, 'En Yüksek Puanlılar',
+              _row(context, Icons.mood_outlined, I18n.t('ah.drawer.mood'), '/mood'),
+              _row(context, Icons.star_outline, I18n.t('ah.drawer.topRated'),
                   '/top-rated'),
-              _row(context, Icons.restaurant_outlined, 'Yakındaki Restoranlar',
+              _row(context, Icons.restaurant_outlined, I18n.t('ah.drawer.restaurants'),
                   '/restaurants'),
-              _row(context, Icons.play_circle_outline, 'Video Rehberler',
+              _row(context, Icons.play_circle_outline, I18n.t('ah.drawer.videos'),
                   '/videos'),
-              _row(context, Icons.forum_outlined, 'Topluluk', '/community'),
-              _section('Gezi Araçları'),
+              _row(context, Icons.forum_outlined, I18n.t('ah.drawer.community'), '/community'),
+              _section(I18n.t('ah.drawer.tripTools')),
               _row(context, Icons.account_balance_wallet_outlined,
-                  'Bütçe Hesaplayıcı', '/budget'),
-              _row(context, Icons.luggage_outlined, 'Eşya Listesi', '/packing'),
-              _row(context, Icons.compare_arrows, 'Mekan Karşılaştır',
+                  I18n.t('ah.drawer.budget'), '/budget'),
+              _row(context, Icons.luggage_outlined, I18n.t('ah.drawer.packing'), '/packing'),
+              _row(context, Icons.compare_arrows, I18n.t('ah.drawer.compare'),
                   '/compare'),
-              _row(context, Icons.hotel_outlined, 'Konaklama', '/accommodation'),
-              _row(context, Icons.qr_code_2, 'QR Kodları Yazdır', '/qr-print'),
-              _section('Uygulama'),
-              _row(context, Icons.notifications_outlined, 'Bildirimler',
+              _row(context, Icons.hotel_outlined, I18n.t('ah.drawer.accommodation'), '/accommodation'),
+              _row(context, Icons.qr_code_2, I18n.t('ah.drawer.qrPrint'), '/qr-print'),
+              _section(I18n.t('ah.drawer.app')),
+              _row(context, Icons.notifications_outlined, I18n.t('ah.nav.notifications'),
                   '/notifications'),
-              _row(context, Icons.book_outlined, 'Günlüklerim', '/diaries'),
-              _section('Destek'),
-              _row(context, Icons.add_location_alt_outlined, 'Mekan Öner',
+              _row(context, Icons.book_outlined, I18n.t('ah.profile.diaries'), '/diaries'),
+              _section(I18n.t('ah.drawer.support')),
+              _row(context, Icons.add_location_alt_outlined, I18n.t('ah.profile.suggestPlace'),
                   '/suggest'),
               const Divider(height: 1, color: DT.border),
               // Çıkış
@@ -127,15 +128,15 @@ class _DrawerBody extends StatelessWidget {
                     context.go('/');
                   }
                 },
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
                       horizontal: DT.s24, vertical: DT.s16),
                   child: Row(
                     children: [
-                      Icon(Icons.logout, size: 20, color: DT.danger),
-                      SizedBox(width: DT.s12),
-                      Text('Çıkış Yap',
-                          style: TextStyle(
+                      const Icon(Icons.logout, size: 20, color: DT.danger),
+                      const SizedBox(width: DT.s12),
+                      Text(I18n.t('ah.common.logout'),
+                          style: const TextStyle(
                               fontSize: 14,
                               color: DT.danger,
                               fontWeight: DT.wMedium)),

@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 
 class VideosScreen extends StatelessWidget {
   const VideosScreen({super.key});
 
+  // 'title' i18n anahtarıdır; 'place' şehir adı olduğu için çevrilmez.
   static const _videos = [
     {
-      'title': 'İstanbul: Tarihin Kalbi',
+      'title': 'tt.videos.v.istanbul',
       'place': 'İstanbul',
       'emoji': '🕌',
       'duration': '8:42',
@@ -15,7 +17,7 @@ class VideosScreen extends StatelessWidget {
       'url': 'https://www.youtube.com/watch?v=ZYFKMuXn8Xg',
     },
     {
-      'title': 'Kapadokya: Balon Turu ve Peri Bacaları',
+      'title': 'tt.videos.v.cappadocia',
       'place': 'Nevşehir',
       'emoji': '🎈',
       'duration': '12:15',
@@ -23,7 +25,7 @@ class VideosScreen extends StatelessWidget {
       'url': 'https://www.youtube.com/watch?v=H3-F5y2MHFQ',
     },
     {
-      'title': 'Ege Kıyıları: Bodrum ve Çevresi',
+      'title': 'tt.videos.v.aegean',
       'place': 'Muğla',
       'emoji': '⛵',
       'duration': '15:30',
@@ -31,7 +33,7 @@ class VideosScreen extends StatelessWidget {
       'url': 'https://www.youtube.com/watch?v=GD10d6a6MXg',
     },
     {
-      'title': 'Safranbolu: Osmanlı Mirası',
+      'title': 'tt.videos.v.safranbolu',
       'place': 'Karabük',
       'emoji': '🏘️',
       'duration': '10:05',
@@ -39,7 +41,7 @@ class VideosScreen extends StatelessWidget {
       'url': 'https://www.youtube.com/watch?v=bxJxJ37FNWU',
     },
     {
-      'title': 'Pamukkale Travertenleri',
+      'title': 'tt.videos.v.pamukkale',
       'place': 'Denizli',
       'emoji': '🏊',
       'duration': '9:18',
@@ -47,7 +49,7 @@ class VideosScreen extends StatelessWidget {
       'url': 'https://www.youtube.com/watch?v=2HHxOPzTRoE',
     },
     {
-      'title': 'Antalya: Sahil ve Tarih',
+      'title': 'tt.videos.v.antalya',
       'place': 'Antalya',
       'emoji': '🌊',
       'duration': '11:47',
@@ -55,7 +57,7 @@ class VideosScreen extends StatelessWidget {
       'url': 'https://www.youtube.com/watch?v=o-lDlzKN8OI',
     },
     {
-      'title': 'Trabzon: Karadeniz\'in İncisi',
+      'title': 'tt.videos.v.trabzon',
       'place': 'Trabzon',
       'emoji': '🏔️',
       'duration': '13:22',
@@ -63,7 +65,7 @@ class VideosScreen extends StatelessWidget {
       'url': 'https://www.youtube.com/watch?v=HT2PxOjxFoI',
     },
     {
-      'title': 'Efes Antik Kenti Rehberi',
+      'title': 'tt.videos.v.ephesus',
       'place': 'İzmir',
       'emoji': '🏛️',
       'duration': '14:55',
@@ -86,7 +88,7 @@ class VideosScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
-        title: const Text('Video Rehberler'),
+        title: Text(I18n.t('tt.videos.title')),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
@@ -111,11 +113,11 @@ class VideosScreen extends StatelessWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Text(
-              "Türkiye'nin en güzel şehirlerini video rehberlerle keşfet",
-              style: TextStyle(fontSize: 14, color: AppTheme.textSecondary),
+              I18n.t('tt.videos.subtitle'),
+              style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary),
             ),
           ),
           Expanded(
@@ -192,7 +194,7 @@ class VideosScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  v['title'] as String,
+                                  I18n.t(v['title'] as String),
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
@@ -223,9 +225,9 @@ class VideosScreen extends StatelessWidget {
                                     color: Colors.red.shade50,
                                     borderRadius: BorderRadius.circular(6),
                                   ),
-                                  child: const Text(
-                                    '▶  İzle',
-                                    style: TextStyle(
+                                  child: Text(
+                                    I18n.t('tt.videos.watch'),
+                                    style: const TextStyle(
                                       color: Colors.red,
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,

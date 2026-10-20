@@ -54,6 +54,14 @@ class _CitiesScreenState extends State<CitiesScreen> {
     }
   }
 
+  /// DB'deki bölge adını aktif dile çevirir (bilinmiyorsa olduğu gibi).
+  static String _regionLabel(String region) {
+    for (final (key, i18nKey) in _regions) {
+      if (key == region) return I18n.t(i18nKey);
+    }
+    return region;
+  }
+
   void _applyFilters() {
     final q = _search.toLowerCase().trim();
     setState(() {
@@ -156,7 +164,7 @@ class _CitiesScreenState extends State<CitiesScreen> {
             child: Row(
               children: [
                 Text(
-                  "${_filteredCities.length} şehir",
+                  I18n.tp('ah.cities.count', {'count': '${_filteredCities.length}'}),
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppTheme.textSecondary,
@@ -218,18 +226,18 @@ class _CitiesScreenState extends State<CitiesScreen> {
         children: [
           const Icon(Icons.search_off, size: 56, color: Colors.grey),
           const SizedBox(height: 12),
-          const Text(
-            "Sonuç bulunamadı",
-            style: TextStyle(
+          Text(
+            I18n.t('ah.cities.noResults'),
+            style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
               color: AppTheme.primary,
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
-            "Farklı bir arama veya bölge dene",
-            style:
+          Text(
+            I18n.t('ah.cities.noResultsHint'),
+            style: const
                 TextStyle(fontSize: 12, color: AppTheme.textSecondary),
           ),
         ],
@@ -301,7 +309,7 @@ class _CityCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            city.region,
+                            _CitiesScreenState._regionLabel(city.region),
                             style: const TextStyle(
                               fontSize: 11,
                               color: Colors.white70,
@@ -319,7 +327,7 @@ class _CityCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            "${city.placeCount} mekan",
+                            I18n.tp('cities.placesCount', {'count': '${city.placeCount}'}),
                             style: const TextStyle(
                               fontSize: 10,
                               color: Colors.white,

@@ -237,7 +237,7 @@ class _EntryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fmt = DateFormat('d MMM yyyy, EEEE', 'tr_TR');
+    final fmt = DateFormat('d MMM yyyy, EEEE', I18n.language.value);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -396,8 +396,8 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
     if (url != null) {
       _photoUrlCtrl.text = url;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('📷 Foto yüklendi'),
+        SnackBar(
+          content: Text(I18n.t('dc.diary.photoUploaded')),
           backgroundColor: Colors.green,
         ),
       );
@@ -423,7 +423,7 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
 
   @override
   Widget build(BuildContext context) {
-    final fmt = DateFormat('d MMM yyyy', 'tr_TR');
+    final fmt = DateFormat('d MMM yyyy', I18n.language.value);
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,

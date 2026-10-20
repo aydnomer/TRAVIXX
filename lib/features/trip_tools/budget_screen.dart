@@ -16,12 +16,12 @@ class BudgetScreen extends StatefulWidget {
 class _BudgetScreenState extends State<BudgetScreen> {
   int _days = 3;
   final _items = <_BudgetItem>[
-    _BudgetItem('🏨', 'Konaklama', 500),
-    _BudgetItem('🍽️', 'Yemek', 200),
-    _BudgetItem('🚗', 'Ulaşım', 150),
-    _BudgetItem('🎫', 'Müze/Bilet', 100),
-    _BudgetItem('🛍️', 'Alışveriş', 100),
-    _BudgetItem('🎲', 'Diğer', 50),
+    _BudgetItem('🏨', 'tt.budget.cat.accommodation', 500),
+    _BudgetItem('🍽️', 'tt.budget.cat.food', 200),
+    _BudgetItem('🚗', 'tt.budget.cat.transport', 150),
+    _BudgetItem('🎫', 'tt.budget.cat.tickets', 100),
+    _BudgetItem('🛍️', 'tt.budget.cat.shopping', 100),
+    _BudgetItem('🎲', 'tt.budget.cat.other', 50),
   ];
 
   double get _dailyTotal =>
@@ -153,9 +153,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
 class _BudgetItem {
   final String emoji;
-  final String name;
+  final String labelKey;
   double dailyAmount;
-  _BudgetItem(this.emoji, this.name, this.dailyAmount);
+  _BudgetItem(this.emoji, this.labelKey, this.dailyAmount);
 }
 
 class _BudgetRow extends StatelessWidget {
@@ -179,7 +179,7 @@ class _BudgetRow extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              item.name,
+              I18n.t(item.labelKey),
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -199,11 +199,11 @@ class _BudgetRow extends StatelessWidget {
                 final parsed = double.tryParse(v);
                 if (parsed != null) onChange(parsed);
               },
-              decoration: const InputDecoration(
-                suffixText: 'TL/gün',
-                suffixStyle: TextStyle(fontSize: 11),
+              decoration: InputDecoration(
+                suffixText: I18n.t('tt.budget.perDay'),
+                suffixStyle: const TextStyle(fontSize: 11),
                 isDense: true,
-                contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               ),
             ),
           ),

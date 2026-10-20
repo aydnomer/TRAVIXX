@@ -1,4 +1,5 @@
 import '../constants/categories.dart';
+import '../i18n/i18n.dart';
 import 'database_service.dart';
 import '../../features/cities/city_model.dart';
 import '../../features/places/place_model.dart';
@@ -121,8 +122,8 @@ class AiPlannerService {
       RegExp(r'(\d+)\s*day'),
       RegExp(r'(\d+)\s*tag'), // German
       RegExp(r'(\d+)\s*jour'), // French
-      RegExp(r'(\d+)\s*день'), // Russian
-      RegExp(r'(\d+)\s*يوم'), // Arabic
+      RegExp(r'(\d+)\s*(?:день|дн)'), // Russian
+      RegExp(r'(\d+)\s*(?:يوم|أيام|ايام)'), // Arabic
     ];
     for (final p in patterns) {
       final m = p.firstMatch(text);
@@ -144,7 +145,11 @@ class AiPlannerService {
 
   static String _generateSummary(City city, List<TripDay> days) {
     final totalPlaces = days.fold<int>(0, (s, d) => s + d.places.length);
-    return '${city.name} için ${days.length} günlük rota — toplam $totalPlaces seçili mekan';
+    return I18n.tp('cs.planner.summary', {
+      'city': city.name,
+      'days': '${days.length}',
+      'count': '$totalPlaces',
+    });
   }
 
   // ─── Trip Wizard için ────────────────────────────────────────────
@@ -156,6 +161,16 @@ class AiPlannerService {
     'Sanat & Müzeler': ['müze', 'galeri', 'sanat', 'sergi', 'tiyatro', 'opera'],
     'Aktif & Macera': ['spor', 'yürüyüş', 'macera', 'tırmanış', 'bisiklet', 'rafting'],
     'Romantik': ['sahil', 'vadi', 'plaj', 'orman', 'gün batımı', 'göl'],
+  };
+
+  /// İlgi alanı anahtarı (eşleştirme için Türkçe kalır) → ekran etiketi.
+  static const _interestLabelKeys = <String, String>{
+    'Tarih & Kültür': 'cs.planner.interest.history',
+    'Doğa & Açık Hava': 'cs.planner.interest.nature',
+    'Gastronomi': 'cs.planner.interest.food',
+    'Sanat & Müzeler': 'cs.planner.interest.art',
+    'Aktif & Macera': 'cs.planner.interest.adventure',
+    'Romantik': 'cs.planner.interest.romantic',
   };
 
   static Future<TripPlan?> planWithFilters({
@@ -205,10 +220,26 @@ class AiPlannerService {
       itinerary.add(TripDay(dayNumber: d + 1, places: sorted.sublist(start, end)));
     }
 
-    final budgetLabel = {'ekonomik': '💰 Ekonomik', 'orta': '💳 Orta Bütçe', 'lüks': '✨ Lüks'}[budget] ?? '';
-    final interestLabel = interests.isEmpty ? '' : ' · ${interests.join(', ')}';
+    final budgetKey = const {
+      'ekonomik': 'cs.planner.budget.economy',
+      'orta': 'cs.planner.budget.mid',
+      'lüks': 'cs.planner.budget.luxury',
+    }[budget];
+    final budgetLabel = budgetKey == null ? '' : I18n.t(budgetKey);
+    final interestLabel = interests.isEmpty
+        ? ''
+        : ' · ${interests.map((i) {
+            final k = _interestLabelKeys[i];
+            return k == null ? i : I18n.t(k);
+          }).join(', ')}';
     final total = itinerary.fold<int>(0, (s, d) => s + d.places.length);
-    final summary = '${city.name} · ${itinerary.length} gün · $budgetLabel$interestLabel — $total mekan';
+    final summary = I18n.tp('cs.planner.wizardSummary', {
+      'city': city.name,
+      'days': '${itinerary.length}',
+      'budget': budgetLabel,
+      'interests': interestLabel,
+      'count': '$total',
+    });
 
     return TripPlan(
       city: city,
@@ -253,8 +284,13 @@ class TripDay {
 
   /// Gün dilimleri etiketi: Sabah / Öğlen / Öğleden sonra / Akşam
   String slotLabel(int index) {
-    const slots = ['🌅 Sabah', '☕ Öğlen', '🌞 Öğleden sonra', '🌆 Akşam'];
+    const slots = [
+      'cs.planner.slot.morning',
+      'cs.planner.slot.noon',
+      'cs.planner.slot.afternoon',
+      'cs.planner.slot.evening',
+    ];
     if (index >= slots.length) return '📍 ${index + 1}';
-    return slots[index];
+    return I18n.t(slots[index]);
   }
 }

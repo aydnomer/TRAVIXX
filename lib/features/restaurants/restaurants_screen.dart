@@ -24,14 +24,15 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
   String _selectedType = 'all';
   int _radiusKm = 2;
 
+  // 'label' bir çeviri anahtarıdır; I18n.t ile gösterilir.
   static const _types = [
-    {'value': 'all', 'label': 'Tümü', 'emoji': '🍽️'},
-    {'value': 'restaurant', 'label': 'Restoran', 'emoji': '🍽️'},
-    {'value': 'cafe', 'label': 'Kafe', 'emoji': '☕'},
-    {'value': 'fast_food', 'label': 'Fast Food', 'emoji': '🍔'},
-    {'value': 'bar', 'label': 'Bar', 'emoji': '🍺'},
-    {'value': 'bakery', 'label': 'Fırın', 'emoji': '🥐'},
-    {'value': 'ice_cream', 'label': 'Dondurma', 'emoji': '🍦'},
+    {'value': 'all', 'label': 'common.all', 'emoji': '🍽️'},
+    {'value': 'restaurant', 'label': 'dc.food.restaurant', 'emoji': '🍽️'},
+    {'value': 'cafe', 'label': 'dc.food.cafe', 'emoji': '☕'},
+    {'value': 'fast_food', 'label': 'dc.food.fastFood', 'emoji': '🍔'},
+    {'value': 'bar', 'label': 'dc.food.bar', 'emoji': '🍺'},
+    {'value': 'bakery', 'label': 'dc.food.bakery', 'emoji': '🥐'},
+    {'value': 'ice_cream', 'label': 'dc.food.iceCream', 'emoji': '🍦'},
   ];
 
   @override
@@ -153,7 +154,7 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                 children: [
                   Text(t['emoji']!, style: const TextStyle(fontSize: 14)),
                   const SizedBox(width: 4),
-                  Text(t['label']!),
+                  Text(I18n.t(t['label']!)),
                 ],
               ),
               selected: selected,

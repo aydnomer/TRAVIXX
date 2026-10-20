@@ -216,7 +216,7 @@ class _DiaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fmt = DateFormat('d MMM yyyy', 'tr_TR');
+    final fmt = DateFormat('d MMM yyyy', I18n.language.value);
     final dateRange = [
       if (diary.startDate != null) fmt.format(diary.startDate!),
       if (diary.endDate != null) '→ ${fmt.format(diary.endDate!)}',
@@ -424,7 +424,7 @@ class _CreateDiarySheetState extends State<_CreateDiarySheet> {
 
   @override
   Widget build(BuildContext context) {
-    final fmt = DateFormat('d MMM yyyy', 'tr_TR');
+    final fmt = DateFormat('d MMM yyyy', I18n.language.value);
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,

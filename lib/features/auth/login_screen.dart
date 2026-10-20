@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -26,7 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
         );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Kayıt başarılı! Email onaylayın.')),
+            SnackBar(content: Text(I18n.t('ah.login.registered'))),
           );
         }
       } else {
@@ -78,9 +79,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       letterSpacing: 1.5,
                     ),
                   ),
-                  const Text(
-                    "Türkiye'yi Keşfet",
-                    style: TextStyle(color: AppTheme.accent, fontSize: 14),
+                  Text(
+                    I18n.t('app.tagline'),
+                    style: const TextStyle(color: AppTheme.accent, fontSize: 14),
                   ),
                   const SizedBox(height: 36),
                   Container(
@@ -93,7 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          _isRegister ? 'Hesap Oluştur' : 'Giriş Yap',
+                          _isRegister ? I18n.t('ah.login.createAccount') : I18n.t('nav.login'),
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -104,9 +105,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         TextField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
-                          decoration: const InputDecoration(
-                            labelText: 'E-posta',
-                            prefixIcon: Icon(
+                          decoration: InputDecoration(
+                            labelText: I18n.t('auth.email'),
+                            prefixIcon: const Icon(
                               Icons.email_outlined,
                               color: AppTheme.primary,
                             ),
@@ -117,7 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           controller: _passwordController,
                           obscureText: _obscure,
                           decoration: InputDecoration(
-                            labelText: 'Şifre',
+                            labelText: I18n.t('auth.password'),
                             prefixIcon: const Icon(
                               Icons.lock_outline,
                               color: AppTheme.primary,
@@ -149,7 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   )
                                 : Text(
-                                    _isRegister ? 'Kayıt Ol' : 'Giriş Yap',
+                                    _isRegister ? I18n.t('nav.register') : I18n.t('nav.login'),
                                     style: const TextStyle(fontSize: 16),
                                   ),
                           ),
@@ -160,8 +161,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               setState(() => _isRegister = !_isRegister),
                           child: Text(
                             _isRegister
-                                ? 'Zaten hesabın var mı? Giriş Yap'
-                                : 'Hesabın yok mu? Kayıt Ol',
+                                ? I18n.t('ah.login.haveAccount')
+                                : I18n.t('ah.login.noAccount'),
                             style: const TextStyle(color: AppTheme.primary),
                           ),
                         ),

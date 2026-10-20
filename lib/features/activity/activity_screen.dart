@@ -35,11 +35,17 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
   String _relativeTime(DateTime t) {
     final diff = DateTime.now().difference(t);
-    if (diff.inMinutes < 1) return 'şimdi';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}dk';
-    if (diff.inHours < 24) return '${diff.inHours}sa';
-    if (diff.inDays < 7) return '${diff.inDays}g';
-    return DateFormat('d MMM', 'tr_TR').format(t);
+    if (diff.inMinutes < 1) return I18n.t('tt.time.now');
+    if (diff.inMinutes < 60) {
+      return I18n.tp('tt.time.minutesShort', {'n': '${diff.inMinutes}'});
+    }
+    if (diff.inHours < 24) {
+      return I18n.tp('tt.time.hoursShort', {'n': '${diff.inHours}'});
+    }
+    if (diff.inDays < 7) {
+      return I18n.tp('tt.time.daysShort', {'n': '${diff.inDays}'});
+    }
+    return DateFormat('d MMM', I18n.language.value).format(t);
   }
 
   @override
@@ -68,7 +74,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                         const Text('📭', style: TextStyle(fontSize: 56)),
                         const SizedBox(height: 12),
                         Text(
-                          I18n.t('activity.title'),
+                          I18n.t('tt.activity.empty'),
                           style: const TextStyle(
                             fontSize: 16,
                             color: AppTheme.textSecondary,
@@ -122,9 +128,13 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
   String _dateHeader(DateTime t) {
     final now = DateTime.now();
-    if (_isSameDay(now, t)) return 'BUGÜN';
-    if (_isSameDay(now.subtract(const Duration(days: 1)), t)) return 'DÜN';
-    return DateFormat('d MMM yyyy', 'tr_TR').format(t).toUpperCase();
+    if (_isSameDay(now, t)) return I18n.t('tt.time.today');
+    if (_isSameDay(now.subtract(const Duration(days: 1)), t)) {
+      return I18n.t('tt.time.yesterday');
+    }
+    return DateFormat('d MMM yyyy', I18n.language.value)
+        .format(t)
+        .toUpperCase();
   }
 }
 

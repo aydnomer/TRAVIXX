@@ -5,6 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../core/constants/categories.dart';
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/database_service.dart';
@@ -208,7 +209,7 @@ class _MapScreenState extends State<MapScreen> {
             Wrap(
               spacing: 6,
               children: [
-                _badge(p.category, _markerColor(p.category)),
+                _badge(Categories.label(p.category), _markerColor(p.category)),
                 _badge('⭐ ${p.ratingLabel}',
                     const Color(0xFFEAB308)),
                 if (p.isFree) _badge(I18n.t('place.free'), Colors.green),
@@ -236,7 +237,7 @@ class _MapScreenState extends State<MapScreen> {
                   context.push('/place/${p.id}');
                 },
                 icon: const Icon(Icons.arrow_forward, size: 16),
-                label: const Text('Detaylar'),
+                label: Text(I18n.t('dc.details')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.accentOrange,
                   foregroundColor: Colors.white,
@@ -435,7 +436,7 @@ class _MapScreenState extends State<MapScreen> {
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: FilterChip(
-              label: Text(c),
+              label: Text(c == 'Tümü' ? I18n.t('common.all') : Categories.label(c)),
               selected: selected,
               onSelected: (_) => setState(() => _selectedCategory = c),
               backgroundColor: Colors.white,

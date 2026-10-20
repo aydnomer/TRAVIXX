@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/i18n/i18n.dart';
+
 /// Kullanıcının son aktivitelerini birleştirir:
 /// - visits (gamification tablosu)
 /// - favorites (eklenen favoriler)
@@ -123,11 +125,11 @@ class ActivityItem {
   String get typeLabel {
     switch (type) {
       case 'visit':
-        return 'ziyaret edildi';
+        return I18n.t('tt.activity.visited');
       case 'favorite':
-        return 'favorilere eklendi';
+        return I18n.t('tt.activity.favorited');
       case 'review':
-        return 'yorum yapıldı';
+        return I18n.t('tt.activity.reviewed');
       default:
         return '';
     }

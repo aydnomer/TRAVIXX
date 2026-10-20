@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/constants/categories.dart';
+import '../../core/i18n/i18n.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../core/utils/database_service.dart';
 import '../../core/utils/gps_service.dart';
@@ -42,6 +43,19 @@ class _HomeScreenState extends State<HomeScreen> {
     'Tümü', 'Plajlar', 'Tarihi', 'Müzeler', 'Doğa', 'Kültür', 'Kaleler',
     'Camiler', 'Manzara',
   ];
+
+  /// Çip id'si (switch'te kullanılır) → görünen ad anahtarı.
+  static const _categoryKeys = {
+    'Tümü': 'ah.home.chip.all',
+    'Plajlar': 'ah.home.chip.beaches',
+    'Tarihi': 'ah.home.chip.historic',
+    'Müzeler': 'ah.home.chip.museums',
+    'Doğa': 'ah.home.chip.nature',
+    'Kültür': 'ah.home.chip.culture',
+    'Kaleler': 'ah.home.chip.castles',
+    'Camiler': 'ah.home.chip.mosques',
+    'Manzara': 'ah.home.chip.scenic',
+  };
 
   @override
   void initState() {
@@ -166,7 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             children: [
               Topbar(
-                title: 'Ana Sayfa',
+                title: I18n.t('ah.nav.home'),
                 temperature: _temp,
                 avatarText: _avatar,
                 onProfileTap: () => showProfileDrawer(context),
@@ -197,7 +211,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       children: [
         MobileHeader(
-          locationName: 'Türkiye',
+          locationName: I18n.t('ah.home.country'),
           avatarText: _avatar,
           onProfileTap: () => context.push('/profile'),
           onLocationTap: () => context.push('/cities'),
@@ -235,11 +249,11 @@ class _HomeScreenState extends State<HomeScreen> {
               borderRadius: DT.brPill,
               border: DT.boxBorder,
             ),
-            child: const Row(
+            child: Row(
               children: [
-                Icon(Icons.search, size: 18, color: DT.textMuted),
-                SizedBox(width: DT.s8),
-                Text('Şehir veya mekan ara...', style: DT.muted12),
+                const Icon(Icons.search, size: 18, color: DT.textMuted),
+                const SizedBox(width: DT.s8),
+                Text(I18n.t('ah.common.searchHint'), style: DT.muted12),
               ],
             ),
           ),
@@ -266,7 +280,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   border: Border.all(
                       color: active ? DT.primary : DT.border, width: 1),
                 ),
-                child: Text(c,
+                child: Text(I18n.t(_categoryKeys[c] ?? c),
                     style: TextStyle(
                         fontSize: 13,
                         color: active ? Colors.white : DT.textSecondary,
@@ -291,7 +305,7 @@ class _HomeScreenState extends State<HomeScreen> {
         // Yakındakiler
         Padding(
           padding: EdgeInsets.symmetric(horizontal: hPad),
-          child: _sectionRow('Yakınındakiler', 'Tümünü gör →',
+          child: _sectionRow(I18n.t('ah.home.nearby'), I18n.t('ah.home.seeAll'),
               () => context.push('/search')),
         ),
         const SizedBox(height: DT.s12),
@@ -303,7 +317,7 @@ class _HomeScreenState extends State<HomeScreen> {
         else if (places.isEmpty)
           Padding(
             padding: EdgeInsets.all(DT.s16).copyWith(left: hPad + 16),
-            child: const Text('Bu kategoride mekan bulunamadı.',
+            child: Text(I18n.t('ah.home.emptyCategory'),
                 style: DT.muted12),
           )
         else if (mobile)
@@ -342,7 +356,7 @@ class _HomeScreenState extends State<HomeScreen> {
         // Ne yapmak istiyorsun? (web 2x2 / mobil tek sütun)
         Padding(
           padding: EdgeInsets.symmetric(horizontal: hPad),
-          child: Text('Ne yapmak istiyorsun?', style: DT.t16),
+          child: Text(I18n.t('ah.home.whatToDo'), style: DT.t16),
         ),
         const SizedBox(height: DT.s12),
         Padding(
@@ -358,29 +372,29 @@ class _HomeScreenState extends State<HomeScreen> {
               QuickActionCard(
                 icon: Icons.route_outlined,
                 color: DT.primary,
-                title: 'Rota Oluştur',
-                subtitle: 'Sana özel gezi rotası planla',
+                title: I18n.t('ah.home.createRoute'),
+                subtitle: I18n.t('ah.home.createRouteSub'),
                 onTap: () => context.push('/trip-wizard'),
               ),
               QuickActionCard(
                 icon: Icons.map_outlined,
                 color: DT.catNature,
-                title: 'Haritada Gez',
-                subtitle: 'Tüm mekanları haritada gör',
+                title: I18n.t('ah.home.mapTitle'),
+                subtitle: I18n.t('ah.home.mapSub'),
                 onTap: () => context.push('/map'),
               ),
               QuickActionCard(
                 icon: Icons.location_city_outlined,
                 color: DT.catCastle,
-                title: 'Şehir Keşfet',
-                subtitle: '81 ili keşfetmeye başla',
+                title: I18n.t('ah.home.citiesTitle'),
+                subtitle: I18n.t('ah.home.citiesSub'),
                 onTap: () => context.push('/cities'),
               ),
               QuickActionCard(
                 icon: Icons.auto_awesome_outlined,
                 color: DT.catMosque,
-                title: 'Rehber Bul',
-                subtitle: 'AI gezi asistanına sor',
+                title: I18n.t('ah.home.guideTitle'),
+                subtitle: I18n.t('ah.home.guideSub'),
                 onTap: () => context.push('/ai-chat'),
               ),
             ],
@@ -392,7 +406,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Padding(
           padding: EdgeInsets.symmetric(horizontal: hPad),
           child: _sectionRow(
-              'Popüler Şehirler', 'Tümü →', () => context.push('/cities')),
+              I18n.t('ah.home.popularCities'), I18n.t('ah.home.allArrow'), () => context.push('/cities')),
         ),
         const SizedBox(height: DT.s12),
         SizedBox(
@@ -425,18 +439,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: DT.s16),
                 decoration: BoxDecoration(
                     color: DT.primary, borderRadius: DT.brCard),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.route_outlined, size: 20, color: Colors.white),
-                    SizedBox(width: DT.s12),
+                    const Icon(Icons.route_outlined, size: 20, color: Colors.white),
+                    const SizedBox(width: DT.s12),
                     Expanded(
-                      child: Text('Rota Oluştur',
-                          style: TextStyle(
+                      child: Text(I18n.t('ah.home.createRoute'),
+                          style: const TextStyle(
                               color: Colors.white,
                               fontSize: 14,
                               fontWeight: DT.wMedium)),
                     ),
-                    Icon(Icons.chevron_right, size: 20, color: Colors.white),
+                    const Icon(Icons.chevron_right, size: 20, color: Colors.white),
                   ],
                 ),
               ),

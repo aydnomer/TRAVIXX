@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/constants/categories.dart';
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/database_service.dart';
@@ -163,7 +164,7 @@ class _CompareScreenState extends State<CompareScreen> {
           // Karşılaştırma satırları
           _buildRow(
             I18n.t('place.category'),
-            _places.map((p) => p.category.isEmpty ? '-' : p.category).toList(),
+            _places.map((p) => p.category.isEmpty ? '-' : Categories.label(p.category)).toList(),
           ),
           _buildRow(
             I18n.t('compare.rating'),
@@ -193,13 +194,13 @@ class _CompareScreenState extends State<CompareScreen> {
           ),
           _buildRow(
             I18n.t('compare.featured'),
-            _places.map((p) => p.isFeatured ? '⭐ Evet' : '—').toList(),
+            _places.map((p) => p.isFeatured ? '⭐ ${I18n.t('dc.yes')}' : '—').toList(),
           ),
           _buildRow(
             I18n.t('compare.gps'),
             _places
                 .map((p) => p.latitude != null && p.longitude != null
-                    ? '📍 Var'
+                    ? '📍 ${I18n.t('dc.available')}'
                     : '—')
                 .toList(),
           ),

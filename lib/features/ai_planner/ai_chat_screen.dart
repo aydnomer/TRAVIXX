@@ -176,11 +176,12 @@ class _AiChatScreenState extends State<AiChatScreen> {
   }
 
   Widget _buildSuggestions() {
+    // Şehir adları olduğu gibi kalır; planlayıcı gün sayısını metinden okur.
     final suggestions = [
-      'İstanbul 2 gün',
-      'Antalya hafta sonu',
-      'Kapadokya 3 gün',
-      'İzmir 2 günlük',
+      I18n.tp('dc.ai.suggestDays', {'city': 'İstanbul', 'count': '2'}),
+      I18n.tp('dc.ai.suggestWeekend', {'city': 'Antalya'}),
+      I18n.tp('dc.ai.suggestDays', {'city': 'Kapadokya', 'count': '3'}),
+      I18n.tp('dc.ai.suggestTrip', {'city': 'İzmir', 'count': '2'}),
     ];
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),

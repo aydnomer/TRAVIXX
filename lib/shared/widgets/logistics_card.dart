@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 
 class LogisticsCard extends StatelessWidget {
@@ -36,15 +37,15 @@ class LogisticsCard extends StatelessWidget {
             children: [
               const Icon(Icons.luggage_outlined, color: AppTheme.accentOrange, size: 22),
               const SizedBox(width: 8),
-              const Text(
-                'Seyahat Planla',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              Text(
+                I18n.t('ah.logistics.title'),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
             ],
           ),
           const SizedBox(height: 4),
           Text(
-            '$searchQuery için hizmetler',
+            I18n.tp('ah.logistics.servicesFor', {'query': searchQuery}),
             style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
           ),
           const SizedBox(height: 14),
@@ -52,7 +53,7 @@ class LogisticsCard extends StatelessWidget {
             children: [
               _btn(
                 icon: Icons.hotel_outlined,
-                label: 'Otel Bul',
+                label: I18n.t('ah.logistics.hotel'),
                 color: const Color(0xFF003580),
                 onTap: () => _open(
                   'https://www.booking.com/searchresults.tr.html?ss=$encoded',
@@ -61,14 +62,14 @@ class LogisticsCard extends StatelessWidget {
               const SizedBox(width: 8),
               _btn(
                 icon: Icons.flight_outlined,
-                label: 'Uçuş Bul',
+                label: I18n.t('ah.logistics.flight'),
                 color: const Color(0xFF0770E3),
                 onTap: () => _open('https://www.skyscanner.com.tr/'),
               ),
               const SizedBox(width: 8),
               _btn(
                 icon: Icons.directions_car_outlined,
-                label: 'Araç Kirala',
+                label: I18n.t('ah.logistics.car'),
                 color: AppTheme.accentOrange,
                 onTap: () => _open(
                   'https://www.rentalcars.com/SearchResults.do?locationSearchString=$encoded',

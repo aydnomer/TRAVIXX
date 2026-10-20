@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/constants/categories.dart';
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/database_service.dart';
@@ -140,7 +141,7 @@ class _SuggestPlaceScreenState extends State<SuggestPlaceScreen> {
                     _label(I18n.t('suggest.placeName')),
                     _input(
                       _nameCtrl,
-                      hint: 'Örn: Sümela Manastırı',
+                      hint: I18n.tp('dc.example', {'text': 'Sümela Manastırı'}),
                       validator: (v) => (v == null || v.trim().isEmpty)
                           ? I18n.t('suggest.required')
                           : null,
@@ -155,7 +156,7 @@ class _SuggestPlaceScreenState extends State<SuggestPlaceScreen> {
                     _label(I18n.t('suggest.address')),
                     _input(
                       _addressCtrl,
-                      hint: 'Örn: Sultanahmet Mh., Fatih/İstanbul',
+                      hint: I18n.tp('dc.example', {'text': 'Sultanahmet Mh., Fatih/İstanbul'}),
                     ),
                     const SizedBox(height: 16),
                     _label(I18n.t('suggest.description')),
@@ -331,7 +332,8 @@ class _SuggestPlaceScreenState extends State<SuggestPlaceScreen> {
         ),
       ),
       items: _categories
-          .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+          .map((c) => DropdownMenuItem(
+              value: c, child: Text(Categories.label(c))))
           .toList(),
       onChanged: (v) =>
           setState(() => _selectedCategory = v ?? 'Tarihi'),

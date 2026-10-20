@@ -1,3 +1,5 @@
+import '../../core/i18n/i18n.dart';
+
 class CommunityPost {
   final String id;
   final String userId;
@@ -23,7 +25,7 @@ class CommunityPost {
     return CommunityPost(
       id: json['id'] as String,
       userId: json['user_id'] as String? ?? '',
-      userName: json['user_name'] as String? ?? 'Gezgin',
+      userName: json['user_name'] as String? ?? I18n.t('profile.travelerName'),
       title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
       cityName: json['city_name'] as String?,

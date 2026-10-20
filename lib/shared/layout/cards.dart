@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/constants/categories.dart';
+import '../../core/i18n/i18n.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../features/places/place_model.dart';
 import 'photo_carousel.dart';
@@ -139,7 +141,7 @@ class PlaceListRow extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     [
-                      if (place.category.isNotEmpty) place.category,
+                      if (place.category.isNotEmpty) Categories.label(place.category),
                       if (distanceKm != null)
                         '${distanceKm!.toStringAsFixed(1)} km',
                     ].join(' · '),
@@ -174,8 +176,8 @@ class _FreeBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: DT.s8, vertical: 2),
       decoration: BoxDecoration(color: DT.primaryLight, borderRadius: DT.brPill),
-      child: const Text('Ücretsiz',
-          style: TextStyle(
+      child: Text(I18n.t('ah.common.free'),
+          style: const TextStyle(
               fontSize: 12, color: DT.primaryDark, fontWeight: DT.wMedium)),
     );
   }

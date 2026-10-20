@@ -1,58 +1,60 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 
 class AccommodationScreen extends StatelessWidget {
   const AccommodationScreen({super.key});
 
+  // title/desc/tags i18n anahtarlarıdır; ekranda I18n.t ile çevrilir.
   static const _categories = [
     {
       'emoji': '🏨',
-      'title': 'Oteller',
-      'desc': "Tüm Türkiye'de otel ara ve karşılaştır",
+      'title': 'tt.acc.hotels.title',
+      'desc': 'tt.acc.hotels.desc',
       'color': 0xFF003580,
       'url': 'https://www.booking.com/searchresults.tr.html?ss=T%C3%BCrkiye',
-      'tags': ['Merkezi konum', 'Kahvaltı dahil', 'Havuz'],
+      'tags': ['tt.acc.hotels.tag1', 'tt.acc.hotels.tag2', 'tt.acc.hotels.tag3'],
     },
     {
       'emoji': '🏡',
-      'title': 'Kiralık Villalar',
-      'desc': 'Ölüdeniz, Datça, Göcek ve daha fazlası',
+      'title': 'tt.acc.villas.title',
+      'desc': 'tt.acc.villas.desc',
       'color': 0xFFE67E22,
       'url': 'https://www.airbnb.com.tr/s/Turkey/homes?property_type_id[]=17',
-      'tags': ['Özel havuz', 'Aile için', 'Manzaralı'],
+      'tags': ['tt.acc.villas.tag1', 'tt.acc.villas.tag2', 'tt.acc.villas.tag3'],
     },
     {
       'emoji': '⛺',
-      'title': 'Kamp Alanları',
-      'desc': "Doğayla iç içe kamp deneyimi",
+      'title': 'tt.acc.camping.title',
+      'desc': 'tt.acc.camping.desc',
       'color': 0xFF27AE60,
       'url': 'https://www.google.com/search?q=t%C3%BCrkiye+kamp+alanlar%C4%B1',
-      'tags': ['Doğa', 'Uygun fiyat', 'Macera'],
+      'tags': ['tt.acc.camping.tag1', 'tt.acc.camping.tag2', 'tt.acc.camping.tag3'],
     },
     {
       'emoji': '🌿',
-      'title': 'Glamping',
-      'desc': 'Çadır konforu, otel lüksü bir arada',
+      'title': 'tt.acc.glamping.title',
+      'desc': 'tt.acc.glamping.desc',
       'color': 0xFF8E44AD,
       'url': 'https://www.google.com/search?q=t%C3%BCrkiye+glamping',
-      'tags': ['Lüks çadır', 'Çevre dostu', 'Instagramlık'],
+      'tags': ['tt.acc.glamping.tag1', 'tt.acc.glamping.tag2', 'tt.acc.glamping.tag3'],
     },
     {
       'emoji': '🏘️',
-      'title': 'Butik & Yerel Evler',
-      'desc': 'Otantik yerel deneyimler yaşa',
+      'title': 'tt.acc.boutique.title',
+      'desc': 'tt.acc.boutique.desc',
       'color': 0xFFB7950B,
       'url': 'https://www.airbnb.com.tr/s/Turkey/homes',
-      'tags': ['Ev sıcaklığı', 'Yerel kültür', 'Otantik'],
+      'tags': ['tt.acc.boutique.tag1', 'tt.acc.boutique.tag2', 'tt.acc.boutique.tag3'],
     },
     {
       'emoji': '🚐',
-      'title': 'Karavan & Çadır Araçları',
-      'desc': 'Özgür seyahat, karavan kiralama',
+      'title': 'tt.acc.caravan.title',
+      'desc': 'tt.acc.caravan.desc',
       'color': 0xFF2980B9,
       'url': 'https://www.google.com/search?q=t%C3%BCrkiye+karavan+kiralama',
-      'tags': ['Özgürlük', 'Esnek rota', 'Ekonomik'],
+      'tags': ['tt.acc.caravan.tag1', 'tt.acc.caravan.tag2', 'tt.acc.caravan.tag3'],
     },
   ];
 
@@ -70,18 +72,18 @@ class AccommodationScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
-        title: const Text('Konaklama Seçenekleri'),
+        title: Text(I18n.t('tt.acc.title')),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.only(bottom: 16),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
               child: Text(
-                'Her tarza uygun konaklama seçeneği bul',
-                style: TextStyle(fontSize: 14, color: AppTheme.textSecondary),
+                I18n.t('tt.acc.subtitle'),
+                style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary),
               ),
             ),
             ..._categories.map((cat) {
@@ -119,7 +121,7 @@ class AccommodationScreen extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    cat['title'] as String,
+                                    I18n.t(cat['title'] as String),
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 20,
@@ -128,7 +130,7 @@ class AccommodationScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    cat['desc'] as String,
+                                    I18n.t(cat['desc'] as String),
                                     style: const TextStyle(
                                       color: Colors.white70,
                                       fontSize: 13,
@@ -159,7 +161,7 @@ class AccommodationScreen extends StatelessWidget {
                                           color: color.withValues(alpha: 0.25)),
                                     ),
                                     child: Text(
-                                      tag,
+                                      I18n.t(tag),
                                       style: TextStyle(
                                         fontSize: 11,
                                         color: color,
