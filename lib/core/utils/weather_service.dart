@@ -1,5 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+
+import '../i18n/i18n.dart';
 
 /// Open-Meteo API ile hava durumu.
 /// - Ücretsiz, API key yok, sınırsız (rate-limit makul).
@@ -125,9 +128,14 @@ class DailyForecast {
     return '🌡️';
   }
 
+  /// Seçili dilde kısa gün adı (Pzt / Mon / Mo ...).
   String dayLabel(int dayIndex) {
-    const days = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
-    return days[date.weekday - 1];
+    try {
+      return DateFormat.E(I18n.language.value).format(date);
+    } catch (_) {
+      const days = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+      return days[date.weekday - 1];
+    }
   }
 }
 

@@ -24,10 +24,12 @@ class _CitiesScreenState extends State<CitiesScreen> {
   static const List<(String, String)> _regions = [
     ("Tümü", "region.all"),
     ("Marmara", "region.marmara"),
+    ("Trakya", "region.thrace"),
     ("Ege", "region.aegean"),
     ("Akdeniz", "region.mediterranean"),
     ("İç Anadolu", "region.centralAnatolia"),
     ("Karadeniz", "region.blackSea"),
+    ("Batı Karadeniz", "region.westernBlackSea"),
     ("Doğu Anadolu", "region.easternAnatolia"),
     ("Güneydoğu Anadolu", "region.southeasternAnatolia"),
   ];

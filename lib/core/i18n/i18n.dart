@@ -212,6 +212,8 @@ class I18n {
       'region.blackSea': 'Karadeniz',
       'region.easternAnatolia': 'Doğu Anadolu',
       'region.southeasternAnatolia': 'Güneydoğu Anadolu',
+      'region.thrace': 'Trakya',
+      'region.westernBlackSea': 'Batı Karadeniz',
 
       // Places
       'places.notFound': 'Bu şehirde mekan bulunamadı',
@@ -478,6 +480,11 @@ class I18n {
 
       // QR Scanner
       'qr.title': 'QR Tara',
+      'place.category': 'Kategori',
+      'qrPrint.title': 'QR Kodları Yazdır',
+      'qrPrint.print': 'Yazdır',
+      'qrPrint.selectCity': 'Şehir seç',
+      'qrPrint.hint': 'Bir şehir seç; o şehirdeki mekanların QR kodları burada çıkar. Yazdırıp mekanlara asabilirsin.',
       'qr.hint': 'QR kodunu çerçeve içine yerleştir\nmekan otomatik açılacak',
       'qr.cameraError': 'Kameraya erişilemiyor',
       'qr.cameraHint':
@@ -643,6 +650,8 @@ class I18n {
       'region.blackSea': 'Black Sea',
       'region.easternAnatolia': 'Eastern Anatolia',
       'region.southeasternAnatolia': 'Southeastern Anatolia',
+      'region.thrace': 'Thrace',
+      'region.westernBlackSea': 'Western Black Sea',
 
       'places.notFound': 'No places found in this city',
 
@@ -883,6 +892,11 @@ class I18n {
       'search.osmHint': 'No results? Try OSM as well',
 
       'qr.title': 'Scan QR',
+      'place.category': 'Category',
+      'qrPrint.title': 'Print QR Codes',
+      'qrPrint.print': 'Print',
+      'qrPrint.selectCity': 'Select city',
+      'qrPrint.hint': 'Pick a city to generate QR codes for its places. Print them and place them on site.',
       'qr.hint': 'Place the QR inside the frame\nthe place will open automatically',
       'qr.cameraError': 'Cannot access camera',
       'qr.cameraHint':
@@ -1046,6 +1060,8 @@ class I18n {
       'region.blackSea': 'Schwarzes Meer',
       'region.easternAnatolia': 'Ostanatolien',
       'region.southeasternAnatolia': 'Südostanatolien',
+      'region.thrace': 'Thrakien',
+      'region.westernBlackSea': 'Westliche Schwarzmeerregion',
 
       'places.notFound': 'Keine Orte in dieser Stadt',
 
@@ -1165,6 +1181,11 @@ class I18n {
       'search.osmHint': 'Keine Treffer? Probiere OSM',
 
       'qr.title': 'QR scannen',
+      'place.category': 'Kategorie',
+      'qrPrint.title': 'QR-Codes drucken',
+      'qrPrint.print': 'Drucken',
+      'qrPrint.selectCity': 'Stadt wählen',
+      'qrPrint.hint': 'Wähle eine Stadt, um QR-Codes für ihre Orte zu erzeugen. Drucke sie aus und bringe sie vor Ort an.',
       'qr.hint':
           'QR in den Rahmen platzieren\nder Ort öffnet sich automatisch',
       'qr.cameraError': 'Kamera nicht zugänglich',
@@ -1329,6 +1350,8 @@ class I18n {
       'region.blackSea': 'البحر الأسود',
       'region.easternAnatolia': 'شرق الأناضول',
       'region.southeasternAnatolia': 'جنوب شرق الأناضول',
+      'region.thrace': 'تراقيا',
+      'region.westernBlackSea': 'غرب البحر الأسود',
 
       'places.notFound': 'لا توجد أماكن في هذه المدينة',
 
@@ -1447,6 +1470,11 @@ class I18n {
       'search.osmHint': 'لا توجد نتائج؟ جرّب OSM',
 
       'qr.title': 'مسح QR',
+      'place.category': 'الفئة',
+      'qrPrint.title': 'طباعة رموز QR',
+      'qrPrint.print': 'طباعة',
+      'qrPrint.selectCity': 'اختر مدينة',
+      'qrPrint.hint': 'اختر مدينة لإنشاء رموز QR لأماكنها، ثم اطبعها وضعها في المواقع.',
       'qr.hint': 'ضع رمز QR داخل الإطار\nسيتم فتح المكان تلقائياً',
       'qr.cameraError': 'لا يمكن الوصول إلى الكاميرا',
       'qr.cameraHint': 'تحقق من أذونات المتصفح أو امنح وصولاً للكاميرا.',
@@ -1609,6 +1637,8 @@ class I18n {
       'region.blackSea': 'Mer Noire',
       'region.easternAnatolia': 'Anatolie orientale',
       'region.southeasternAnatolia': 'Anatolie du Sud-Est',
+      'region.thrace': 'Thrace',
+      'region.westernBlackSea': 'Mer Noire occidentale',
 
       'places.notFound': 'Aucun lieu dans cette ville',
 
@@ -1728,6 +1758,11 @@ class I18n {
       'search.osmHint': 'Aucun résultat ? Essaie OSM',
 
       'qr.title': 'Scanner QR',
+      'place.category': 'Catégorie',
+      'qrPrint.title': 'Imprimer les QR codes',
+      'qrPrint.print': 'Imprimer',
+      'qrPrint.selectCity': 'Choisir une ville',
+      'qrPrint.hint': 'Choisissez une ville pour générer les QR codes de ses lieux, puis imprimez-les.',
       'qr.hint':
           'Place le QR dans le cadre\nle lieu s\'ouvrira automatiquement',
       'qr.cameraError': 'Impossible d\'accéder à la caméra',
@@ -1893,6 +1928,8 @@ class I18n {
       'region.blackSea': 'Черноморский',
       'region.easternAnatolia': 'Восточная Анатолия',
       'region.southeasternAnatolia': 'Юго-Восточная Анатолия',
+      'region.thrace': 'Фракия',
+      'region.westernBlackSea': 'Западное Черноморье',
 
       'places.notFound': 'В этом городе мест не найдено',
 
@@ -2012,6 +2049,11 @@ class I18n {
       'search.osmHint': 'Ничего не нашли? Попробуйте OSM',
 
       'qr.title': 'Скан QR',
+      'place.category': 'Категория',
+      'qrPrint.title': 'Печать QR-кодов',
+      'qrPrint.print': 'Печать',
+      'qrPrint.selectCity': 'Выберите город',
+      'qrPrint.hint': 'Выберите город, чтобы создать QR-коды для его мест, и распечатайте их.',
       'qr.hint':
           'Поместите QR в рамку\nместо откроется автоматически',
       'qr.cameraError': 'Нет доступа к камере',

@@ -173,8 +173,8 @@ class _PostCard extends StatelessWidget {
                       radius: 17,
                       backgroundColor: AppTheme.primary,
                       child: Text(
-                        (post.userEmail.isNotEmpty
-                                ? post.userEmail[0]
+                        (post.userName.isNotEmpty
+                                ? post.userName[0]
                                 : '?')
                             .toUpperCase(),
                         style: const TextStyle(
@@ -189,7 +189,7 @@ class _PostCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            post.userEmail.split('@').first,
+                            post.userName,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 13,

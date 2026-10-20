@@ -37,10 +37,14 @@ class DatabaseService {
   }
 
   static Future<List<Place>> searchPlaces(String query) async {
+    // PostgREST `or` filtresinde virgül, parantez ve joker karakterler
+    // sözdizimini bozar; kullanıcı girdisinden temizlenir.
+    final q = query.replaceAll(RegExp(r'[,()%*\\"]'), ' ').trim();
+    if (q.isEmpty) return const [];
     final response = await _supabase
         .from('places')
         .select()
-        .or('name.ilike.%$query%,name_en.ilike.%$query%')
+        .or('name.ilike.%$q%,name_en.ilike.%$q%')
         .order('rating', ascending: false);
     return (response as List)
         .map((json) => Place.fromJson(json as Map<String, dynamic>))

@@ -10,7 +10,8 @@ import 'features/onboarding/onboarding_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('tr_TR', null);
+  // Tüm dillerin tarih/gün adları (hava durumu, günlük vb. için)
+  await initializeDateFormatting();
   await I18n.load();
   await AppTheme.load();
   await CompareService.load();

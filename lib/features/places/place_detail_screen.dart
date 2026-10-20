@@ -125,8 +125,14 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
       TtsService.stop();
       setState(() => _isSpeaking = false);
     } else {
-      final text = '${p.name}. ${p.description}';
-      TtsService.speak(text, langCode: I18n.language.value);
+      // Metnin dili ile ses dili aynı olmalı: Türkçe dışındaki dillerde
+      // İngilizce açıklama varsa onu İngilizce sesle oku.
+      final lang = I18n.language.value;
+      final useEn = lang != 'tr' && p.descriptionEn.isNotEmpty;
+      final text = useEn
+          ? '${p.nameEn.isNotEmpty ? p.nameEn : p.name}. ${p.descriptionEn}'
+          : '${p.name}. ${p.description}';
+      TtsService.speak(text, langCode: useEn ? 'en' : 'tr');
       setState(() => _isSpeaking = true);
       // 30 saniye sonra otomatik state reset (uzun metin biterse)
       Future.delayed(const Duration(seconds: 60), () {
@@ -155,15 +161,6 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
 
     // Otomatik döndürmeyi başlat (birden fazla görsel varsa)
     _startGalleryAutoplay(_effectiveImages(p).length);
-
-    // Best-effort: DB'de foto yoksa Wikipedia görsellerini geri yaz
-    if (p.images.isEmpty && media.images.isNotEmpty) {
-      Supabase.instance.client
-          .from('places')
-          .update({'images': media.images})
-          .eq('id', p.id)
-          .then((_) {}, onError: (_) {});
-    }
   }
 
   // Galeriyi 3 saniyede bir otomatik ilerlet

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/constants/categories.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../core/utils/database_service.dart';
 import '../../core/utils/gps_service.dart';
@@ -38,7 +39,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String _category = 'Tümü';
 
   static const _categories = [
-    'Tümü', 'Müzeler', 'Kaleler', 'Doğa', 'Restoranlar', 'Camiler',
+    'Tümü', 'Tarihi', 'Müzeler', 'Doğa', 'Kültür', 'Kaleler', 'Camiler',
+    'Manzara',
   ];
 
   @override
@@ -96,21 +98,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<_PlaceWithDistance> get _filtered {
     if (_category == 'Tümü') return _places;
-    final key = {
-      'Müzeler': 'müze',
-      'Kaleler': 'kale',
-      'Doğa': 'doğa',
-      'Restoranlar': 'restoran',
-      'Camiler': 'cami',
-    }[_category];
-    if (key == null) return _places;
-    return _places
-        .where((p) => p.place.category.toLowerCase().contains(key) ||
-            (key == 'doğa' &&
-                (p.place.category.toLowerCase().contains('park') ||
-                    p.place.category.toLowerCase().contains('şelale') ||
-                    p.place.category.toLowerCase().contains('mağara'))))
-        .toList();
+    bool Function(Place) test;
+    switch (_category) {
+      case 'Tarihi':
+        test = (p) => p.category == Categories.historic;
+      case 'Müzeler':
+        test = (p) => p.category == Categories.museum;
+      case 'Doğa':
+        test = (p) => p.category == Categories.nature;
+      case 'Kültür':
+        test = (p) => p.category == Categories.culture;
+      case 'Manzara':
+        test = (p) => p.category == Categories.scenic;
+      // Kale ve cami ayrı kategori değil; ada göre bulunur.
+      case 'Kaleler':
+        test = (p) => Categories.containsAny(p.name, const ['kale', 'hisar']);
+      case 'Camiler':
+        test = (p) => Categories.containsAny(p.name, const ['cami', 'mescit']);
+      default:
+        return _places;
+    }
+    return _places.where((p) => test(p.place)).toList();
   }
 
   String get _avatar =>

@@ -1,7 +1,7 @@
 class CommunityPost {
   final String id;
   final String userId;
-  final String userEmail;
+  final String userName;
   final String title;
   final String description;
   final String? cityName;
@@ -11,7 +11,7 @@ class CommunityPost {
   CommunityPost({
     required this.id,
     required this.userId,
-    required this.userEmail,
+    required this.userName,
     required this.title,
     required this.description,
     this.cityName,
@@ -23,7 +23,7 @@ class CommunityPost {
     return CommunityPost(
       id: json['id'] as String,
       userId: json['user_id'] as String? ?? '',
-      userEmail: json['user_email'] as String? ?? 'Gezgin',
+      userName: json['user_name'] as String? ?? 'Gezgin',
       title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
       cityName: json['city_name'] as String?,
