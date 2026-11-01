@@ -1978,14 +1978,14 @@ class _LandingScreenState extends State<LandingScreen> {
 
   // ─── SUPABASE AUTH ───────────────────────────────────────────
   Future<void> _signIn(String email, String password) async {
-    if (email.trim().isEmpty || password.trim().isEmpty) {
+    if (email.trim().isEmpty || password.isEmpty) {
       _showSnack('E-posta ve şifre boş olamaz', isError: true);
       return;
     }
     try {
       final res = await Supabase.instance.client.auth.signInWithPassword(
         email: email.trim(),
-        password: password.trim(),
+        password: password,
       );
       if (!mounted) return;
       if (res.session != null) {
@@ -2000,7 +2000,7 @@ class _LandingScreenState extends State<LandingScreen> {
   }
 
   Future<void> _signUp(String email, String password) async {
-    if (email.trim().isEmpty || password.trim().length < 6) {
+    if (email.trim().isEmpty || password.length < 6) {
       _showSnack('Geçerli bir e-posta ve en az 6 karakter şifre girin',
           isError: true);
       return;
@@ -2008,7 +2008,7 @@ class _LandingScreenState extends State<LandingScreen> {
     try {
       final res = await Supabase.instance.client.auth.signUp(
         email: email.trim(),
-        password: password.trim(),
+        password: password,
       );
       if (!mounted) return;
       // Email confirmation kapalıysa session direkt gelir, açıksa null gelir

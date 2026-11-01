@@ -55,7 +55,16 @@ class _AiChatScreenState extends State<AiChatScreen> {
 
     if (plan == null) {
       // Şehir tanınmadı — Gemini'ye genel soru olarak gönder
-      final geminiReply = await GeminiService.chat(query);
+      // (son mesajlar bağlam olarak gider; plan kartları hariç)
+      final history = _messages
+          .take(_messages.length - 1)
+          .where((m) => m.text != null && m.plan == null)
+          .map((m) => (
+                role: m.role == _ChatRole.user ? 'user' : 'model',
+                text: m.text!,
+              ))
+          .toList();
+      final geminiReply = await GeminiService.chat(query, history: history);
       if (!mounted) return;
       setState(() {
         _processing = false;

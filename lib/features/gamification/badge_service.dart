@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/constants/categories.dart';
+
 /// Rozet ve ziyaret takip sistemi.
 ///
 /// Supabase tablosu (kullanıcı oluşturmalı, README'de var):
@@ -64,7 +66,7 @@ class BadgeService {
       for (final v in visits) {
         final places = v['places'];
         if (places is Map && places['category'] != null) {
-          final cat = places['category'] as String;
+          final cat = Categories.normalize(places['category'] as String);
           byCategory[cat] = (byCategory[cat] ?? 0) + 1;
         }
       }

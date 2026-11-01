@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+import 'gps_service.dart';
+
 /// OpenStreetMap Overpass API — Travixx veritabanında olmayan
 /// turistik mekanları aramak için ücretsiz Katman 2 servisi.
 class OverpassPlace {
@@ -177,8 +179,8 @@ out body $limit;
         final venueLng = (el['lon'] as num?)?.toDouble();
         if (venueLat == null || venueLng == null) continue;
 
-        // Düz mesafe hesaplama (basit, kısa mesafeler için yeterli)
-        final dist = _quickDistance(lat, lng, venueLat, venueLng);
+        final dist =
+            GpsService.distanceKm(lat, lng, venueLat, venueLng) * 1000;
 
         venues.add(NearbyVenue(
           osmId: (el['id'] as num).toInt(),
@@ -198,16 +200,6 @@ out body $limit;
     }
   }
 
-  /// Hızlı küresel mesafe (Haversine basitleştirilmiş — kısa mesafelerde yeterli)
-  static double _quickDistance(
-      double lat1, double lng1, double lat2, double lng2) {
-    const earthR = 6371000.0; // metre
-    final dLat = (lat2 - lat1) * 3.14159265 / 180.0;
-    final dLng = (lng2 - lng1) * 3.14159265 / 180.0;
-    final a = dLat * dLat + dLng * dLng * 0.5;
-    return earthR * 0.000001 * a.clamp(0, double.infinity) +
-        earthR * (dLat.abs() + dLng.abs()) * 0.5;
-  }
 }
 
 /// Yakındaki yemek mekanı

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/qr_service.dart';
 
 class QrScannerScreen extends StatefulWidget {
   const QrScannerScreen({super.key});
@@ -36,16 +36,12 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     setState(() => _busy = true);
 
     try {
-      // QR kodla eşleşen kayıt var mı?
-      final response = await Supabase.instance.client
-          .from('qr_codes')
-          .select('place_id, scan_count')
-          .eq('qr_data', code)
-          .maybeSingle();
+      // QR içeriği link (…/#/qr/<kod>), mekan id'si veya qr_codes kaydı olabilir
+      final placeId = await QrService.resolvePlaceId(code);
 
       if (!mounted) return;
 
-      if (response == null) {
+      if (placeId == null) {
         _showSnack(I18n.t('qr.notRegistered'), isError: true);
         // Birkaç saniye bekleyip tekrar tarayabilsin
         await Future.delayed(const Duration(seconds: 2));
@@ -53,28 +49,10 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
         return;
       }
 
-      final placeId = response['place_id'] as String?;
-      if (placeId == null) {
-        _showSnack(I18n.t('qr.broken'), isError: true);
-        await Future.delayed(const Duration(seconds: 2));
-        if (mounted) setState(() => _busy = false);
-        return;
-      }
-
-      // Tarama sayısını artır (best-effort, hata olsa devam et)
-      final currentCount = (response['scan_count'] as int?) ?? 0;
-      Supabase.instance.client
-          .from('qr_codes')
-          .update({'scan_count': currentCount + 1})
-          .eq('qr_data', code)
-          .then((_) {}, onError: (_) {});
-
       // Detaya git
-      if (mounted) {
-        _showSnack(I18n.t('qr.foundOpening'), isError: false);
-        await Future.delayed(const Duration(milliseconds: 600));
-        if (mounted) context.go('/place/$placeId');
-      }
+      _showSnack(I18n.t('qr.foundOpening'), isError: false);
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (mounted) context.go('/place/$placeId');
     } catch (e) {
       if (!mounted) return;
       _showSnack('${I18n.t('auth.genericError')}: $e', isError: true);
