@@ -15,6 +15,7 @@ import '../../shared/widgets/photo_viewer.dart';
 import '../../shared/widgets/logistics_card.dart';
 import '../../core/utils/database_service.dart';
 import '../../core/utils/storage_service.dart';
+import '../prices/price_section.dart';
 import '../../core/utils/translation_service.dart';
 import '../../core/utils/overpass_service.dart';
 import '../../core/utils/currency_service.dart';
@@ -408,7 +409,9 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     final p = _place!;
     final hasMap = p.latitude != null && p.longitude != null;
     final hasContact = (p.website?.isNotEmpty ?? false) ||
-        (p.phone?.isNotEmpty ?? false);
+        (p.phone?.isNotEmpty ?? false) ||
+        (p.instagram?.isNotEmpty ?? false) ||
+        (p.reservationUrl?.isNotEmpty ?? false);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -500,7 +503,47 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                         value: p.phone!,
                         onTap: () => _openUrl('tel:${p.phone}'),
                       ),
+                    if (p.instagram?.isNotEmpty ?? false) ...[
+                      const SizedBox(height: 8),
+                      _linkRow(
+                        icon: Icons.camera_alt_outlined,
+                        label: 'Instagram',
+                        value: p.instagram!
+                            .replaceFirst(RegExp(r'^https?://(www\.)?'), ''),
+                        onTap: () => _openUrl(p.instagram!),
+                      ),
+                    ],
+                    if (p.reservationUrl?.isNotEmpty ?? false) ...[
+                      const SizedBox(height: 8),
+                      _linkRow(
+                        icon: Icons.event_seat_outlined,
+                        label: I18n.t('nl.reservation'),
+                        value: p.reservationUrl!
+                            .replaceFirst(RegExp(r'^https?://(www\.)?'), ''),
+                        onTap: () => _openUrl(p.reservationUrl!),
+                      ),
+                    ],
                   ],
+                  if (p.isNightlife &&
+                      (p.minAge != null || (p.music?.isNotEmpty ?? false))) ...[
+                    const SizedBox(height: 14),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        if (p.minAge != null)
+                          _badge('🔞 ${p.minAge}+', Colors.deepPurple,
+                              isLight: true),
+                        if (p.music?.isNotEmpty ?? false)
+                          _badge('🎵 ${p.music}', Colors.deepPurple,
+                              isLight: true),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                  _sectionTitle(I18n.t('nl.prices')),
+                  const SizedBox(height: 10),
+                  PriceSection(place: p),
                   if (hasMap) ...[
                     const SizedBox(height: 24),
                     _sectionTitle(I18n.t('place.location')),

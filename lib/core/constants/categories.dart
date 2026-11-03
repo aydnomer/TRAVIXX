@@ -17,6 +17,7 @@ class Categories {
   static const String shopping = 'Alışveriş';
   static const String religious = 'Dini';
   static const String beach = 'Plaj';
+  static const String nightlife = 'Eğlence';
 
   /// Bilinen tüm kategoriler (mekan öner formu vb. için).
   static const List<String> all = [
@@ -28,6 +29,7 @@ class Categories {
     shopping,
     religious,
     beach,
+    nightlife,
   ];
 
   /// Karaktersiz/küçük harf karşılıkları → doğru yazım.

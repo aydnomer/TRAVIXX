@@ -56,6 +56,14 @@ class Place {
   /// Wikipedia başlığı, OSM etiketi biçiminde ("tr:Efes").
   final String? wikipedia;
 
+  /// Gece hayatı / beach club alanları (OSM ya da elle).
+  final String? instagram;
+  final String? reservationUrl;
+  final int? minAge;
+  final String? music;
+
+  bool get isNightlife => category == Categories.nightlife;
+
   /// Kullanıcı yorumu sayısı ve ortalaması (veritabanı tetikleyicisi tutar).
   final int reviewCount;
   final double? reviewAvg;
@@ -97,6 +105,10 @@ class Place {
     this.subcategory,
     this.wikidata,
     this.wikipedia,
+    this.instagram,
+    this.reservationUrl,
+    this.minAge,
+    this.music,
     this.reviewCount = 0,
     this.reviewAvg,
   });
@@ -128,6 +140,10 @@ class Place {
       subcategory: json['subcategory'] as String?,
       wikidata: json['wikidata'] as String?,
       wikipedia: json['wikipedia'] as String?,
+      instagram: json['instagram'] as String?,
+      reservationUrl: json['reservation_url'] as String?,
+      minAge: (json['min_age'] as num?)?.toInt(),
+      music: json['music'] as String?,
       reviewCount: (json['review_count'] as num?)?.toInt() ?? 0,
       reviewAvg: (json['review_avg'] as num?)?.toDouble(),
     );

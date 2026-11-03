@@ -90,6 +90,10 @@ class DT {
   // ── Kategori → renk + ikon eşlemesi ──────────────────────────
   static Color categoryColor(String? category) {
     final c = (category ?? '').toLowerCase();
+    if (c.contains('eğlence') || c.contains('eglence')) {
+      return const Color(0xFFE8566C);
+    }
+    if (c.contains('plaj') || c.contains('beach')) return const Color(0xFF1E9BD7);
     if (c.contains('müze') || c.contains('muze') || c.contains('museum')) {
       return catMuseum;
     }
@@ -116,6 +120,10 @@ class DT {
 
   static IconData categoryIcon(String? category) {
     final c = (category ?? '').toLowerCase();
+    if (c.contains('eğlence') || c.contains('eglence')) {
+      return Icons.nightlife_outlined;
+    }
+    if (c.contains('plaj') || c.contains('beach')) return Icons.beach_access_outlined;
     if (c.contains('müze') || c.contains('muze') || c.contains('museum')) {
       return Icons.museum_outlined;
     }

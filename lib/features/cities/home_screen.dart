@@ -391,6 +391,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () => context.push('/cities'),
               ),
               QuickActionCard(
+                icon: Icons.beach_access_outlined,
+                color: const Color(0xFFE8566C),
+                title: I18n.t('nl.title'),
+                subtitle: I18n.t('nl.homeSub'),
+                onTap: () => context.push('/nightlife'),
+              ),
+              QuickActionCard(
                 icon: Icons.auto_awesome_outlined,
                 color: DT.catMosque,
                 title: I18n.t('ah.home.guideTitle'),

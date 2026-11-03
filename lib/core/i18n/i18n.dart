@@ -6,6 +6,7 @@ import 'strings/category_strings.dart';
 import 'strings/city_guide_strings.dart';
 import 'strings/core_services_strings.dart';
 import 'strings/discover_strings.dart';
+import 'strings/nightlife_strings.dart';
 import 'strings/trip_tools_strings.dart';
 
 /// Travixx için hafif i18n sistemi.
@@ -69,6 +70,7 @@ class I18n {
     cityGuideStrings,
     coreServicesStrings,
     discoverStrings,
+    nightlifeStrings,
     tripToolsStrings,
   ];
 

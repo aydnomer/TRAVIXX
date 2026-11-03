@@ -98,6 +98,7 @@ class _DrawerBody extends StatelessWidget {
               _row(context, Icons.mood_outlined, I18n.t('ah.drawer.mood'), '/mood'),
               _row(context, Icons.star_outline, I18n.t('ah.drawer.topRated'),
                   '/top-rated'),
+              _row(context, Icons.beach_access_outlined, I18n.t('nl.title'), '/nightlife'),
               _row(context, Icons.restaurant_outlined, I18n.t('ah.drawer.restaurants'),
                   '/restaurants'),
               _row(context, Icons.play_circle_outline, I18n.t('ah.drawer.videos'),

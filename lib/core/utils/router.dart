@@ -35,6 +35,7 @@ import "../../features/trip_wizard/trip_wizard_screen.dart";
 import "../../features/videos/videos_screen.dart";
 import "../../features/community/community_screen.dart";
 import "../../features/accommodation/accommodation_screen.dart";
+import "../../features/nightlife/nightlife_screen.dart";
 
 /// Supabase auth state değişimlerinde router'ı tetiklemek için.
 class _AuthRefreshListenable extends ChangeNotifier {
@@ -157,6 +158,11 @@ final GoRouter appRouter = GoRouter(
         final id = state.pathParameters['id']!;
         return DiaryDetailScreen(diaryId: id);
       },
+    ),
+    GoRoute(
+      path: "/nightlife",
+      builder: (context, state) =>
+          NightlifeScreen(initialHub: state.uri.queryParameters["hub"]),
     ),
     GoRoute(
       path: "/restaurants",
