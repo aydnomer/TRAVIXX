@@ -48,6 +48,7 @@ area["ISO3166-2"="TR-$plate"]->.a;
   nwr["boundary"~"^(national_park|protected_area)\$"]["name"]["wikidata"](area.a);
   nwr["tourism"="viewpoint"]["name"](area.a);
   nwr["tourism"="attraction"]["name"]["wikidata"](area.a);
+  nwr["amenity"~"^(nightclub|bar|pub)\$"]["name"](area.a);
 );
 out center tags;
 ''';
@@ -66,8 +67,23 @@ OsmKind? classify(Map<String, String> t) {
   final historic = t['historic'];
   final tourism = t['tourism'];
 
-  if (natural == 'beach' || t['leisure'] == 'beach_resort') {
-    return const OsmKind('Plaj', 'Plaj', '🏖️');
+  // Beach club: plaj işletmesi ya da adında "beach" geçen bar/kulüp.
+  final amenity = t['amenity'];
+  final nameFolded = fold(t['name'] ?? '');
+  if (t['leisure'] == 'beach_resort' ||
+      t['club'] == 'beach' ||
+      ((amenity == 'bar' || amenity == 'nightclub') &&
+          RegExp(r'\bbeach\b').hasMatch(nameFolded))) {
+    return const OsmKind('Eğlence', 'Beach Club', '🏝️');
+  }
+  if (natural == 'beach') return const OsmKind('Plaj', 'Plaj', '🏖️');
+  switch (amenity) {
+    case 'nightclub':
+      return const OsmKind('Eğlence', 'Gece Kulübü', '🪩');
+    case 'bar':
+      return const OsmKind('Eğlence', 'Bar', '🍸');
+    case 'pub':
+      return const OsmKind('Eğlence', 'Pub', '🍺');
   }
   if (tourism == 'museum') return const OsmKind('Müze', 'Müze', '🏛️');
 
@@ -219,10 +235,24 @@ Map<String, dynamic>? toPlaceRow(Map<String, dynamic> el, String cityId) {
     'opening_hours': nz(tags['opening_hours']),
     'admission_fee': nz(tags['charge']),
     'is_free': fee == 'no',
+    'instagram': instagramUrl(tags['contact:instagram'] ?? tags['instagram']),
+    'reservation_url': nz(tags['reservation:url'] ?? tags['contact:booking']),
+    'min_age': int.tryParse(tags['min_age'] ?? ''),
+    'music': nz(tags['music'] ?? tags['music:genre']),
     'wikidata': nz(tags['wikidata']),
     'wikipedia': nz(tags['wikipedia']),
     'updated_at': DateTime.now().toUtc().toIso8601String(),
   };
+}
+
+/// Instagram etiketi ("@ad", "ad" ya da tam adres) → profil adresi.
+String? instagramUrl(String? raw) {
+  final v = raw?.trim();
+  if (v == null || v.isEmpty) return null;
+  if (v.startsWith('http')) return v.startsWith('https://') ? v : null;
+  final handle = v.replaceFirst('@', '');
+  if (!RegExp(r'^[A-Za-z0-9._]{1,30}$').hasMatch(handle)) return null;
+  return 'https://instagram.com/$handle';
 }
 
 /// Mesafe (km), Haversine.

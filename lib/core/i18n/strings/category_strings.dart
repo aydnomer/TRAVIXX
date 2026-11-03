@@ -2,6 +2,7 @@
 // Türkçe ad (Categories.fold), örn. 'cat.muze', 'sub.selale'.
 const Map<String, Map<String, String>> categoryStrings = {
   'tr': {
+    'cat.eglence': 'Eğlence', 'sub.beach club': 'Beach Club', 'sub.gece kulubu': 'Gece Kulübü', 'sub.bar': 'Bar', 'sub.pub': 'Pub',
     'cat.tarihi': 'Tarihi', 'cat.muze': 'Müze', 'cat.doga': 'Doğa',
     'cat.kultur': 'Kültür', 'cat.manzara': 'Manzara',
     'cat.alisveris': 'Alışveriş', 'cat.dini': 'Dini', 'cat.plaj': 'Plaj',
@@ -19,6 +20,7 @@ const Map<String, Map<String, String>> categoryStrings = {
     'sub.seyir noktasi': 'Seyir Noktası', 'sub.turistik nokta': 'Turistik Nokta',
   },
   'en': {
+    'cat.eglence': 'Nightlife', 'sub.beach club': 'Beach Club', 'sub.gece kulubu': 'Nightclub', 'sub.bar': 'Bar', 'sub.pub': 'Pub',
     'cat.tarihi': 'Historic', 'cat.muze': 'Museum', 'cat.doga': 'Nature',
     'cat.kultur': 'Culture', 'cat.manzara': 'Scenic',
     'cat.alisveris': 'Shopping', 'cat.dini': 'Religious', 'cat.plaj': 'Beach',
@@ -36,6 +38,7 @@ const Map<String, Map<String, String>> categoryStrings = {
     'sub.seyir noktasi': 'Viewpoint', 'sub.turistik nokta': 'Attraction',
   },
   'de': {
+    'cat.eglence': 'Nachtleben', 'sub.beach club': 'Beach Club', 'sub.gece kulubu': 'Nachtclub', 'sub.bar': 'Bar', 'sub.pub': 'Pub',
     'cat.tarihi': 'Historisch', 'cat.muze': 'Museum', 'cat.doga': 'Natur',
     'cat.kultur': 'Kultur', 'cat.manzara': 'Aussicht',
     'cat.alisveris': 'Einkaufen', 'cat.dini': 'Religiös', 'cat.plaj': 'Strand',
@@ -54,6 +57,7 @@ const Map<String, Map<String, String>> categoryStrings = {
     'sub.turistik nokta': 'Sehenswürdigkeit',
   },
   'ar': {
+    'cat.eglence': 'سهر وترفيه', 'sub.beach club': 'نادي شاطئي', 'sub.gece kulubu': 'ملهى ليلي', 'sub.bar': 'بار', 'sub.pub': 'حانة',
     'cat.tarihi': 'تاريخي', 'cat.muze': 'متحف', 'cat.doga': 'طبيعة',
     'cat.kultur': 'ثقافة', 'cat.manzara': 'إطلالة',
     'cat.alisveris': 'تسوق', 'cat.dini': 'ديني', 'cat.plaj': 'شاطئ',
@@ -71,6 +75,7 @@ const Map<String, Map<String, String>> categoryStrings = {
     'sub.seyir noktasi': 'نقطة مشاهدة', 'sub.turistik nokta': 'معلم سياحي',
   },
   'fr': {
+    'cat.eglence': 'Vie nocturne', 'sub.beach club': 'Beach club', 'sub.gece kulubu': 'Boîte de nuit', 'sub.bar': 'Bar', 'sub.pub': 'Pub',
     'cat.tarihi': 'Historique', 'cat.muze': 'Musée', 'cat.doga': 'Nature',
     'cat.kultur': 'Culture', 'cat.manzara': 'Panorama',
     'cat.alisveris': 'Shopping', 'cat.dini': 'Religieux', 'cat.plaj': 'Plage',
@@ -89,6 +94,7 @@ const Map<String, Map<String, String>> categoryStrings = {
     'sub.turistik nokta': 'Attraction',
   },
   'ru': {
+    'cat.eglence': 'Ночная жизнь', 'sub.beach club': 'Бич-клуб', 'sub.gece kulubu': 'Ночной клуб', 'sub.bar': 'Бар', 'sub.pub': 'Паб',
     'cat.tarihi': 'Историческое', 'cat.muze': 'Музей', 'cat.doga': 'Природа',
     'cat.kultur': 'Культура', 'cat.manzara': 'Виды',
     'cat.alisveris': 'Покупки', 'cat.dini': 'Религиозное', 'cat.plaj': 'Пляж',
